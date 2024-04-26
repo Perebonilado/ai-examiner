@@ -1,0 +1,10 @@
+export enum SystemModule {
+  DATABASE = 'DATABASE',
+  HTTP = 'HTTP',
+  REPOSITORY = 'REPOSITORY',
+  QUERY = 'QUERY',
+  EVENT = 'EVENT',
+  INFRA = 'INFRA',
+  HANDLER = 'HANDLER',
+  SCHEDULER = 'SCHEDULER',
+}
