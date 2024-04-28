@@ -13,7 +13,7 @@ export class AIExaminerService {
   private openAiClient: OpenAI;
   private examiner: OpenAI.Beta.Assistants.Assistant;
   private prompt = `
-  Based off the file, generate 5 multiple choice questions and return only a json array format like this: [{ id: string, question: string, options: { value: string, id: string }[], correctAnswerId: string, explanation: string}]. This json structure should be the only thing you return, no other strings whatsoever`;
+  Based off the file, generate 5 multiple choice questions and return only a json array format like this: [{ id: string, question: string, options: { value: string, id: string }[], correctAnswerId: string, explanation: string}]. This json structure should be the only thing you return, no other strings whatsoever. Ignore images in the file, and be as concise and fast as possible`;
 
   constructor() {
     this.intializeOpenAiClient();
@@ -56,7 +56,7 @@ export class AIExaminerService {
       this.examiner = await this.openAiClient.beta.assistants.create({
         name: examiner.name,
         instructions: examiner.instructions,
-        model: 'gpt-4-turbo',
+        model: 'gpt-3.5-turbo',
         tools: [{ type: 'file_search' }],
       });
     } catch (error) {
