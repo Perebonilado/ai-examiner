@@ -3,12 +3,14 @@ import {
   Column,
   Model,
   DataType,
+  ForeignKey,
   BeforeCreate,
 } from 'sequelize-typescript';
 import { generateUUID } from 'src/utils';
+import { QuestionGroupModel } from './QuestionGroupModel';
 
-@Table({ tableName: 'lookup' })
-export class LookUpModel extends Model<LookUpModel> {
+@Table({ tableName: 'question' })
+export class QuestionModel extends Model<QuestionModel> {
   @Column({
     type: DataType.STRING,
     primaryKey: true,
@@ -16,21 +18,22 @@ export class LookUpModel extends Model<LookUpModel> {
   id: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.JSON,
     allowNull: false,
-    field: 'title',
+    field: 'data',
   })
-  title: string;
+  data: string;
 
+  @ForeignKey(() => QuestionGroupModel)
   @Column({
     type: DataType.STRING,
     allowNull: false,
-    field: 'type',
+    field: 'question_group_id',
   })
-  type: string;
+  questionGroupId: string;
 
   @BeforeCreate
-  static addUUID(instance: LookUpModel) {
+  static addUUID(instance: QuestionModel) {
     instance.id = generateUUID();
   }
 }

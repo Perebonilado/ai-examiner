@@ -4,17 +4,16 @@ import {
   Model,
   DataType,
   BeforeCreate,
-  ForeignKey,
   HasMany,
 } from 'sequelize-typescript';
 import { generateUUID } from 'src/utils';
 import * as moment from 'moment';
-import { CourseDocumentModel } from './DocumentModel';
+import { CourseDocumentModel } from './CourseDocumentModel';
 
 @Table({ tableName: 'course' })
 export class CourseModel extends Model<CourseModel> {
   @Column({
-    type: DataType.UUID,
+    type: DataType.STRING,
     primaryKey: true,
   })
   id: string;

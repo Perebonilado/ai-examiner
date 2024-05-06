@@ -3,7 +3,6 @@ import {
   Column,
   Model,
   DataType,
-  HasMany,
   BeforeCreate,
   ForeignKey,
 } from 'sequelize-typescript';
@@ -14,7 +13,7 @@ import { CourseModel } from './CourseModel';
 @Table({ tableName: 'course_document' })
 export class CourseDocumentModel extends Model<CourseDocumentModel> {
   @Column({
-    type: DataType.UUID,
+    type: DataType.STRING,
     primaryKey: true,
   })
   id: string;
