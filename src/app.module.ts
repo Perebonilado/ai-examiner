@@ -4,6 +4,7 @@ import { InfraWebModule } from './infra/web/InfraWebModule';
 import { ConfigModule } from '@nestjs/config';
 import { InfraDbModule } from './infra/db/InfraDbModule';
 import { InfraRepositoryModule } from './infra/db/InfraRepositoryModule';
+import { QueryModule } from './query/QueryModule';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { InfraRepositoryModule } from './infra/db/InfraRepositoryModule';
     InfraWebModule,
     InfraDbModule,
     InfraRepositoryModule,
+    QueryModule,
   ],
 })
 export class AppModule {}
