@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { AuthService } from '../auth/services/AuthService';
 import { QueryModule } from 'src/query/QueryModule';
+import { CourseController } from './controllers/CourseController';
 
 @Module({
   imports: [
@@ -18,6 +19,6 @@ import { QueryModule } from 'src/query/QueryModule';
     QueryModule,
   ],
   providers: [AuthService],
-  controllers: [QuestionsController, AuthController],
+  controllers: [QuestionsController, AuthController, CourseController],
 })
 export class InfraWebModule {}
