@@ -4,6 +4,7 @@ import { verifyPassword } from 'src/utils';
 import { JwtService } from '@nestjs/jwt';
 import { LoginUserDto } from 'src/dto/LoginUserDto';
 import { VerifiedTokenModel } from '../models/VerifiedTokenModel';
+import { EnvironmentVariables } from 'src/EnvironmentVariables';
 
 @Injectable()
 export class AuthService {
@@ -27,7 +28,9 @@ export class AuthService {
         return {
           status: HttpStatus.OK,
           data: {
-            accessToken: await this.jwtService.signAsync(payload),
+            token: await this.jwtService.signAsync(payload, {
+              secret: EnvironmentVariables.config.jwtSecret,
+            }),
           },
           message: 'Successful',
         };

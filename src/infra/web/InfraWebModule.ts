@@ -12,11 +12,10 @@ import { QueryModule } from 'src/query/QueryModule';
   imports: [
     JwtModule.register({
       global: true,
-      secret: EnvironmentVariables.config.jwtSecret /* save in env eventually*/,
     }),
     IntegrationsModule,
     BusinessModule,
-    QueryModule
+    QueryModule,
   ],
   providers: [AuthService],
   controllers: [QuestionsController, AuthController],

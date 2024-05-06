@@ -41,6 +41,7 @@ export class AuthController {
     try {
       return await this.authService.signIn(body);
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         error?.response ?? 'Failed to login user',
         HttpStatus.BAD_REQUEST,

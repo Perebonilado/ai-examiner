@@ -9,6 +9,7 @@ import { UserRepository } from 'src/business/repository/UserRepository';
 import { UserModel } from 'src/infra/db/models/UserModel';
 import { JwtService } from '@nestjs/jwt';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
+import { hashPassword } from 'src/utils';
 
 export class CreateUserHandler extends AbstractRequestHandlerTemplate<
   CreateUserRequest,
@@ -31,8 +32,9 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
       );
 
       if (!userExists) {
+        const payload = {...request.payload, password: await hashPassword(request.payload.password)}
         const savedUser = await this.userRepository.create(
-          request.payload as UserModel,
+          payload as UserModel,
         );
 
         const token = this.jwtService.sign(
