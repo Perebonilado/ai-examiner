@@ -23,6 +23,14 @@ export class CourseModel extends Model<CourseModel> {
   @Column({
     type: DataType.STRING,
     allowNull: false,
+    unique: true,
+    field: 'title',
+  })
+  title: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
     field: 'description',
   })
   description: string;

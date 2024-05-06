@@ -13,4 +13,14 @@ export class CourseQueryService {
       throw new QueryError('Failed to find user courses').InnerError(error);
     }
   }
+
+  public async findUserCourseByTitle(title: string, userId: string) {
+    try {
+      return await CourseModel.findOne({ where: { title, userId } });
+    } catch (error) {
+      throw new QueryError(
+        'Failed to find course by title ' + title,
+      ).InnerError(error);
+    }
+  }
 }
