@@ -12,6 +12,8 @@ import { CreateUserDto } from 'src/dto/CreateUserDto';
 import { AuthService } from 'src/infra/auth/services/AuthService';
 import { ZodValidationPipe } from 'src/pipes/ZodValidationPipe.pipe';
 import { SignUpValidationSchema } from '../zod-validation-schemas/SignUpValidationSchema';
+import { LoginUserDto } from 'src/dto/LoginUserDto';
+import { LoginValidationSchema } from '../zod-validation-schemas/LoginValidationSchema';
 
 @Controller('auth')
 export class AuthController {
@@ -33,5 +35,16 @@ export class AuthController {
     }
   }
 
-  
+  @Post('/login')
+  @UsePipes(new ZodValidationPipe(LoginValidationSchema))
+  public async login(@Body() body: LoginUserDto) {
+    try {
+      return await this.authService.signIn(body);
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to login user',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
 }
