@@ -26,7 +26,7 @@ export class CourseController {
       return await this.courseQueryService.findAllUserCourses(userToken.sub);
     } catch (error) {
       throw new HttpException(
-        error?.response ?? 'Failed to login user',
+        error?.response ?? 'Failed to find user courses',
         HttpStatus.BAD_REQUEST,
       );
     }
