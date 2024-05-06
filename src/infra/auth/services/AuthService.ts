@@ -26,7 +26,9 @@ export class AuthService {
 
         return {
           status: HttpStatus.OK,
-          accessToken: await this.jwtService.signAsync(payload),
+          data: {
+            accessToken: await this.jwtService.signAsync(payload),
+          },
           message: 'Successful',
         };
       } else {

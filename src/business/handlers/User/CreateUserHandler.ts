@@ -48,10 +48,11 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
           data: {
             token,
           },
+          status: HttpStatus.CREATED,
         };
       }
 
-      throw new HttpException('USer already exists', HttpStatus.BAD_REQUEST);
+      throw new HttpException('User already exists', HttpStatus.BAD_REQUEST);
     } catch (error) {
       throw new HandlerError('Failed to handle user creation').InnerError(
         error,
