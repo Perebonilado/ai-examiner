@@ -5,10 +5,12 @@ import {
   DataType,
   BeforeCreate,
   HasMany,
+  ForeignKey,
 } from 'sequelize-typescript';
 import { generateUUID } from 'src/utils';
 import * as moment from 'moment';
 import { CourseDocumentModel } from './CourseDocumentModel';
+import { UserModel } from './UserModel';
 
 @Table({ tableName: 'course' })
 export class CourseModel extends Model<CourseModel> {
@@ -43,11 +45,19 @@ export class CourseModel extends Model<CourseModel> {
   @Column({ type: DataType.DATE, field: 'modified_on', allowNull: true })
   modifiedOn: Date;
 
-  @Column({ type: DataType.UUID, field: 'modified_by', allowNull: true })
+  @Column({ type: DataType.STRING, field: 'modified_by', allowNull: true })
   modifiedBy: string;
 
-  @HasMany(()=>CourseDocumentModel, 'course_id')
-  courseDocument: CourseDocumentModel
+  @ForeignKey(() => UserModel)
+  @Column({
+    type: DataType.STRING,
+    field: 'user_id',
+    allowNull: false,
+  })
+  userId: string;
+
+  @HasMany(() => CourseDocumentModel, 'course_id')
+  courseDocument: CourseDocumentModel;
 
   @BeforeCreate
   static addUUID(instance: CourseModel) {
