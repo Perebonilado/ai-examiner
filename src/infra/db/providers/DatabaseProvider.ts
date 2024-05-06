@@ -3,6 +3,9 @@ import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { UserModel } from '../models/UserModel';
 import { LookUpModel } from '../models/LookUpModel';
 import { CourseModel } from '../models/CourseModel';
+import { CourseDocumentModel } from '../models/CourseDocumentModel';
+import { QuestionGroupModel } from '../models/QuestionGroupModel';
+import { QuestionModel } from '../models/QuestionModel';
 
 export let sequelize: Sequelize;
 
@@ -21,7 +24,14 @@ export const databaseProviders = [
         logQueryParameters: false,
         define: { timestamps: false },
       });
-      sequelize.addModels([UserModel, LookUpModel, CourseModel]);
+      sequelize.addModels([
+        UserModel,
+        LookUpModel,
+        CourseModel,
+        CourseDocumentModel,
+        QuestionGroupModel,
+        QuestionModel,
+      ]);
 
       try {
         await sequelize.sync();
