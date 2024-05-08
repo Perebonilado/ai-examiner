@@ -3,11 +3,13 @@ import {
   Column,
   Model,
   DataType,
-  ForeignKey,
   BeforeCreate,
+  ForeignKey,
 } from 'sequelize-typescript';
 import { generateUUID } from 'src/utils';
-import { QuestionGroupModel } from './QuestionGroupModel';
+import * as moment from 'moment';
+import { UserModel } from './UserModel';
+import { CourseDocumentModel } from './CourseDocumentModel';
 
 @Table({ tableName: 'question' })
 export class QuestionModel extends Model<QuestionModel> {
@@ -24,13 +26,29 @@ export class QuestionModel extends Model<QuestionModel> {
   })
   data: string;
 
-  @ForeignKey(() => QuestionGroupModel)
+  @Column({
+    type: DataType.DATE,
+    field: 'created_on',
+    allowNull: true,
+    defaultValue: moment(new Date()).utc().toDate(),
+  })
+  createdOn: Date;
+
+  @ForeignKey(() => UserModel)
   @Column({
     type: DataType.STRING,
+    field: 'user_id',
     allowNull: false,
-    field: 'question_group_id',
   })
-  questionGroupId: string;
+  userId: string;
+
+  @ForeignKey(() => CourseDocumentModel)
+  @Column({
+    type: DataType.STRING,
+    field: 'course_document_id',
+    allowNull: false,
+  })
+  courseDocumentId: string;
 
   @BeforeCreate
   static addUUID(instance: QuestionModel) {
