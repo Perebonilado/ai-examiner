@@ -106,7 +106,7 @@ export class CourseController {
           filePath: createdDocument.data.fileLocation,
         });
 
-      const savedQuestions = await this.createQuestionHandler.handle({
+      await this.createQuestionHandler.handle({
         payload: {
           courseDocumentId: createdDocument.data.id,
           data: generatedQuestions,
