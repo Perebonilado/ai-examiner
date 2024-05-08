@@ -6,6 +6,8 @@ import { CourseSequelizeRepository } from './repository/CourseSequelizeRepositor
 import { CourseRepository } from 'src/business/repository/CourseRepository';
 import { CourseDocumentRepository } from 'src/business/repository/CourseDocumentRepository';
 import { CourseDocumentSequelizeRepository } from './repository/CourseDocumentSequelizeRepository';
+import { QuestionRepository } from 'src/business/repository/QuestionRepository';
+import { QuestionSequelizeRepository } from './repository/QuestionSequelizeRepository';
 
 @Module({
   imports: [InfraDbModule],
@@ -22,7 +24,16 @@ import { CourseDocumentSequelizeRepository } from './repository/CourseDocumentSe
       provide: CourseDocumentRepository,
       useClass: CourseDocumentSequelizeRepository,
     },
+    {
+      provide: QuestionRepository,
+      useClass: QuestionSequelizeRepository,
+    },
   ],
-  exports: [UserRepository, CourseRepository, CourseDocumentRepository],
+  exports: [
+    UserRepository,
+    CourseRepository,
+    CourseDocumentRepository,
+    QuestionRepository,
+  ],
 })
 export class InfraRepositoryModule {}

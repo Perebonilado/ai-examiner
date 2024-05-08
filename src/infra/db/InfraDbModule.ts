@@ -3,6 +3,7 @@ import { databaseProviders } from './providers/DatabaseProvider';
 import { UserDbConnector } from './connectors/UserDbConnector';
 import { CourseDbConnector } from './connectors/CourseDbConnector';
 import { CourseDocumentDbConnector } from './connectors/CourseDocumentDbConnector';
+import { QuestionDbConnector } from './connectors/QuestionDbConnector';
 
 @Module({
   providers: [
@@ -10,12 +11,14 @@ import { CourseDocumentDbConnector } from './connectors/CourseDocumentDbConnecto
     UserDbConnector,
     CourseDbConnector,
     CourseDocumentDbConnector,
+    QuestionDbConnector,
   ],
   exports: [
     ...databaseProviders,
     UserDbConnector,
     CourseDbConnector,
     CourseDocumentDbConnector,
+    QuestionDbConnector,
   ],
 })
 export class InfraDbModule {}
