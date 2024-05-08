@@ -6,7 +6,6 @@ import { CommandResponse } from '../response/CommandResponse';
 import { HandlerError } from 'src/error-handlers/business/HandlerError';
 import { CourseDocumentRepository } from 'src/business/repository/CourseDocumentRepository';
 import { CourseDocumentModel } from 'src/infra/db/models/CourseDocumentModel';
-import { AIExaminerService } from 'src/integrations/open-ai/services/AIExaminerService';
 import { StorageBucketService } from 'src/integrations/aws/services/StorageBucketService';
 
 @Injectable()
