@@ -11,7 +11,6 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
-import { StorageBucketService } from 'src/integrations/aws/services/StorageBucketService';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { Request } from 'express';
@@ -21,8 +20,6 @@ import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 @Controller('course-document')
 export class CourseDocumentController {
   constructor(
-    @Inject(StorageBucketService)
-    private storageBucketService: StorageBucketService,
     @Inject(CreateCourseDocumentHandler)
     private createCourseDocumentHander: CreateCourseDocumentHandler,
   ) {}
@@ -37,11 +34,10 @@ export class CourseDocumentController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
-      const uploadedFile = await this.storageBucketService.uploadFile(file);
       return await this.createCourseDocumentHander.handle({
         payload: {
           courseId: body.courseId,
-          fileLocation: uploadedFile.fileLocation,
+          file: file,
           title: body.title,
           userId: userToken.sub,
         },
