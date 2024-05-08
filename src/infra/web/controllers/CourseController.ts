@@ -13,7 +13,6 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { CreateCourseHandler } from 'src/business/handlers/Course/CreateCourseHandler';
-import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CreateCourseDto } from 'src/dto/CreateCourseDto';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
