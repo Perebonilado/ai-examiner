@@ -4,10 +4,10 @@ import { QuestionsController } from './controllers/QuestionsController';
 import { AuthController } from './controllers/AuthController';
 import { BusinessModule } from 'src/business/BusinessModule';
 import { JwtModule } from '@nestjs/jwt';
-import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { AuthService } from '../auth/services/AuthService';
 import { QueryModule } from 'src/query/QueryModule';
 import { CourseController } from './controllers/CourseController';
+import { CourseDocumentController } from './controllers/CourseDocumentController';
 
 @Module({
   imports: [
@@ -19,6 +19,6 @@ import { CourseController } from './controllers/CourseController';
     QueryModule,
   ],
   providers: [AuthService],
-  controllers: [QuestionsController, AuthController, CourseController],
+  controllers: [QuestionsController, AuthController, CourseController, CourseDocumentController],
 })
 export class InfraWebModule {}
