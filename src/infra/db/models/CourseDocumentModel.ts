@@ -34,6 +34,13 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
   courseId: string;
 
   @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    field: 'file_location',
+  })
+  fileLocation: string;
+
+  @Column({
     type: DataType.DATE,
     field: 'created_on',
     allowNull: true,

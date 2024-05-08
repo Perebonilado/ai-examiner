@@ -17,3 +17,7 @@ export const hashPassword = async (password: string): Promise<string> => {
   const hash = await bcrypt.hash(password, saltRounds);
   return hash;
 };
+
+export const replaceAllSpacesInStringWithHyphen = (str: string) => {
+  return str.replace(/\s+/g, '-');
+};

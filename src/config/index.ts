@@ -7,6 +7,10 @@ export interface Config {
   database: string;
   databaseHost: string;
   jwtSecret: string;
+  awsAccessKey: string;
+  awsSecretKey: string;
+  awsStorageBucket: string;
+  awsServerLocation: string;
 }
 
 export default (): Config => ({
@@ -17,5 +21,9 @@ export default (): Config => ({
   databasePassword: process.env.Database_Password,
   database: process.env.Database,
   databaseHost: process.env.Database_Host,
-  jwtSecret: process.env.JWT_SECRET
+  jwtSecret: process.env.JWT_SECRET,
+  awsAccessKey: process.env.Aws_Access_Key,
+  awsSecretKey: process.env.Aws_Secret_Key,
+  awsStorageBucket: process.env.Aws_Storage_Bucket,
+  awsServerLocation: process.env.Aws_Server_Location,
 });

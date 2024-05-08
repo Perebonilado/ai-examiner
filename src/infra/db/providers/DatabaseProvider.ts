@@ -35,6 +35,7 @@ export const databaseProviders = [
 
       try {
         await sequelize.sync();
+        console.log('Database synced successfully')
       } catch (error) {
         console.log(error);
       }
