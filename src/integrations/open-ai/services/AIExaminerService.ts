@@ -24,7 +24,7 @@ export class AIExaminerService {
   ) {
     try {
       await this.intializeExaminer(payload.examiner);
-      await this.createVectorStore(payload.file);
+      await this.createVectorStore(payload.filePath);
       await this.createThread();
       await this.createRun();
       const messages = await this.retrieveThreadMessage();
@@ -67,18 +67,10 @@ export class AIExaminerService {
     }
   }
 
-  private async createVectorStore(file: Express.Multer.File) {
+  private async createVectorStore(filePath: string) {
     try {
-      const tempFilePath = join(tmpdir(), file.originalname);
-      await new Promise((resolve, reject) => {
-        const writeStream = createWriteStream(tempFilePath);
-        writeStream.write(file.buffer);
-        writeStream.on('error', reject);
-        writeStream.on('finish', resolve);
-        writeStream.end();
-      });
-
-      const fileStream = createReadStream(tempFilePath, {
+      
+      const fileStream = createReadStream(filePath, {
         autoClose: true,
       });
 
@@ -93,7 +85,6 @@ export class AIExaminerService {
         tool_resources: { file_search: { vector_store_ids: [vectorStore.id] } },
       });
 
-      await unlink(tempFilePath);
     } catch (error) {
       throw new HttpException(
         'Falied to create vector store',

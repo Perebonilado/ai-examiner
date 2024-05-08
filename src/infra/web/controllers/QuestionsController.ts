@@ -31,7 +31,7 @@ export class QuestionsController {
 
       const questions =
         await this.aiExaminerService.generateMultipleChoiceQuestions({
-          file,
+          filePath: '',
           examiner: {
             instructions: `You are a ${body.category} examiner in a university`,
             name: `${body.category} examiner`,
