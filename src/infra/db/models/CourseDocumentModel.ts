@@ -9,6 +9,7 @@ import {
 import * as moment from 'moment';
 import { generateUUID } from 'src/utils';
 import { CourseModel } from './CourseModel';
+import { UserModel } from './UserModel';
 
 @Table({ tableName: 'course_document' })
 export class CourseDocumentModel extends Model<CourseDocumentModel> {
@@ -32,6 +33,14 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
     field: 'course_id',
   })
   courseId: string;
+
+  @ForeignKey(() => UserModel)
+  @Column({
+    type: DataType.STRING,
+    field: 'user_id',
+    allowNull: false,
+  })
+  userId: string;
 
   @Column({
     type: DataType.STRING,

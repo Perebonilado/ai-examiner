@@ -28,6 +28,7 @@ export class CreateCourseDocumentHandler extends AbstractRequestHandlerTemplate<
         title: payload.title,
         courseId: payload.courseId,
         fileLocation: payload.fileLocation,
+        userId: payload.userId,
       } as CourseDocumentModel);
 
       return {

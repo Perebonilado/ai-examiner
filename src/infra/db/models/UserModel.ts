@@ -11,6 +11,7 @@ import { generateUUID } from 'src/utils';
 import { LookUpModel } from './LookUpModel';
 import * as moment from 'moment';
 import { CourseModel } from './CourseModel';
+import { CourseDocumentModel } from './CourseDocumentModel';
 
 @Table({ tableName: 'user' })
 export class UserModel extends Model<UserModel> {
@@ -70,6 +71,9 @@ export class UserModel extends Model<UserModel> {
 
   @HasMany(() => CourseModel, 'user_id')
   course: CourseModel;
+
+  @HasMany(() => CourseDocumentModel, 'user_id')
+  courseDocument: CourseDocumentModel;
 
   @BeforeCreate
   static addUUID(instance: UserModel) {
