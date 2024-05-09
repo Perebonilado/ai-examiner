@@ -95,8 +95,6 @@ export class CourseController {
         },
       });
 
-      // const userInfo = await this.userQueryService.findById(userToken.sub);
-
       const generatedQuestions =
         await this.aiExaminerService.generateMultipleChoiceQuestions({
           examiner: {
