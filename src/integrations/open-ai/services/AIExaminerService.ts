@@ -6,7 +6,7 @@ import { createReadStream, createWriteStream } from 'fs';
 import { GenerateMCQPayloadModel, MCQModel } from '../models/MCQModel';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { unlink } from 'fs/promises';
+import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class AIExaminerService {
@@ -15,7 +15,7 @@ export class AIExaminerService {
   private prompt = `
   Based off the file, generate 5 multiple choice questions and return only a json array format like this: [{ id: string, question: string, options: { value: string, id: string }[], correctAnswerId: string, explanation: string}]. This json structure should be the only thing you return, no other strings whatsoever. Ignore images in the file, and be as concise and fast as possible`;
 
-  constructor() {
+  constructor(private readonly httpService: HttpService) {
     this.intializeOpenAiClient();
   }
 
@@ -28,8 +28,10 @@ export class AIExaminerService {
       await this.createThread();
       await this.createRun();
       const messages = await this.retrieveThreadMessage();
-      const questions = (messages.data[0].content[0] as any).text.value
-      return JSON.parse(questions.replace(/^```json\s*|\s*```$/g, '')) as unknown as MCQModel[];
+      const questions = (messages.data[0].content[0] as any).text.value;
+      return JSON.parse(
+        questions.replace(/^```json\s*|\s*```$/g, ''),
+      ) as unknown as MCQModel[];
     } catch (error) {
       throw new HttpException(
         'Falied to generate multiple choice questions',
@@ -67,10 +69,26 @@ export class AIExaminerService {
     }
   }
 
-  private async createVectorStore(filePath: string) {
+  private async createVectorStore(url: string) {
     try {
-      
-      const fileStream = createReadStream(filePath, {
+      const { data: arrayBuffer } = await this.httpService.axiosRef.get(url, {
+        responseType: 'arraybuffer',
+      });
+      const splitUrl = url.split('.');
+      const extension = splitUrl[splitUrl.length - 1];
+      const tempFilePath = join(
+        tmpdir(),
+        `${new Date().getTime()}.${extension}`,
+      );
+      await new Promise((resolve, reject) => {
+        const writeStream = createWriteStream(tempFilePath);
+        writeStream.write(arrayBuffer);
+        writeStream.on('error', reject);
+        writeStream.on('finish', resolve);
+        writeStream.end();
+      });
+
+      const fileStream = createReadStream(tempFilePath, {
         autoClose: true,
       });
 
@@ -84,7 +102,6 @@ export class AIExaminerService {
       await this.openAiClient.beta.assistants.update(this.examiner.id, {
         tool_resources: { file_search: { vector_store_ids: [vectorStore.id] } },
       });
-
     } catch (error) {
       throw new HttpException(
         'Falied to create vector store',
@@ -103,7 +120,6 @@ export class AIExaminerService {
           },
         ],
       });
-
       return thread;
     } catch (error) {
       throw new HttpException(
@@ -124,7 +140,6 @@ export class AIExaminerService {
           assistant_id: this.examiner.id,
         },
       );
-
       return [run, thread] as const;
     } catch (error) {
       throw new HttpException(
@@ -143,7 +158,6 @@ export class AIExaminerService {
           run_id: run.id,
         },
       );
-
       return messages;
     } catch (error) {
       throw new HttpException(

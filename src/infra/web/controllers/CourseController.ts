@@ -83,24 +83,24 @@ export class CourseController {
       const userToken = request['user'] as VerifiedTokenModel;
 
       const createdCourse = await this.createCourseHandler.handle({
-        payload: { ...body.courseInfo, userId: userToken.sub },
+        payload: { description: body.courseDescription,  title: body.courseTitle, userId: userToken.sub },
       });
 
       const createdDocument = await this.createCourseDocumentHandler.handle({
         payload: {
           courseId: createdCourse.data.id,
           file: file,
-          title: body.documentInfo.title,
+          title: body.documentTitle,
           userId: userToken.sub,
         },
       });
 
-      const userInfo = await this.userQueryService.findById(userToken.sub);
+      // const userInfo = await this.userQueryService.findById(userToken.sub);
 
       const generatedQuestions =
         await this.aiExaminerService.generateMultipleChoiceQuestions({
           examiner: {
-            instructions: `You are an examiner in ${userInfo.institution}`,
+            instructions: `You are an examiner in the University`,
             name: 'Examiner',
           },
           filePath: createdDocument.data.fileLocation,
@@ -120,6 +120,7 @@ export class CourseController {
         message: 'Course created, document uploaded and questions generated',
       };
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         error?.response ??
           'Failed to create course, document and generate questions',
