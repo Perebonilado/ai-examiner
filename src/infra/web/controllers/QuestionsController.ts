@@ -9,6 +9,7 @@ import {
   Get,
   UseGuards,
   Req,
+  Param,
 } from '@nestjs/common';
 import { AIExaminerService } from 'src/integrations/open-ai/services/AIExaminerService';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
@@ -16,6 +17,7 @@ import { Request } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { GetAllQuestionsDto } from 'src/dto/GetAllQuestionsDto';
 import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
+import { GetQuestionByIdDto } from 'src/dto/GetQuestionByIdDto';
 
 @Controller('questions')
 export class QuestionsController {
@@ -24,6 +26,23 @@ export class QuestionsController {
     @Inject(QuestionQueryService)
     private questionQueryService: QuestionQueryService,
   ) {}
+
+  @UseGuards(AuthGuard)
+  @Get('/:id')
+  public async getQuestionById(@Param() params: GetQuestionByIdDto, @Req() request: Request) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      return await this.questionQueryService.findQuestionsById(
+        params.id,
+        userToken.sub,
+      );
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to find question by id ' + params.id,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
 
   @UseGuards(AuthGuard)
   @Get('')
@@ -40,9 +59,10 @@ export class QuestionsController {
         );
 
       const mappedQuestions = questions.map((q) => ({
-        data: JSON.parse(q.data),
         courseDocumentId: q.courseDocumentId,
         createdOn: q.createdOn,
+        id: q.id,
+        count: JSON.parse(q.data).length,
       }));
 
       return mappedQuestions;
