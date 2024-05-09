@@ -6,14 +6,11 @@ import {
   Inject,
   Post,
   UploadedFile,
-  UseInterceptors,
   Get,
   UseGuards,
   Req,
 } from '@nestjs/common';
 import { AIExaminerService } from 'src/integrations/open-ai/services/AIExaminerService';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { GenerateMCQDto } from 'src/dto/GenerateMCQDto';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { Request } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
@@ -36,10 +33,13 @@ export class QuestionsController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
-      return await this.questionQueryService.findAllQUestionsByDocumentIdAndUserId(
-        body.courseDocumentId,
-        userToken.sub,
-      );
+      const questions =
+        await this.questionQueryService.findAllQUestionsByDocumentIdAndUserId(
+          body.courseDocumentId,
+          userToken.sub,
+        );
+
+      return questions;
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find questions',
@@ -49,16 +49,8 @@ export class QuestionsController {
   }
 
   @Post('/generate-mcq')
-  // @UseInterceptors(FileInterceptor('document'))
-  public async generateMCQQuestions(
-    @UploadedFile() file: Express.Multer.File,
-    // @Body() body: GenerateMCQDto,
-  ) {
+  public async generateMCQQuestions(@UploadedFile() file: Express.Multer.File) {
     try {
-      // if (!body.category.trim()) {
-      //   throw new HttpException('category is required', HttpStatus.BAD_REQUEST);
-      // }
-
       const questions =
         await this.aiExaminerService.generateMultipleChoiceQuestions({
           filePath:
