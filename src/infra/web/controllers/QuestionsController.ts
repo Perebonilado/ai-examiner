@@ -39,7 +39,13 @@ export class QuestionsController {
           userToken.sub,
         );
 
-      return questions;
+      const mappedQuestions = questions.map((q) => ({
+        data: JSON.parse(q.data),
+        courseDocumentId: q.courseDocumentId,
+        createdAt: q.createdOn,
+      }));
+
+      return mappedQuestions;
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find questions',
