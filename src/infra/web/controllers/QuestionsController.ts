@@ -42,7 +42,7 @@ export class QuestionsController {
       const mappedQuestions = questions.map((q) => ({
         data: JSON.parse(q.data),
         courseDocumentId: q.courseDocumentId,
-        createdAt: q.createdOn,
+        createdOn: q.createdOn,
       }));
 
       return mappedQuestions;
