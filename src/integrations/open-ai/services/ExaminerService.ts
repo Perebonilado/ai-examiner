@@ -16,7 +16,6 @@ export class ExaminerService {
   }
 
   private openAiClient: OpenAI;
-  //   private examiner: OpenAI.Beta.Assistants.Assistant;
   private prompt = `
   Based off the file, generate 5 multiple choice questions and return only a json array format like this: [{ id: string, question: string, options: { value: string, id: string }[], correctAnswerId: string, explanation: string}]. This json structure should be the only thing you return, no other strings whatsoever. Ignore images in the file, and be as concise and fast as possible`;
 
@@ -33,13 +32,12 @@ export class ExaminerService {
     }
   }
 
-  public async createAssistant(
-    examiner: ExaminerModel,
-  ): Promise<OpenAI.Beta.Assistants.Assistant> {
+  public async createAssistant(): Promise<OpenAI.Beta.Assistants.Assistant> {
     try {
       return await this.openAiClient.beta.assistants.create({
-        name: examiner.name as unknown as string,
-        instructions: examiner.instructions,
+        name: 'Examiner',
+        instructions:
+          'You are an examiner for students that will read through materials and generate questions to help students study better',
         model: 'gpt-3.5-turbo',
         tools: [{ type: 'file_search' }],
       });
@@ -81,6 +79,44 @@ export class ExaminerService {
     }
   }
 
+  public async createThreadMessage(threadId: string, message: string) {
+    try {
+      return await this.openAiClient.beta.threads.messages.create(threadId, {
+        role: 'user',
+        content: message,
+      });
+    } catch (error) {
+      throw new HttpException(
+        'Falied to create thread message',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async retrieveThreadMessages(threadId: string) {
+    try {
+      return await this.openAiClient.beta.threads.messages.list(threadId);
+    } catch (error) {
+      throw new HttpException(
+        'Falied to retrieve thread messages',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async createRun(assistantId: string, threadId: string) {
+    try {
+      await this.openAiClient.beta.threads.runs.create(threadId, {
+        assistant_id: assistantId,
+      });
+    } catch (error) {
+      throw new HttpException(
+        'Falied to create run',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   public async createVectorStore(name: string) {
     try {
       return await this.openAiClient.beta.vectorStores.create({
@@ -109,10 +145,14 @@ export class ExaminerService {
         autoClose: true,
       });
 
-      return await this.openAiClient.files.create({
+      const uploadedFile = await this.openAiClient.files.create({
         file: fileStream,
         purpose: 'assistants',
       });
+
+      await unlink(tempFilePath);
+
+      return uploadedFile;
     } catch (error) {
       throw new HttpException(
         'Falied to upload file',
