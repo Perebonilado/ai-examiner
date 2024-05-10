@@ -46,10 +46,17 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
 
   @Column({
     type: DataType.STRING,
+    field: 'open_ai_thread_id',
     allowNull: false,
-    field: 'file_location',
   })
-  fileLocation: string;
+  openAiThreadId: string;
+
+  @Column({
+    type: DataType.STRING,
+    field: 'open_ai_file_id',
+    allowNull: false,
+  })
+  openAiFileId: string;
 
   @Column({
     type: DataType.DATE,

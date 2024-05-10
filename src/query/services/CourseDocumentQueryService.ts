@@ -18,4 +18,14 @@ export class CourseDocumentQueryService {
       );
     }
   }
+
+  public async findCourseDocumentById(id: string, userId: string) {
+    try {
+      return await CourseDocumentModel.findOne({ where: { id, userId } });
+    } catch (error) {
+      throw new QueryError('Failed to find course documents by id').InnerError(
+        error,
+      );
+    }
+  }
 }

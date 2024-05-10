@@ -7,6 +7,7 @@ import { GenerateMCQPayloadModel, MCQModel } from '../models/MCQModel';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { HttpService } from '@nestjs/axios';
+import { unlink } from 'fs/promises';
 
 @Injectable()
 export class AIExaminerService {
@@ -33,6 +34,7 @@ export class AIExaminerService {
         questions.replace(/^```json\s*|\s*```$/g, ''),
       ) as unknown as MCQModel[];
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         'Falied to generate multiple choice questions',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -56,11 +58,12 @@ export class AIExaminerService {
   private async intializeExaminer(examiner: ExaminerModel) {
     try {
       this.examiner = await this.openAiClient.beta.assistants.create({
-        name: examiner.name,
+        name: examiner.name as unknown as string,
         instructions: examiner.instructions,
         model: 'gpt-3.5-turbo',
         tools: [{ type: 'file_search' }],
       });
+      console.log('examiner initialized');
     } catch (error) {
       throw new HttpException(
         'Falied to initialize AI examiner',
@@ -102,6 +105,10 @@ export class AIExaminerService {
       await this.openAiClient.beta.assistants.update(this.examiner.id, {
         tool_resources: { file_search: { vector_store_ids: [vectorStore.id] } },
       });
+
+      await unlink(tempFilePath);
+
+      console.log('vector store created');
     } catch (error) {
       throw new HttpException(
         'Falied to create vector store',
@@ -120,6 +127,7 @@ export class AIExaminerService {
           },
         ],
       });
+      console.log('thread created');
       return thread;
     } catch (error) {
       throw new HttpException(
@@ -140,6 +148,7 @@ export class AIExaminerService {
           assistant_id: this.examiner.id,
         },
       );
+      console.log('run created')
       return [run, thread] as const;
     } catch (error) {
       throw new HttpException(
@@ -158,6 +167,7 @@ export class AIExaminerService {
           run_id: run.id,
         },
       );
+      console.log('messages retrieved')
       return messages;
     } catch (error) {
       throw new HttpException(

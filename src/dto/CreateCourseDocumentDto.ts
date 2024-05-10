@@ -1,6 +1,7 @@
 export interface CreateCourseDocumentDto {
   title: string;
   courseId: string;
-  file: Express.Multer.File;
-  userId: string
+  userId: string;
+  threadId: string;
+  fileId: string;
 }
