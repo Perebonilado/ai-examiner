@@ -24,6 +24,7 @@ import { CreateCourseDocumentQuestionDto } from 'src/dto/CreateCourseDocumentQue
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { initialGenerationPrompt } from 'src/constants';
 import { extractQuestionsFromMessages } from 'src/utils';
+import { EnvironmentVariables } from 'src/EnvironmentVariables';
 
 @Controller('course')
 export class CourseController {
@@ -122,7 +123,7 @@ export class CourseController {
       );
 
       //find assistant and get id to pass in
-      await this.examinerService.createRun('', updatedThread.id);
+      await this.examinerService.createRun(EnvironmentVariables.config.assistantId, updatedThread.id);
 
       const messages = await this.examinerService.retrieveThreadMessages(
         updatedThread.id,

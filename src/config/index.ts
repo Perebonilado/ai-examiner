@@ -7,6 +7,7 @@ export interface Config {
   database: string;
   databaseHost: string;
   jwtSecret: string;
+  assistantId: string;
   awsAccessKey: string;
   awsSecretKey: string;
   awsStorageBucket: string;
@@ -26,4 +27,5 @@ export default (): Config => ({
   awsSecretKey: process.env.Aws_Secret_Key,
   awsStorageBucket: process.env.Aws_Storage_Bucket,
   awsServerLocation: process.env.Aws_Server_Location,
+  assistantId: process.env.OPEN_AI_ASSITANT_ID
 });
