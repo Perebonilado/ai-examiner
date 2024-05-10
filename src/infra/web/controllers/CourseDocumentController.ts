@@ -21,8 +21,9 @@ import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { GetAllCourseDocumentDto } from 'src/dto/GetAllCourseDocumentDto';
 import { GenerateCourseDocumentQuestionDto } from 'src/dto/GenerateCourseDocumentQuestionsDto';
-import { AIExaminerService } from 'src/integrations/open-ai/services/AIExaminerService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
+import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
+import { extractQuestionsFromMessages } from 'src/utils';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -31,7 +32,7 @@ export class CourseDocumentController {
     private createCourseDocumentHander: CreateCourseDocumentHandler,
     @Inject(CourseDocumentQueryService)
     private courseDocumentQueryService: CourseDocumentQueryService,
-    @Inject(AIExaminerService) private aiExaminerService: AIExaminerService,
+    @Inject(ExaminerService) private examinerService: ExaminerService,
     @Inject(CreateQuestionHandler)
     private createQuestionHandler: CreateQuestionHandler,
   ) {}
@@ -71,16 +72,44 @@ export class CourseDocumentController {
         );
 
       if (document) {
-        const questions =
-          await this.aiExaminerService.generateMultipleChoiceQuestions({
-            examiner: { instructions: 'You are an examiner', name: 'Examiner' },
-            filePath: document.fileLocation,
-          });
+        const existingThread = await this.examinerService.findThread(
+          document.openAiThreadId,
+        );
+
+        // check if vector store has expired, if so:
+        // create new store, attach file and attach to thread
+        if (
+          !existingThread.tool_resources.file_search.vector_store_ids.length
+        ) {
+          const newVectorStore = await this.examinerService.createVectorStore(
+            document.title,
+          );
+          const updatedVectorStore =
+            await this.examinerService.attachFileToVectorStore(
+              document.openAiFileId,
+              newVectorStore.id,
+            );
+
+          await this.examinerService.attachVectorStoreToThread(
+            existingThread.id,
+            updatedVectorStore.id,
+          );
+        }
+
+        //find assistant and get id to pass in
+        await this.examinerService.createRun('', existingThread.id);
+
+        const messages = await this.examinerService.retrieveThreadMessages(
+          existingThread.id,
+        );
+
+        const mostRecentlyGeneratedQuestions =
+          extractQuestionsFromMessages(messages);
 
         return await this.createQuestionHandler.handle({
           payload: {
             courseDocumentId: document.id,
-            data: questions,
+            data: mostRecentlyGeneratedQuestions,
             userId: userToken.sub,
           },
         });
@@ -108,12 +137,34 @@ export class CourseDocumentController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
+
+      const uploadedFile = await this.examinerService.uploadFile(file);
+
+      const vectorStore = await this.examinerService.createVectorStore(
+        body.title,
+      );
+
+      const updatedVectorStore =
+        await this.examinerService.attachFileToVectorStore(
+          uploadedFile.id,
+          vectorStore.id,
+        );
+
+      const thread = await this.examinerService.createThread();
+
+      const updatedThread =
+        await this.examinerService.attachVectorStoreToThread(
+          thread.id,
+          updatedVectorStore.id,
+        );
+
       return await this.createCourseDocumentHander.handle({
         payload: {
           courseId: body.courseId,
-          file: file,
           title: body.title,
           userId: userToken.sub,
+          fileId: uploadedFile.id,
+          threadId: updatedThread.id,
         },
       });
     } catch (error) {

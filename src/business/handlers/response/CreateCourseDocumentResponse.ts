@@ -1,4 +1,5 @@
 export interface CreateCourseDocumentResponse {
   id: string;
-  fileLocation: string;
+  threadId: string;
+  fileId: string;
 }

@@ -21,8 +21,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { CreateCourseDocumentQuestionDto } from 'src/dto/CreateCourseDocumentQuestionDto';
-import { AIExaminerService } from 'src/integrations/open-ai/services/AIExaminerService';
-import { UserQueryService } from 'src/query/services/UserQueryService';
+import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
+import { initialGenerationPrompt } from 'src/constants';
+import { extractQuestionsFromMessages } from 'src/utils';
 
 @Controller('course')
 export class CourseController {
@@ -34,8 +35,7 @@ export class CourseController {
     private createCourseDocumentHandler: CreateCourseDocumentHandler,
     @Inject(CreateQuestionHandler)
     private createQuestionHandler: CreateQuestionHandler,
-    @Inject(AIExaminerService) private aiExaminerService: AIExaminerService,
-    @Inject(UserQueryService) private userQueryService: UserQueryService,
+    @Inject(ExaminerService) private examinerService: ExaminerService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -83,31 +83,57 @@ export class CourseController {
       const userToken = request['user'] as VerifiedTokenModel;
 
       const createdCourse = await this.createCourseHandler.handle({
-        payload: { description: body.courseDescription,  title: body.courseTitle, userId: userToken.sub },
-      });
-
-      const createdDocument = await this.createCourseDocumentHandler.handle({
         payload: {
-          courseId: createdCourse.data.id,
-          file: file,
-          title: body.documentTitle,
+          description: body.courseDescription,
+          title: body.courseTitle,
           userId: userToken.sub,
         },
       });
 
-      const generatedQuestions =
-        await this.aiExaminerService.generateMultipleChoiceQuestions({
-          examiner: {
-            instructions: `You are an examiner in the University`,
-            name: 'Examiner',
-          },
-          filePath: createdDocument.data.fileLocation,
-        });
+      const uploadedFile = await this.examinerService.uploadFile(file);
+      const vectorStore = await this.examinerService.createVectorStore(
+        file.originalname,
+      );
+      const updatedVectorStore =
+        await this.examinerService.attachFileToVectorStore(
+          uploadedFile.id,
+          vectorStore.id,
+        );
+      const thread = await this.examinerService.createThread();
+      const updatedThread =
+        await this.examinerService.attachVectorStoreToThread(
+          thread.id,
+          updatedVectorStore.id,
+        );
+
+      const createdDocument = await this.createCourseDocumentHandler.handle({
+        payload: {
+          courseId: createdCourse.data.id,
+          title: body.documentTitle,
+          userId: userToken.sub,
+          fileId: uploadedFile.id,
+          threadId: updatedThread.id,
+        },
+      });
+
+      await this.examinerService.createThreadMessage(
+        updatedThread.id,
+        initialGenerationPrompt,
+      );
+
+      //find assistant and get id to pass in
+      await this.examinerService.createRun('', updatedThread.id);
+
+      const messages = await this.examinerService.retrieveThreadMessages(
+        updatedThread.id,
+      );
+
+      const mostRecentlyGeneratedQuestions = extractQuestionsFromMessages(messages)
 
       await this.createQuestionHandler.handle({
         payload: {
           courseDocumentId: createdDocument.data.id,
-          data: generatedQuestions,
+          data: mostRecentlyGeneratedQuestions,
           userId: userToken.sub,
         },
       });
@@ -118,7 +144,7 @@ export class CourseController {
         message: 'Course created, document uploaded and questions generated',
       };
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new HttpException(
         error?.response ??
           'Failed to create course, document and generate questions',

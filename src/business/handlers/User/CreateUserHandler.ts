@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { hashPassword } from 'src/utils';
 
+@Injectable()
 export class CreateUserHandler extends AbstractRequestHandlerTemplate<
   CreateUserRequest,
   CreateUserResponse
