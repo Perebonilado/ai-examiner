@@ -106,7 +106,7 @@ export class ExaminerService {
 
   public async createRun(assistantId: string, threadId: string) {
     try {
-      await this.openAiClient.beta.threads.runs.create(threadId, {
+      await this.openAiClient.beta.threads.runs.createAndPoll(threadId, {
         assistant_id: assistantId,
       });
     } catch (error) {

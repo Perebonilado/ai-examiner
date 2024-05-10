@@ -27,13 +27,7 @@ export const replaceAllSpacesInStringWithHyphen = (str: string) => {
 export const extractQuestionsFromMessages = (
   messages: OpenAI.Beta.Threads.Messages.MessagesPage,
 ) => {
-  const lastMessageIndex = messages.data.length - 1;
-  
-  const lastContentIndex = messages.data[lastMessageIndex].content.length - 1;
-
-  const questions = (
-    messages.data[lastMessageIndex].content[lastContentIndex] as any
-  ).text.value;
+  const questions = (messages.data[0].content[0] as any).text.value;
 
   return JSON.parse(
     questions.replace(/^```json\s*|\s*```$/g, ''),

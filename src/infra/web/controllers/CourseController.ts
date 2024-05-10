@@ -122,7 +122,6 @@ export class CourseController {
         initialGenerationPrompt,
       );
 
-      //find assistant and get id to pass in
       await this.examinerService.createRun(EnvironmentVariables.config.assistantId, updatedThread.id);
 
       const messages = await this.examinerService.retrieveThreadMessages(

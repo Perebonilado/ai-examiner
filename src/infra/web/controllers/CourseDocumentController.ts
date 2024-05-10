@@ -25,6 +25,7 @@ import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQues
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { extractQuestionsFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
+import { initialGenerationPrompt } from 'src/constants';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -97,7 +98,11 @@ export class CourseDocumentController {
           );
         }
 
-        //find assistant and get id to pass in
+        await this.examinerService.createThreadMessage(
+          existingThread.id,
+          initialGenerationPrompt,
+        );
+
         await this.examinerService.createRun(
           EnvironmentVariables.config.assistantId,
           existingThread.id,
