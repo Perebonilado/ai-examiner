@@ -10,6 +10,8 @@ import {
   UseGuards,
   UploadedFile,
   UseInterceptors,
+  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { CreateCourseHandler } from 'src/business/handlers/Course/CreateCourseHandler';
@@ -22,7 +24,7 @@ import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocumen
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { CreateCourseDocumentQuestionDto } from 'src/dto/CreateCourseDocumentQuestionDto';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
-import { initialGenerationPrompt } from 'src/constants';
+import { defaultPageNumber, defaultPageSize, initialGenerationPrompt } from 'src/constants';
 import { extractQuestionsFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 
@@ -41,10 +43,18 @@ export class CourseController {
 
   @UseGuards(AuthGuard)
   @Get('')
-  public async getAllCourses(@Req() request: Request) {
+  public async getAllCourses(
+    @Req() request: Request,
+    @Query('page', ParseIntPipe) page: number,
+    @Query('pageSize', ParseIntPipe) pageSize: number,
+  ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
-      return await this.courseQueryService.findAllUserCourses(userToken.sub);
+      return await this.courseQueryService.findAllUserCourses(
+        userToken.sub,
+        pageSize ?? defaultPageSize,
+        page ?? defaultPageNumber,
+      );
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find user courses',
@@ -122,13 +132,17 @@ export class CourseController {
         initialGenerationPrompt,
       );
 
-      await this.examinerService.createRun(EnvironmentVariables.config.assistantId, updatedThread.id);
+      await this.examinerService.createRun(
+        EnvironmentVariables.config.assistantId,
+        updatedThread.id,
+      );
 
       const messages = await this.examinerService.retrieveThreadMessages(
         updatedThread.id,
       );
 
-      const mostRecentlyGeneratedQuestions = extractQuestionsFromMessages(messages)
+      const mostRecentlyGeneratedQuestions =
+        extractQuestionsFromMessages(messages);
 
       await this.createQuestionHandler.handle({
         payload: {

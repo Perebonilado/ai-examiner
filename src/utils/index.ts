@@ -33,3 +33,10 @@ export const extractQuestionsFromMessages = (
     questions.replace(/^```json\s*|\s*```$/g, ''),
   ) as unknown as MCQModel[];
 };
+
+export const getPagination = (page: number, size: number) => {
+  // starting from page 1
+  const offset = (page - 1) * size;
+
+  return { offset, limit: size };
+};
