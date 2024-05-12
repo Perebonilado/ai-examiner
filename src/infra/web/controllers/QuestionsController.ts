@@ -25,7 +25,10 @@ export class QuestionsController {
 
   @UseGuards(AuthGuard)
   @Get('/:id')
-  public async getQuestionById(@Param() params: GetQuestionByIdDto, @Req() request: Request) {
+  public async getQuestionById(
+    @Param() params: GetQuestionByIdDto,
+    @Req() request: Request,
+  ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
       return await this.questionQueryService.findQuestionsById(
@@ -61,7 +64,10 @@ export class QuestionsController {
         count: JSON.parse(q.data).length,
       }));
 
-      return mappedQuestions;
+      return {
+        data: mappedQuestions,
+        status: HttpStatus.OK,
+      };
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find questions',
@@ -69,5 +75,4 @@ export class QuestionsController {
       );
     }
   }
-
 }
