@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize';
 import QueryError from 'src/error-handlers/query/QueryError';
 import { CourseDocumentModel } from 'src/infra/db/models/CourseDocumentModel';
@@ -11,15 +12,19 @@ export class CourseQueryService {
   constructor() {}
 
   public async findAllUserCourses(
+    title: string,
     userId: string,
     pageSize: number,
     page: number,
   ): Promise<AllUserCoursesModel> {
     try {
-      console.log(pageSize)
       const { limit, offset } = getPagination(page, pageSize);
-      const courses = await CourseModel.findAndCountAll({
-        where: { userId },
+      const totalCount = await CourseModel.count({ where: { userId } });
+      const courses = await CourseModel.findAll({
+        where: {
+          [Op.and]: [{ userId }, { title: { [Op.like]: `%${title}%` } }],
+        },
+        order: [['created_on', 'DESC']],
         limit,
         offset,
         include: [
@@ -41,11 +46,11 @@ export class CourseQueryService {
       });
 
       return {
-        courses: courses.rows,
+        courses: courses,
         meta: {
           currentPage: page,
           pageSize,
-          totalCount: courses.count[0].count,
+          totalCount,
         },
       };
     } catch (error) {

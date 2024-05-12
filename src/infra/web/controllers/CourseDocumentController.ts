@@ -11,6 +11,8 @@ import {
   HttpStatus,
   Get,
   Param,
+  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -42,16 +44,23 @@ export class CourseDocumentController {
   @UseGuards(AuthGuard)
   @Get('')
   public async getAllCourseDocuments(
-    @Body() body: GetAllCourseDocumentDto,
     @Req() request: Request,
+    @Query('courseId') courseId: string,
+    @Query('title') title: string,
+    @Query('page', ParseIntPipe) page: number,
+    @Query('pageSize', ParseIntPipe) pageSize: number,
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
       return await this.courseDocumentQueryService.findAllUserCoursesDocumentsByCourseId(
-        body.courseId,
+        courseId ?? '',
+        title ?? '',
         userToken.sub,
+        pageSize,
+        page
       );
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         error?.response ?? 'Failed to find course documents',
         HttpStatus.BAD_REQUEST,

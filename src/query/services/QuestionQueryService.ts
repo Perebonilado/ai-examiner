@@ -11,6 +11,7 @@ export class QuestionQueryService {
     try {
       return await QuestionModel.findAll({
         where: { courseDocumentId: documentId, userId },
+        order: [['created_on', 'DESC']],
       });
     } catch (error) {
       throw new QueryError('Failed to find questions').InnerError(error);

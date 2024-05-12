@@ -45,12 +45,15 @@ export class CourseController {
   @Get('')
   public async getAllCourses(
     @Req() request: Request,
+    @Query('title') title: string,
     @Query('page', ParseIntPipe) page: number,
     @Query('pageSize', ParseIntPipe) pageSize: number,
   ) {
     try {
+      console.log(title)
       const userToken = request['user'] as VerifiedTokenModel;
       return await this.courseQueryService.findAllUserCourses(
+        title ?? '',
         userToken.sub,
         pageSize ?? defaultPageSize,
         page ?? defaultPageNumber,
