@@ -24,7 +24,11 @@ import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocumen
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { CreateCourseDocumentQuestionDto } from 'src/dto/CreateCourseDocumentQuestionDto';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
-import { defaultPageNumber, defaultPageSize, initialGenerationPrompt } from 'src/constants';
+import {
+  defaultPageNumber,
+  defaultPageSize,
+  initialGenerationPrompt,
+} from 'src/constants';
 import { extractQuestionsFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 
@@ -50,14 +54,18 @@ export class CourseController {
     @Query('pageSize', ParseIntPipe) pageSize: number,
   ) {
     try {
-      console.log(title)
       const userToken = request['user'] as VerifiedTokenModel;
-      return await this.courseQueryService.findAllUserCourses(
+      const data = await this.courseQueryService.findAllUserCourses(
         title ?? '',
         userToken.sub,
         pageSize ?? defaultPageSize,
         page ?? defaultPageNumber,
       );
+
+      return {
+        data,
+        status: HttpStatus.OK,
+      };
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find user courses',

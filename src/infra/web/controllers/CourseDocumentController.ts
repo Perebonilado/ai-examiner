@@ -52,15 +52,20 @@ export class CourseDocumentController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
-      return await this.courseDocumentQueryService.findAllUserCoursesDocumentsByCourseId(
-        courseId ?? '',
-        title ?? '',
-        userToken.sub,
-        pageSize,
-        page
-      );
+      const data =
+        await this.courseDocumentQueryService.findAllUserCoursesDocumentsByCourseId(
+          courseId ?? '',
+          title ?? '',
+          userToken.sub,
+          pageSize,
+          page,
+        );
+
+      return {
+        data,
+        status: HttpStatus.OK,
+      };
     } catch (error) {
-      console.log(error)
       throw new HttpException(
         error?.response ?? 'Failed to find course documents',
         HttpStatus.BAD_REQUEST,
