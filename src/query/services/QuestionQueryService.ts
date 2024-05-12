@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import QueryError from 'src/error-handlers/query/QueryError';
+import { CourseDocumentModel } from 'src/infra/db/models/CourseDocumentModel';
 import { QuestionModel } from 'src/infra/db/models/QuestionModel';
 import { getPagination } from 'src/utils';
 
@@ -39,9 +40,13 @@ export class QuestionQueryService {
   public async findQuestionsById(id: string, userId: string) {
     try {
       const question = await QuestionModel.findOne({ where: { id, userId } });
+      const courseDocument = await CourseDocumentModel.findOne({
+        where: { id: question.courseDocumentId, userId },
+      });
 
       return {
         id: question.id,
+        topicTitle: courseDocument.title,
         createdOn: question.createdOn,
         questions: JSON.parse(question.data),
       };
