@@ -8,6 +8,8 @@ import {
   UseGuards,
   Req,
   Param,
+  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { Request } from 'express';
@@ -47,17 +49,21 @@ export class QuestionsController {
   @Get('')
   public async getAllUserQuestions(
     @Req() request: Request,
-    @Body() body: GetAllQuestionsDto,
+    @Query('courseDocumentId') courseDocumentId: string,
+    @Query('page', ParseIntPipe) page: number,
+    @Query('pageSize', ParseIntPipe) pageSize: number,
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
       const questions =
-        await this.questionQueryService.findAllQUestionsByDocumentIdAndUserId(
-          body.courseDocumentId,
+        await this.questionQueryService.findAllQuestionsByDocumentIdAndUserId(
+          courseDocumentId,
           userToken.sub,
+          pageSize,
+          page,
         );
 
-      const mappedQuestions = questions.map((q) => ({
+      const mappedQuestions = questions.questions.map((q) => ({
         courseDocumentId: q.courseDocumentId,
         createdOn: q.createdOn,
         id: q.id,
@@ -66,6 +72,7 @@ export class QuestionsController {
 
       return {
         data: mappedQuestions,
+        meta: questions.meta,
         status: HttpStatus.OK,
       };
     } catch (error) {

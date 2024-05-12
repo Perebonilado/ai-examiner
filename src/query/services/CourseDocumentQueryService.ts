@@ -11,7 +11,8 @@ import { getPagination } from 'src/utils';
 export class CourseDocumentQueryService {
   constructor() {}
 
-  public async findAllUserCoursesDocumentsByCourseId(
+  public async findAllUserCoursesDocuments(
+    id: string,
     courseId: string,
     title: string,
     userId: string,
@@ -24,19 +25,19 @@ export class CourseDocumentQueryService {
       const totalCount = await CourseDocumentModel.count({
         where: { userId, courseId },
       });
-      const courseIdQuery = courseId ? { courseId } : {}
+      const courseIdQuery = courseId ? { courseId } : {};
+      const idQuery = id ? { id } : {};
 
       const docs = await CourseDocumentModel.findAll({
         where: {
           [Op.and]: [
+            idQuery,
             courseIdQuery,
             { userId },
             { title: { [Op.like]: `%${title}%` } },
           ],
         },
-        order: [
-          ['created_on', 'DESC']
-        ],
+        order: [['created_on', 'DESC']],
         limit,
         offset,
         include: [{ model: QuestionModel, attributes: [], duplicating: false }],

@@ -21,7 +21,6 @@ import { Request } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
-import { GetAllCourseDocumentDto } from 'src/dto/GetAllCourseDocumentDto';
 import { GenerateCourseDocumentQuestionDto } from 'src/dto/GenerateCourseDocumentQuestionsDto';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
@@ -45,6 +44,7 @@ export class CourseDocumentController {
   @Get('')
   public async getAllCourseDocuments(
     @Req() request: Request,
+    @Query('id') id: string,
     @Query('courseId') courseId: string,
     @Query('title') title: string,
     @Query('page', ParseIntPipe) page: number,
@@ -53,7 +53,8 @@ export class CourseDocumentController {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
       const data =
-        await this.courseDocumentQueryService.findAllUserCoursesDocumentsByCourseId(
+        await this.courseDocumentQueryService.findAllUserCoursesDocuments(
+          id ?? '',
           courseId ?? '',
           title ?? '',
           userToken.sub,

@@ -1,18 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import QueryError from 'src/error-handlers/query/QueryError';
 import { QuestionModel } from 'src/infra/db/models/QuestionModel';
+import { getPagination } from 'src/utils';
 
 @Injectable()
 export class QuestionQueryService {
-  public async findAllQUestionsByDocumentIdAndUserId(
+  public async findAllQuestionsByDocumentIdAndUserId(
     documentId: string,
     userId: string,
+    pageSize: number,
+    page: number,
   ) {
     try {
-      return await QuestionModel.findAll({
+      const { limit, offset } = getPagination(page, pageSize);
+      const totalCount = await QuestionModel.count({
+        where: { courseDocumentId: documentId, userId },
+      });
+      const questions = await QuestionModel.findAll({
         where: { courseDocumentId: documentId, userId },
         order: [['created_on', 'DESC']],
+        limit,
+        offset,
       });
+
+      return {
+        questions: questions,
+        meta: {
+          currentPage: page,
+          pageSize,
+          totalCount,
+        },
+      };
     } catch (error) {
       throw new QueryError('Failed to find questions').InnerError(error);
     }

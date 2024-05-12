@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   Query,
   ParseIntPipe,
+  Param,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { CreateCourseHandler } from 'src/business/handlers/Course/CreateCourseHandler';
@@ -69,6 +70,32 @@ export class CourseController {
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find user courses',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/:id')
+  public async getCourseById(@Req() request: Request, @Param('id') id: string) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      const course = await this.courseQueryService.findCourseById(
+        userToken.sub,
+        id,
+      );
+
+      if (course) {
+        return {
+          data: course,
+          status: HttpStatus.OK,
+        };
+      } else {
+        throw new HttpException('Course not found', HttpStatus.NOT_FOUND);
+      }
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to find user course by id',
         HttpStatus.BAD_REQUEST,
       );
     }

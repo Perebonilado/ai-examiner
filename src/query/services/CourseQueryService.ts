@@ -11,6 +11,16 @@ import { getPagination } from 'src/utils';
 export class CourseQueryService {
   constructor() {}
 
+  public async findCourseById(userId: string, courseId) {
+    try {
+      return await CourseModel.findOne({ where: { userId, id: courseId } });
+    } catch (error) {
+      throw new QueryError('Failed to find user course by id').InnerError(
+        error,
+      );
+    }
+  }
+
   public async findAllUserCourses(
     title: string,
     userId: string,
