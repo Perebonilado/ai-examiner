@@ -19,6 +19,9 @@ export const databaseProviders = [
         username: EnvironmentVariables.config.databaseUsername,
         password: EnvironmentVariables.config.databasePassword,
         database: EnvironmentVariables.config.database,
+        logging: false,
+        logQueryParameters: false,
+        define: { timestamps: false },
       });
       sequelize.addModels([
         UserModel,
