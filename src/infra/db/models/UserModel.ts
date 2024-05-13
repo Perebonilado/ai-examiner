@@ -51,7 +51,7 @@ export class UserModel extends Model<UserModel> {
   })
   password: string;
 
-  // @ForeignKey(() => LookUpModel)
+  @ForeignKey(() => LookUpModel)
   @Column({
     type: DataType.STRING,
     allowNull: false,

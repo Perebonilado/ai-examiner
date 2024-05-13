@@ -40,19 +40,9 @@ export class CourseQueryService {
         include: [
           {
             model: CourseDocumentModel,
-            attributes: [],
-            duplicating: false,
+            attributes: ['id'],
           },
         ],
-        attributes: {
-          include: [
-            [
-              Sequelize.fn('COUNT', Sequelize.col('CourseDocument.title')),
-              'topicCount',
-            ],
-          ],
-        },
-        group: ['CourseModel.id'],
       });
 
       return {

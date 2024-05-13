@@ -40,16 +40,7 @@ export class CourseDocumentQueryService {
         order: [['created_on', 'DESC']],
         limit,
         offset,
-        include: [{ model: QuestionModel, attributes: [], duplicating: false }],
-        attributes: {
-          include: [
-            [
-              Sequelize.fn('COUNT', Sequelize.col('Question.id')),
-              'questionCount',
-            ],
-          ],
-        },
-        group: ['CourseDocumentModel.id'],
+        include: [{ model: QuestionModel, attributes: ['id'] }],
       });
 
       return {
