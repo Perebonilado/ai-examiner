@@ -1,6 +1,24 @@
 import { Module } from '@nestjs/common';
 import { IntegrationsModule } from 'src/integrations/IntegrationsModule';
 import { QuestionsController } from './controllers/QuestionsController';
+import { AuthController } from './controllers/AuthController';
+import { BusinessModule } from 'src/business/BusinessModule';
+import { JwtModule } from '@nestjs/jwt';
+import { AuthService } from '../auth/services/AuthService';
+import { QueryModule } from 'src/query/QueryModule';
+import { CourseController } from './controllers/CourseController';
+import { CourseDocumentController } from './controllers/CourseDocumentController';
 
-@Module({ imports: [IntegrationsModule], controllers: [QuestionsController] })
+@Module({
+  imports: [
+    JwtModule.register({
+      global: true,
+    }),
+    IntegrationsModule,
+    BusinessModule,
+    QueryModule,
+  ],
+  providers: [AuthService],
+  controllers: [QuestionsController, AuthController, CourseController, CourseDocumentController],
+})
 export class InfraWebModule {}

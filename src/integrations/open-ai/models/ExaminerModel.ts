@@ -1,4 +1,6 @@
 export interface ExaminerModel {
-  name: string;
+  name: ExaminerModel;
   instructions: string;
 }
+
+export type ExaminerName = 'MCQ Examiner'

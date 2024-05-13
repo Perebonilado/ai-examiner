@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { AIExaminerService } from './services/AIExaminerService';
+import { HttpModule } from '@nestjs/axios';
+import { ExaminerService } from './services/ExaminerService';
 
 @Module({
-  providers: [AIExaminerService],
-  exports: [AIExaminerService],
+  imports: [HttpModule],
+  providers: [ExaminerService],
+  exports: [ExaminerService],
 })
 export class OpenAiModule {}

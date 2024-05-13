@@ -1,7 +1,7 @@
 import { ExaminerModel } from './ExaminerModel';
 
 export interface GenerateMCQPayloadModel {
-  file: Express.Multer.File;
+  filePath: string;
   examiner: ExaminerModel;
 }
 
