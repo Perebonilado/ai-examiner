@@ -156,7 +156,7 @@ export class CourseDocumentController {
   @UseInterceptors(FileInterceptor('document'))
   public async createCourseDocument(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: Omit<CreateCourseDocumentDto, 'userId'>,
+    @Body() body: Omit<CreateCourseDocumentDto, 'userId' | 'threadId' | 'fileId'>,
     @Req() request: Request,
   ) {
     try {
