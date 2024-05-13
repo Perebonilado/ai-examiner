@@ -12,10 +12,17 @@ export const databaseProviders = [
   {
     provide: 'SEQUELIZE',
     useFactory: async (): Promise<Sequelize> => {
-      sequelize = new Sequelize(
-        `mysql://${process.env.Database_Username}:${process.env.Database_Password}@${process.env.Database_Host}:${process.env.Database_Port}/defaultdb?ssl-mode=REQUIRED`,
-        { define: { timestamps: false }, logging: false, logQueryParameters: false },
-      );
+      sequelize = new Sequelize({
+        dialect: 'mysql',
+        host: EnvironmentVariables.config.databaseHost,
+        port: EnvironmentVariables.config.databasePort,
+        username: EnvironmentVariables.config.databaseUsername,
+        password: EnvironmentVariables.config.databasePassword,
+        database: EnvironmentVariables.config.database,
+        logging: false,
+        logQueryParameters: false,
+        define: { timestamps: false },
+      });
       sequelize.addModels([
         UserModel,
         LookUpModel,
@@ -26,7 +33,7 @@ export const databaseProviders = [
 
       try {
         await sequelize.sync();
-        console.log('Database synced successfully');
+        console.log('Database synced successfully')
       } catch (error) {
         console.log(error);
       }
