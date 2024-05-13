@@ -63,7 +63,6 @@ export class UserModel extends Model<UserModel> {
     type: DataType.DATE,
     field: 'created_on',
     allowNull: true,
-    defaultValue: moment(new Date()).utc().toDate(),
   })
   createdOn: Date;
 
@@ -82,5 +81,6 @@ export class UserModel extends Model<UserModel> {
   @BeforeCreate
   static addUUID(instance: UserModel) {
     instance.id = generateUUID();
+    instance.createdOn = moment(new Date()).utc().toDate();
   }
 }

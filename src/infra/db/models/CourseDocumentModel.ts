@@ -62,7 +62,6 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
     type: DataType.DATE,
     field: 'created_on',
     allowNull: true,
-    defaultValue: moment(new Date()).utc().toDate(),
   })
   createdOn: Date;
 
@@ -72,5 +71,6 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
   @BeforeCreate
   static addUUID(instance: CourseDocumentModel) {
     instance.id = generateUUID();
+    instance.createdOn = moment(new Date()).utc().toDate();
   }
 }
