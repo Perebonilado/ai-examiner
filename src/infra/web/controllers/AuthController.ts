@@ -6,6 +6,9 @@ import {
   HttpStatus,
   Body,
   UsePipes,
+  Get,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { CreateUserHandler } from 'src/business/handlers/User/CreateUserHandler';
 import { CreateUserDto } from 'src/dto/CreateUserDto';
@@ -14,6 +17,8 @@ import { ZodValidationPipe } from 'src/pipes/ZodValidationPipe.pipe';
 import { SignUpValidationSchema } from '../zod-validation-schemas/SignUpValidationSchema';
 import { LoginUserDto } from 'src/dto/LoginUserDto';
 import { LoginValidationSchema } from '../zod-validation-schemas/LoginValidationSchema';
+import { GoogleOauthGuard } from 'src/infra/auth/guards/GoogleOauthGuard';
+import { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -41,9 +46,29 @@ export class AuthController {
     try {
       return await this.authService.signIn(body);
     } catch (error) {
-      console.log(error)
       throw new HttpException(
         error?.response ?? 'Failed to login user',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Get('/google')
+  @UseGuards(GoogleOauthGuard)
+  public async googleAuth() {}
+
+  @Get('/google/callback')
+  @UseGuards(GoogleOauthGuard)
+  public async googleAuthRedirect(@Req() req: Request) {
+    try {
+      /* 
+      check if user exists
+      if not, call create handler
+      if user exists, call login
+      */
+    } catch (error) {
+      throw new HttpException(
+        'google oauth login error',
         HttpStatus.BAD_REQUEST,
       );
     }

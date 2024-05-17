@@ -4,11 +4,9 @@ import {
   Model,
   DataType,
   BeforeCreate,
-  ForeignKey,
   HasMany,
 } from 'sequelize-typescript';
 import { generateUUID } from 'src/utils';
-import { LookUpModel } from './LookUpModel';
 import * as moment from 'moment';
 import { CourseModel } from './CourseModel';
 import { CourseDocumentModel } from './CourseDocumentModel';
@@ -51,10 +49,9 @@ export class UserModel extends Model<UserModel> {
   })
   password: string;
 
-  @ForeignKey(() => LookUpModel)
   @Column({
     type: DataType.STRING,
-    allowNull: false,
+    allowNull: true,
     field: 'institution',
   })
   institution: string;

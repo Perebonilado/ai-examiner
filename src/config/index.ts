@@ -10,7 +10,7 @@ export interface Config {
   assistantId: string;
   googleClientId: string;
   googleClientSecret: string;
-  googleRedirectUrl: string;
+  googleCallbackUrl: string;
 }
 
 export default (): Config => ({
@@ -25,5 +25,5 @@ export default (): Config => ({
   assistantId: process.env.OPEN_AI_ASSITANT_ID,
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  googleRedirectUrl: process.env.GOOGLE_REDIRECT_URL
+  googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL
 });

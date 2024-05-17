@@ -6,6 +6,7 @@ import { InfraDbModule } from './infra/db/InfraDbModule';
 import { InfraRepositoryModule } from './infra/db/InfraRepositoryModule';
 import { QueryModule } from './query/QueryModule';
 import { BusinessModule } from './business/BusinessModule';
+import { GoogleStrategy } from './infra/auth/strategies/google.strategy';
 
 @Module({
   imports: [
@@ -17,5 +18,6 @@ import { BusinessModule } from './business/BusinessModule';
     QueryModule,
     BusinessModule
   ],
+  providers: [GoogleStrategy]
 })
 export class AppModule {}
