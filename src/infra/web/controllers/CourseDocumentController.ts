@@ -22,7 +22,9 @@ import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
-
+import { initialGenerationPrompt } from 'src/constants';
+import { EnvironmentVariables } from 'src/EnvironmentVariables';
+import { extractQuestionsFromMessages } from 'src/utils';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -73,9 +75,13 @@ export class CourseDocumentController {
   @UseGuards(AuthGuard)
   @Post('')
   @UseInterceptors(FileInterceptor('document'))
-  public async createCourseDocument(
+  public async createCourseDocumentAndGenerateQuestions(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: Omit<CreateCourseDocumentDto, 'userId' | 'threadId' | 'fileId'>,
+    @Body()
+    body: Omit<
+      CreateCourseDocumentDto,
+      'userId' | 'threadId' | 'fileId' | 'courseId'
+    >,
     @Req() request: Request,
   ) {
     try {
@@ -101,16 +107,64 @@ export class CourseDocumentController {
           updatedVectorStore.id,
         );
 
-      return await this.createCourseDocumentHander.handle({
+      const createdDocument = await this.createCourseDocumentHander.handle({
         payload: {
-          courseId: body.courseId,
+          courseId: '',
           title: body.title,
           userId: userToken.sub,
           fileId: uploadedFile.id,
           threadId: updatedThread.id,
         },
       });
+
+      const existingThread = await this.examinerService.findThread(
+        createdDocument.data.threadId,
+      );
+
+      // check if vector store has expired, if so:
+      // create new store, attach file and attach to thread
+      if (!existingThread.tool_resources.file_search.vector_store_ids.length) {
+        const newVectorStore = await this.examinerService.createVectorStore(
+          document.title,
+        );
+        const updatedVectorStore =
+          await this.examinerService.attachFileToVectorStore(
+            createdDocument.data.fileId,
+            newVectorStore.id,
+          );
+
+        await this.examinerService.attachVectorStoreToThread(
+          existingThread.id,
+          updatedVectorStore.id,
+        );
+      }
+
+      await this.examinerService.createThreadMessage(
+        existingThread.id,
+        initialGenerationPrompt,
+      );
+
+      await this.examinerService.createRun(
+        EnvironmentVariables.config.assistantId,
+        existingThread.id,
+      );
+
+      const messages = await this.examinerService.retrieveThreadMessages(
+        existingThread.id,
+      );
+
+      const mostRecentlyGeneratedQuestions =
+        extractQuestionsFromMessages(messages);
+
+      return await this.createQuestionHandler.handle({
+        payload: {
+          courseDocumentId: createdDocument.data.id,
+          data: mostRecentlyGeneratedQuestions,
+          userId: userToken.sub,
+        },
+      });
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         error?.response ?? 'Failed to create course document',
         HttpStatus.BAD_REQUEST,

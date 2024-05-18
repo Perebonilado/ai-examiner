@@ -33,7 +33,13 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
       );
 
       if (!userExists) {
-        const payload = {...request.payload, password: await hashPassword(request.payload.password)}
+        const payload = {
+          ...request.payload,
+          password: !request.payload.password
+            ? ''
+            : await hashPassword(request.payload.password),
+          institution: '',
+        };
         const savedUser = await this.userRepository.create(
           payload as UserModel,
         );

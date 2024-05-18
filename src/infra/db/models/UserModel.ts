@@ -44,7 +44,7 @@ export class UserModel extends Model<UserModel> {
 
   @Column({
     type: DataType.STRING,
-    allowNull: false,
+    allowNull: true,
     field: 'password',
   })
   password: string;

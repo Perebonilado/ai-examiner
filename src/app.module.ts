@@ -18,6 +18,6 @@ import { GoogleStrategy } from './infra/auth/strategies/google.strategy';
     QueryModule,
     BusinessModule
   ],
-  providers: [GoogleStrategy]
+  providers: []
 })
 export class AppModule {}

@@ -28,10 +28,9 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
   })
   title: string;
 
-  @ForeignKey(() => CourseModel)
   @Column({
     type: DataType.STRING,
-    allowNull: false,
+    allowNull: true,
     field: 'course_id',
   })
   courseId: string;

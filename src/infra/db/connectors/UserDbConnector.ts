@@ -8,6 +8,7 @@ export class UserDbConnector {
     try {
       return await UserModel.create(user);
     } catch (error) {
+      console.log(error)
       throw new DatabaseError('Failed to create user').InnerError(error);
     }
   }
