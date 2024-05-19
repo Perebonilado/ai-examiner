@@ -5,6 +5,7 @@ import { LookUpModel } from '../models/LookUpModel';
 import { CourseModel } from '../models/CourseModel';
 import { CourseDocumentModel } from '../models/CourseDocumentModel';
 import { QuestionModel } from '../models/QuestionModel';
+import { ScoreModel } from '../models/ScoreModel';
 
 export let sequelize: Sequelize;
 
@@ -29,6 +30,7 @@ export const databaseProviders = [
         CourseModel,
         CourseDocumentModel,
         QuestionModel,
+        ScoreModel
       ]);
 
       try {

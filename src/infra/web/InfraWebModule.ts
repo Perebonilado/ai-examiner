@@ -9,6 +9,7 @@ import { QueryModule } from 'src/query/QueryModule';
 import { CourseController } from './controllers/CourseController';
 import { CourseDocumentController } from './controllers/CourseDocumentController';
 import { GoogleStrategy } from '../auth/strategies/google.strategy';
+import { ScoreController } from './controllers/ScoreController';
 
 @Module({
   imports: [
@@ -20,6 +21,12 @@ import { GoogleStrategy } from '../auth/strategies/google.strategy';
     QueryModule,
   ],
   providers: [AuthService, GoogleStrategy],
-  controllers: [QuestionsController, AuthController, CourseController, CourseDocumentController],
+  controllers: [
+    QuestionsController,
+    AuthController,
+    CourseController,
+    CourseDocumentController,
+    ScoreController,
+  ],
 })
 export class InfraWebModule {}

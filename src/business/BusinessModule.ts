@@ -6,6 +6,7 @@ import { IntegrationsModule } from 'src/integrations/IntegrationsModule';
 import { CreateCourseHandler } from './handlers/Course/CreateCourseHandler';
 import { CreateCourseDocumentHandler } from './handlers/CourseDocument/CreateCourseDocumentHandler';
 import { CreateQuestionHandler } from './handlers/Question/CreateQuestionHandler';
+import { CreateScoreHandler } from './handlers/Score/CreateScoreHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -13,13 +14,15 @@ import { CreateQuestionHandler } from './handlers/Question/CreateQuestionHandler
     CreateUserHandler,
     CreateCourseHandler,
     CreateCourseDocumentHandler,
-    CreateQuestionHandler
+    CreateQuestionHandler,
+    CreateScoreHandler
   ],
   exports: [
     CreateUserHandler,
     CreateCourseHandler,
     CreateCourseDocumentHandler,
-    CreateQuestionHandler
+    CreateQuestionHandler,
+    CreateScoreHandler
   ],
 })
 export class BusinessModule {}

@@ -160,6 +160,7 @@ export class QuestionsController {
         createdOn: q.createdOn,
         id: q.id,
         count: JSON.parse(q.data).length,
+        score: q.score
       }));
 
       return {
