@@ -156,15 +156,23 @@ export class CourseDocumentController {
       const mostRecentlyGeneratedQuestions =
         extractQuestionsFromMessages(messages);
 
-      return await this.createQuestionHandler.handle({
+      const createdQuestion = await this.createQuestionHandler.handle({
         payload: {
           courseDocumentId: createdDocument.data.id,
           data: mostRecentlyGeneratedQuestions,
           userId: userToken.sub,
         },
       });
+
+      return {
+        status: HttpStatus.CREATED,
+        message: 'Questions successfully generated for document',
+        data: {
+          documentId: createdDocument.data.id,
+          questionId: createdQuestion.data.id,
+        },
+      };
     } catch (error) {
-      console.log(error)
       throw new HttpException(
         error?.response ?? 'Failed to create course document',
         HttpStatus.BAD_REQUEST,

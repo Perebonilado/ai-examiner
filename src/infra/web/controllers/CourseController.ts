@@ -68,7 +68,6 @@ export class CourseController {
         status: HttpStatus.OK,
       };
     } catch (error) {
-      console.log(error)
       throw new HttpException(
         error?.response ?? 'Failed to find user courses',
         HttpStatus.BAD_REQUEST,
@@ -197,7 +196,6 @@ export class CourseController {
         message: 'Course created, document uploaded and questions generated',
       };
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         error?.response ??
           'Failed to create course, document and generate questions',
