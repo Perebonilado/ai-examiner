@@ -86,8 +86,13 @@ export class AuthController {
           { secret: EnvironmentVariables.config.jwtSecret },
         );
 
-        response.cookie('access_token', token);
-        response.redirect(`http://localhost:3001/dashboard`);
+        response.cookie(
+          EnvironmentVariables.config.frontendAccessTokenKey,
+          token,
+        );
+        response.redirect(
+          `${EnvironmentVariables.config.frontendBaseUrl}/dashboard`,
+        );
       } else {
         const createdUser = await this.createUserHandler.handle({
           payload: {
@@ -99,7 +104,9 @@ export class AuthController {
         });
 
         response.cookie('access_token', createdUser.data.token);
-        response.redirect(`http://localhost:3001`);
+        response.redirect(
+          `${EnvironmentVariables.config.frontendBaseUrl}/dashboard`,
+        );
       }
     } catch (error) {
       throw new HttpException(

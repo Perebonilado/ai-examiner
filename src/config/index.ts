@@ -11,6 +11,8 @@ export interface Config {
   googleClientId: string;
   googleClientSecret: string;
   googleCallbackUrl: string;
+  frontendBaseUrl: string;
+  frontendAccessTokenKey: string;
 }
 
 export default (): Config => ({
@@ -25,5 +27,7 @@ export default (): Config => ({
   assistantId: process.env.OPEN_AI_ASSITANT_ID,
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL
+  googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL,
+  frontendBaseUrl: process.env.FRONTEND_BASE_URL,
+  frontendAccessTokenKey: process.env.FRONTEND_ACCESS_TOKEN_KEY
 });
