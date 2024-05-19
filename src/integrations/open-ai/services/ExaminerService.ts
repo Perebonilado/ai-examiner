@@ -38,7 +38,7 @@ export class ExaminerService {
         name: 'Examiner',
         instructions:
           'You are an examiner for students that will read through materials and generate questions to help students study better',
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o',
         tools: [{ type: 'file_search' }],
       });
     } catch (error) {

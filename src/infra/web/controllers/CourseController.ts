@@ -28,7 +28,7 @@ import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerServi
 import {
   defaultPageNumber,
   defaultPageSize,
-  initialGenerationPrompt,
+  getGenerationPropmt,
 } from 'src/constants';
 import { extractQuestionsFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
@@ -126,6 +126,7 @@ export class CourseController {
   public async createCourseDocAndQuestion(
     @UploadedFile() file: Express.Multer.File,
     @Body() body: CreateCourseDocumentQuestionDto,
+    @Query('questionCount') questionCount: number,
     @Req() request: Request,
   ) {
     try {
@@ -167,7 +168,7 @@ export class CourseController {
 
       await this.examinerService.createThreadMessage(
         updatedThread.id,
-        initialGenerationPrompt,
+        getGenerationPropmt(questionCount || 5),
       );
 
       await this.examinerService.createRun(

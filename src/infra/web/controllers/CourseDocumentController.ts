@@ -22,7 +22,7 @@ import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
-import { initialGenerationPrompt } from 'src/constants';
+import { getGenerationPropmt } from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { extractQuestionsFromMessages } from 'src/utils';
 
@@ -77,6 +77,7 @@ export class CourseDocumentController {
   @UseInterceptors(FileInterceptor('document'))
   public async createCourseDocumentAndGenerateQuestions(
     @UploadedFile() file: Express.Multer.File,
+    @Query('questionCount') questionCount: number,
     @Body()
     body: Omit<
       CreateCourseDocumentDto,
@@ -141,7 +142,7 @@ export class CourseDocumentController {
 
       await this.examinerService.createThreadMessage(
         existingThread.id,
-        initialGenerationPrompt,
+        getGenerationPropmt(questionCount || 5),
       );
 
       await this.examinerService.createRun(

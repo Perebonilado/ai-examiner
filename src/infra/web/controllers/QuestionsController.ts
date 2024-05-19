@@ -20,7 +20,7 @@ import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { GetQuestionByIdDto } from 'src/dto/GetQuestionByIdDto';
 import { extractQuestionsFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
-import { initialGenerationPrompt } from 'src/constants';
+import { getGenerationPropmt } from 'src/constants';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
@@ -64,6 +64,7 @@ export class QuestionsController {
   public async generateDocumentQuestions(
     @Param() params: GenerateCourseDocumentQuestionDto,
     @Req() request: Request,
+    @Query('questionCount') questionCount: number,
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
@@ -100,7 +101,7 @@ export class QuestionsController {
 
         await this.examinerService.createThreadMessage(
           existingThread.id,
-          initialGenerationPrompt,
+          getGenerationPropmt(questionCount || 5),
         );
 
         await this.examinerService.createRun(
