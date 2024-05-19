@@ -46,8 +46,8 @@ export class QuestionQueryService {
 
       return {
         id: question.id,
-        topicTitle: courseDocument.title,
-        topicId: courseDocument.id,
+        documentTitle: courseDocument.title,
+        documentId: courseDocument.id,
         createdOn: question.createdOn,
         questions: JSON.parse(question.data),
       };
