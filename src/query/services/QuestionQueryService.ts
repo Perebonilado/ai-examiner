@@ -34,7 +34,7 @@ export class QuestionQueryService {
           const score = await this.scoreQueryService.findScoreByQuestionId(
             q.id,
           );
-          return { ...q.get({ plain: true }), score: score || null };
+          return { ...q.get({ plain: true }), score: score ? score.score : null };
         }),
       );
 

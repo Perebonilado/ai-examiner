@@ -12,10 +12,10 @@ import {
   ParseIntPipe,
   Post,
 } from '@nestjs/common';
+import * as moment from 'moment';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { Request } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
-import { GetAllQuestionsDto } from 'src/dto/GetAllQuestionsDto';
 import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { GetQuestionByIdDto } from 'src/dto/GetQuestionByIdDto';
 import { extractQuestionsFromMessages } from 'src/utils';
@@ -27,6 +27,8 @@ import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQues
 import { GenerateCourseDocumentQuestionDto } from 'src/dto/GenerateCourseDocumentQuestionsDto';
 import { CreateScoreHandler } from 'src/business/handlers/Score/CreateScoreHandler';
 import { CreateScoreDto } from 'src/dto/CreateScoreDto';
+import { ScoreQueryService } from 'src/query/services/ScoreQueryService';
+import { UpdateScoreHandler } from 'src/business/handlers/Score/UpdateScoreHandler';
 
 @Controller('questions')
 export class QuestionsController {
@@ -39,6 +41,8 @@ export class QuestionsController {
     @Inject(CreateQuestionHandler)
     private createQuestionHandler: CreateQuestionHandler,
     @Inject(CreateScoreHandler) private createScoreHandler: CreateScoreHandler,
+    @Inject(ScoreQueryService) private scoreQueryService: ScoreQueryService,
+    @Inject(UpdateScoreHandler) private updateScoreHandler: UpdateScoreHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -163,7 +167,7 @@ export class QuestionsController {
         createdOn: q.createdOn,
         id: q.id,
         count: JSON.parse(q.data).length,
-        score: q.score
+        score: q.score,
       }));
 
       return {
@@ -187,6 +191,21 @@ export class QuestionsController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
+
+      const scoreExists = await this.scoreQueryService.findScoreByQuestionId(
+        payload.questionId,
+      );
+
+      if (scoreExists) {
+        return await this.updateScoreHandler.handle({
+          payload: {
+            createdOn: moment(new Date()).utc().toDate(),
+            id: scoreExists.id,
+            score: payload.score,
+          },
+        });
+      }
+
       return await this.createScoreHandler.handle({
         payload: {
           documentId: payload.documentId,

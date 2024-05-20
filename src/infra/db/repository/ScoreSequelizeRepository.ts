@@ -16,4 +16,13 @@ export class ScoreSequelizeRepository implements ScoreRepository {
       throw new RepositoryError('Failed to save score').InnerError(error);
     }
   }
+
+  public async update(score: ScoreModel): Promise<ScoreModel> {
+    try {
+       await this.scoreDbConnector.update(score);
+      return await ScoreModel.findOne({ where: { id: score.id } });
+    } catch (error) {
+      throw new RepositoryError('Failed to update score').InnerError(error);
+    }
+  }
 }

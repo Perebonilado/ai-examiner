@@ -1,7 +1,8 @@
-import { ScoreModel } from "src/infra/db/models/ScoreModel";
+import { ScoreModel } from 'src/infra/db/models/ScoreModel';
 
-export const ScoreRepository = Symbol('ScoreRepository')
+export const ScoreRepository = Symbol('ScoreRepository');
 
 export interface ScoreRepository {
-    create(score: ScoreModel): Promise<ScoreModel>
+  create(score: ScoreModel): Promise<ScoreModel>;
+  update(score: ScoreModel): Promise<ScoreModel>;
 }

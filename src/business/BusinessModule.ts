@@ -7,6 +7,7 @@ import { CreateCourseHandler } from './handlers/Course/CreateCourseHandler';
 import { CreateCourseDocumentHandler } from './handlers/CourseDocument/CreateCourseDocumentHandler';
 import { CreateQuestionHandler } from './handlers/Question/CreateQuestionHandler';
 import { CreateScoreHandler } from './handlers/Score/CreateScoreHandler';
+import { UpdateScoreHandler } from './handlers/Score/UpdateScoreHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -15,14 +16,16 @@ import { CreateScoreHandler } from './handlers/Score/CreateScoreHandler';
     CreateCourseHandler,
     CreateCourseDocumentHandler,
     CreateQuestionHandler,
-    CreateScoreHandler
+    CreateScoreHandler,
+    UpdateScoreHandler
   ],
   exports: [
     CreateUserHandler,
     CreateCourseHandler,
     CreateCourseDocumentHandler,
     CreateQuestionHandler,
-    CreateScoreHandler
+    CreateScoreHandler,
+    UpdateScoreHandler
   ],
 })
 export class BusinessModule {}

@@ -13,4 +13,12 @@ export class ScoreDbConnector {
       throw new DatabaseError('Failed to save score').InnerError(error);
     }
   }
+
+  public async update(score: ScoreModel) {
+    try {
+      return await ScoreModel.update(score, { where: { id: score.id } });
+    } catch (error) {
+      throw new DatabaseError('Failed to update score').InnerError(error);
+    }
+  }
 }
