@@ -25,6 +25,8 @@ import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQue
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { GenerateCourseDocumentQuestionDto } from 'src/dto/GenerateCourseDocumentQuestionsDto';
+import { CreateScoreHandler } from 'src/business/handlers/Score/CreateScoreHandler';
+import { CreateScoreDto } from 'src/dto/CreateScoreDto';
 
 @Controller('questions')
 export class QuestionsController {
@@ -36,6 +38,7 @@ export class QuestionsController {
     @Inject(ExaminerService) private examinerService: ExaminerService,
     @Inject(CreateQuestionHandler)
     private createQuestionHandler: CreateQuestionHandler,
+    @Inject(CreateScoreHandler) private createScoreHandler: CreateScoreHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -171,6 +174,30 @@ export class QuestionsController {
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find questions',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/score')
+  public async saveScore(
+    @Body() payload: Omit<CreateScoreDto, 'userId'>,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      return await this.createScoreHandler.handle({
+        payload: {
+          documentId: payload.documentId,
+          questionId: payload.questionId,
+          score: payload.score,
+          userId: userToken.sub,
+        },
+      });
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to save score',
         HttpStatus.BAD_REQUEST,
       );
     }
