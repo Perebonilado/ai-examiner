@@ -1,11 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import QueryError from 'src/error-handlers/query/QueryError';
 import { CourseDocumentModel } from 'src/infra/db/models/CourseDocumentModel';
 import { QuestionModel } from 'src/infra/db/models/QuestionModel';
 import { getPagination } from 'src/utils';
+import { ScoreQueryService } from './ScoreQueryService';
 
 @Injectable()
 export class QuestionQueryService {
+  constructor(
+    @Inject(ScoreQueryService) private scoreQueryService: ScoreQueryService,
+  ) {}
+
   public async findAllQuestionsByDocumentIdAndUserId(
     documentId: string,
     userId: string,
@@ -24,8 +29,17 @@ export class QuestionQueryService {
         offset,
       });
 
+      const questionsWithScores = await Promise.all(
+        questions.map(async (q) => {
+          const score = await this.scoreQueryService.findScoreByQuestionId(
+            q.id,
+          );
+          return { ...q.get({ plain: true }), score: score ? score.score : null };
+        }),
+      );
+
       return {
-        questions: questions,
+        questions: questionsWithScores,
         meta: {
           currentPage: page,
           pageSize,
@@ -43,13 +57,15 @@ export class QuestionQueryService {
       const courseDocument = await CourseDocumentModel.findOne({
         where: { id: question.courseDocumentId, userId },
       });
+      const score = await this.scoreQueryService.findScoreByQuestionId(question.id)
 
       return {
         id: question.id,
-        topicTitle: courseDocument.title,
-        topicId: courseDocument.id,
+        documentTitle: courseDocument.title,
+        documentId: courseDocument.id,
         createdOn: question.createdOn,
         questions: JSON.parse(question.data),
+        score: score ? score.score : null
       };
     } catch (error) {
       throw new QueryError('Failed to find questions by id').InnerError(error);

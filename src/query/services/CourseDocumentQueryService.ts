@@ -1,15 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Op } from 'sequelize';
-import { Sequelize } from 'sequelize';
 import QueryError from 'src/error-handlers/query/QueryError';
 import { CourseDocumentModel } from 'src/infra/db/models/CourseDocumentModel';
 import { QuestionModel } from 'src/infra/db/models/QuestionModel';
-import { AllUserCourseDocumentsModel } from 'src/infra/web/models/AllUserCourseDocumentsModel';
 import { getPagination } from 'src/utils';
+import { ScoreQueryService } from './ScoreQueryService';
 
 @Injectable()
 export class CourseDocumentQueryService {
-  constructor() {}
+  constructor(
+    @Inject(ScoreQueryService) private scoreQueryService: ScoreQueryService,
+  ) {}
 
   public async findAllUserCoursesDocuments(
     id: string,
@@ -18,7 +19,7 @@ export class CourseDocumentQueryService {
     userId: string,
     pageSize: number,
     page: number,
-  ): Promise<AllUserCourseDocumentsModel> {
+  ) {
     try {
       const { limit, offset } = getPagination(page, pageSize);
 
@@ -43,8 +44,29 @@ export class CourseDocumentQueryService {
         include: [{ model: QuestionModel, attributes: ['id'] }],
       });
 
+      const docsWithScores = await Promise.all(
+        docs.map(async (d) => {
+          const scores = await this.scoreQueryService.findScoresByDocumentId(
+            d.id,
+          );
+
+          if (scores.length) {
+            const scoreValues = scores.map((sc) => sc.score);
+            const totalScores = scoreValues.reduce(
+              (acc, curr) => acc + curr,
+              0,
+            );
+            const averageScore = totalScores / scoreValues.length;
+
+            return { ...d.get({plain: true}), averageScore}
+          }
+
+          return { averageScore: null, ...d.get({plain: true}) };
+        }),
+      );
+
       return {
-        courseDocuments: docs,
+        courseDocuments: docsWithScores,
         meta: {
           currentPage: page,
           pageSize,

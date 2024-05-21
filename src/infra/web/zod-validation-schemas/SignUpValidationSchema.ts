@@ -5,5 +5,4 @@ export const SignUpValidationSchema = z.object({
   lastName: z.string(),
   email: z.string().email(),
   password: z.string(),
-  institution: z.string(),
 });

@@ -63,9 +63,6 @@ export class CourseModel extends Model<CourseModel> {
   })
   userId: string;
 
-  @HasMany(() => CourseDocumentModel, 'course_id')
-  courseDocument: CourseDocumentModel;
-
   @BeforeCreate
   static addUUID(instance: CourseModel) {
     instance.id = generateUUID();
