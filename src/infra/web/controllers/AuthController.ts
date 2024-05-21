@@ -86,21 +86,8 @@ export class AuthController {
           { secret: EnvironmentVariables.config.jwtSecret },
         );
 
-        const url = new URL(`${EnvironmentVariables.config.frontendBaseUrl}`);
-
-        response.cookie(
-          EnvironmentVariables.config.frontendAccessTokenKey,
-          token,
-          {
-            domain: url.hostname,
-            httpOnly: true,
-            secure: true,
-            path: '/',
-            sameSite: false
-          },
-        );
         response.redirect(
-          `${EnvironmentVariables.config.frontendBaseUrl}/dashboard`,
+          `${EnvironmentVariables.config.frontendBaseUrl}/auth/login?token=${token}`,
         );
       } else {
         const createdUser = await this.createUserHandler.handle({
