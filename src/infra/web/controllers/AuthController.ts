@@ -86,9 +86,14 @@ export class AuthController {
           { secret: EnvironmentVariables.config.jwtSecret },
         );
 
+        const url = new URL(`${EnvironmentVariables.config.frontendBaseUrl}`)
+
         response.cookie(
           EnvironmentVariables.config.frontendAccessTokenKey,
           token,
+          {
+            domain: url.hostname
+          }
         );
         response.redirect(
           `${EnvironmentVariables.config.frontendBaseUrl}/dashboard`,
