@@ -66,7 +66,7 @@ export class CourseDocumentController {
       };
     } catch (error) {
       throw new HttpException(
-        error?.response ?? 'Failed to find course documents',
+        error?.response ?? 'Failed to find Documents',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -175,7 +175,7 @@ export class CourseDocumentController {
       };
     } catch (error) {
       throw new HttpException(
-        error?.response ?? 'Failed to create course document',
+        error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,
       );
     }

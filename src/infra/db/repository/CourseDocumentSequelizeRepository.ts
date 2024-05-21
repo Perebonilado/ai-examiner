@@ -19,7 +19,7 @@ export class CourseDocumentSequelizeRepository
     try {
       return await this.courseDocumentDbConnector.create(courseDocument);
     } catch (error) {
-      throw new RepositoryError('Failed to save course document').InnerError(
+      throw new RepositoryError('Failed to save Document').InnerError(
         error,
       );
     }

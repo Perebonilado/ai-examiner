@@ -10,7 +10,7 @@ export class CourseDocumentDbConnector {
     try {
       return await CourseDocumentModel.create(courseDocument);
     } catch (error) {
-      throw new DatabaseError('Failed to save course document').InnerError(
+      throw new DatabaseError('Failed to save Document').InnerError(
         error,
       );
     }

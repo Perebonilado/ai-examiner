@@ -74,7 +74,7 @@ export class CourseDocumentQueryService {
         },
       };
     } catch (error) {
-      throw new QueryError('Failed to find all course documents').InnerError(
+      throw new QueryError('Failed to find all documents').InnerError(
         error,
       );
     }
@@ -84,7 +84,7 @@ export class CourseDocumentQueryService {
     try {
       return await CourseDocumentModel.findOne({ where: { id, userId } });
     } catch (error) {
-      throw new QueryError('Failed to find course documents by id').InnerError(
+      throw new QueryError('Failed to find documents by id').InnerError(
         error,
       );
     }
