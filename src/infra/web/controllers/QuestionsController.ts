@@ -132,7 +132,7 @@ export class QuestionsController {
         });
       } else {
         throw new HttpException(
-          'Course Document does not exist',
+          'Document does not exist',
           HttpStatus.NOT_FOUND,
         );
       }

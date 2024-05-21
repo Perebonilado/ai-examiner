@@ -33,7 +33,7 @@ export class CreateCourseDocumentHandler extends AbstractRequestHandlerTemplate<
       } as CourseDocumentModel);
 
       return {
-        message: 'Course document successfully created',
+        message: 'Document successfully created',
         status: HttpStatus.CREATED,
         data: {
           threadId: createdCourseDocument.openAiThreadId,
@@ -43,7 +43,7 @@ export class CreateCourseDocumentHandler extends AbstractRequestHandlerTemplate<
       };
     } catch (error) {
       throw new HandlerError(
-        'Failed to handle course document creation',
+        'Failed to handle Document creation',
       ).InnerError(error);
     }
   }
