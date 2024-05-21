@@ -96,6 +96,7 @@ export class AuthController {
             httpOnly: true,
             secure: true,
             path: '/',
+            sameSite: false
           },
         );
         response.redirect(
