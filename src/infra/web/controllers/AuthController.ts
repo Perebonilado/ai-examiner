@@ -89,7 +89,7 @@ export class AuthController {
         // response.redirect(
         //   `${EnvironmentVariables.config.frontendBaseUrl}/auth/login?token=${token}`,
         // );
-        response.cookie('access_token', token);
+        response.cookie(EnvironmentVariables.config.frontendAccessTokenKey, token);
         response.redirect(
           `${EnvironmentVariables.config.frontendBaseUrl}/dashboard`,
         );
@@ -103,7 +103,7 @@ export class AuthController {
           },
         });
 
-        response.cookie('access_token', createdUser.data.token);
+        response.cookie(EnvironmentVariables.config.frontendAccessTokenKey, createdUser.data.token);
         response.redirect(
           `${EnvironmentVariables.config.frontendBaseUrl}/dashboard`,
         );
