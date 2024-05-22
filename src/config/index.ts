@@ -13,6 +13,9 @@ export interface Config {
   googleCallbackUrl: string;
   frontendBaseUrl: string;
   frontendAccessTokenKey: string;
+  mailChimpApiKey: string;
+  mailChimpServerPrefix: string;
+  mailChimpAudienceId: string;
 }
 
 export default (): Config => ({
@@ -29,5 +32,8 @@ export default (): Config => ({
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
   googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL,
   frontendBaseUrl: process.env.FRONTEND_BASE_URL,
-  frontendAccessTokenKey: process.env.FRONTEND_ACCESS_TOKEN_KEY
+  frontendAccessTokenKey: process.env.FRONTEND_ACCESS_TOKEN_KEY,
+  mailChimpApiKey: process.env.MAILCHIMP_API_KEY,
+  mailChimpServerPrefix: process.env.MAILCHIMP_SERVER_PREFIX,
+  mailChimpAudienceId: process.env.MAILCHIMP_AUDIENCE_ID
 });

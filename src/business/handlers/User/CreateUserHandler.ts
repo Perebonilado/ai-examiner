@@ -10,6 +10,7 @@ import { UserModel } from 'src/infra/db/models/UserModel';
 import { JwtService } from '@nestjs/jwt';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { hashPassword } from 'src/utils';
+import { ManageMailChimpAudience } from 'src/integrations/mail-chimp/services/ManageMailChimpAudience';
 
 @Injectable()
 export class CreateUserHandler extends AbstractRequestHandlerTemplate<
@@ -20,6 +21,8 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
     @Inject(UserQueryService) private userQueryService: UserQueryService,
     @Inject(UserRepository) private userRepository: UserRepository,
     private jwtService: JwtService,
+    @Inject(ManageMailChimpAudience)
+    private manageMailChimpAudience: ManageMailChimpAudience,
   ) {
     super();
   }
@@ -43,6 +46,10 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
         const savedUser = await this.userRepository.create(
           payload as UserModel,
         );
+
+        await this.manageMailChimpAudience.addMemberToList({
+          email: savedUser.email,
+        });
 
         const token = this.jwtService.sign(
           {
