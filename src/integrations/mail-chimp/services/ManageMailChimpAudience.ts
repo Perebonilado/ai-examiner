@@ -59,10 +59,8 @@ export class ManageMailChimpAudience {
         },
       });
 
-      console.log('member', member);
       return true;
     } catch (error) {
-      console.log(error)
       throw new HttpException(
         'Failed to check member subscription status',
         HttpStatus.INTERNAL_SERVER_ERROR,

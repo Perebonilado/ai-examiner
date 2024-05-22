@@ -21,8 +21,8 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
     @Inject(UserQueryService) private userQueryService: UserQueryService,
     @Inject(UserRepository) private userRepository: UserRepository,
     private jwtService: JwtService,
-    // @Inject(ManageMailChimpAudience)
-    // private manageMailChimpAudience: ManageMailChimpAudience,
+    @Inject(ManageMailChimpAudience)
+    private manageMailChimpAudience: ManageMailChimpAudience,
   ) {
     super();
   }
@@ -47,9 +47,9 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
           payload as UserModel,
         );
 
-        // await this.manageMailChimpAudience.addMemberToList({
-        //   email: savedUser.email,
-        // });
+        await this.manageMailChimpAudience.addMemberToList({
+          email: savedUser.email,
+        });
 
         const token = this.jwtService.sign(
           {
