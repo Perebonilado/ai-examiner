@@ -21,8 +21,8 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
     @Inject(UserQueryService) private userQueryService: UserQueryService,
     @Inject(UserRepository) private userRepository: UserRepository,
     private jwtService: JwtService,
-    @Inject(ManageMailChimpAudience)
-    private manageMailChimpAudience: ManageMailChimpAudience,
+    // @Inject(ManageMailChimpAudience)
+    // private manageMailChimpAudience: ManageMailChimpAudience,
   ) {
     super();
   }
