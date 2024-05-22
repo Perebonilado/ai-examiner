@@ -86,13 +86,13 @@ export class AuthController {
           { secret: EnvironmentVariables.config.jwtSecret },
         );
 
-        // response.redirect(
-        //   `${EnvironmentVariables.config.frontendBaseUrl}/auth/login?token=${token}`,
-        // );
-        response.cookie('access_token', token);
         response.redirect(
-          `${EnvironmentVariables.config.frontendBaseUrl}/dashboard`,
+          `${EnvironmentVariables.config.frontendBaseUrl}/auth/login?token=${token}`,
         );
+        // response.cookie('access_token', token);
+        // response.redirect(
+        //   `${EnvironmentVariables.config.frontendBaseUrl}/dashboard`,
+        // );
       } else {
         const createdUser = await this.createUserHandler.handle({
           payload: {
@@ -103,10 +103,14 @@ export class AuthController {
           },
         });
 
-        response.cookie('access_token', createdUser.data.token);
         response.redirect(
-          `${EnvironmentVariables.config.frontendBaseUrl}/dashboard`,
+          `${EnvironmentVariables.config.frontendBaseUrl}/auth/login?token=${createdUser.data.token}`,
         );
+
+        // response.cookie('access_token', createdUser.data.token);
+        // response.redirect(
+        //   `${EnvironmentVariables.config.frontendBaseUrl}/dashboard`,
+        // );
       }
     } catch (error) {
       throw new HttpException(
