@@ -47,9 +47,9 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
           payload as UserModel,
         );
 
-        await this.manageMailChimpAudience.addMemberToList({
-          email: savedUser.email,
-        });
+        // await this.manageMailChimpAudience.addMemberToList({
+        //   email: savedUser.email,
+        // });
 
         const token = this.jwtService.sign(
           {
