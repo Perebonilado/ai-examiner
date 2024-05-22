@@ -24,6 +24,10 @@ export class ManageMailChimpAudience {
         {
           email_address: payload.email,
           status: 'subscribed',
+          merge_fields: {
+            FNAME: payload.firstName,
+            LNAME: payload.lastName
+          }
         },
         {
           headers: {

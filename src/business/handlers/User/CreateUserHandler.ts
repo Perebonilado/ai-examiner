@@ -49,6 +49,8 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
 
         await this.manageMailChimpAudience.addMemberToList({
           email: savedUser.email,
+          firstName: savedUser.firstName,
+          lastName: savedUser.lastName,
         });
 
         const token = this.jwtService.sign(
