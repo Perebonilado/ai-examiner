@@ -127,25 +127,25 @@ export class ExaminerService {
 
   public async uploadFile(file: Express.Multer.File) {
     try {
-      const tempFilePath = join(tmpdir(), file.originalname);
-      await new Promise((resolve, reject) => {
-        const writeStream = createWriteStream(tempFilePath);
-        writeStream.write(file.buffer);
-        writeStream.on('error', reject);
-        writeStream.on('finish', resolve);
-        writeStream.end();
-      });
+      // const tempFilePath = join(tmpdir(), file.originalname);
+      // await new Promise((resolve, reject) => {
+      //   const writeStream = createWriteStream(tempFilePath);
+      //   writeStream.write(file.buffer);
+      //   writeStream.on('error', reject);
+      //   writeStream.on('finish', resolve);
+      //   writeStream.end();
+      // });
 
-      const fileStream = createReadStream(tempFilePath, {
-        autoClose: true,
-      });
+      // const fileStream = createReadStream(tempFilePath, {
+      //   autoClose: true,
+      // });
 
       const uploadedFile = await this.openAiClient.files.create({
-        file: fileStream,
+        file: file as unknown as File,
         purpose: 'assistants',
       });
 
-      await unlink(tempFilePath);
+      // await unlink(tempFilePath);
 
       return uploadedFile;
     } catch (error) {
