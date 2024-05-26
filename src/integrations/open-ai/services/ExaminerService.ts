@@ -1,23 +1,18 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import { createReadStream, createWriteStream } from 'fs';
-import { GenerateMCQPayloadModel, MCQModel } from '../models/MCQModel';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { HttpService } from '@nestjs/axios';
 import { unlink } from 'fs/promises';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
-import { ExaminerModel } from '../models/ExaminerModel';
 
 @Injectable()
 export class ExaminerService {
-  constructor(private readonly httpService: HttpService) {
+  constructor() {
     this.intializeOpenAiClient();
   }
 
   private openAiClient: OpenAI;
-  private prompt = `
-  Based off the file, generate 5 multiple choice questions and return only a json array format like this: [{ id: string, question: string, options: { value: string, id: string }[], correctAnswerId: string, explanation: string}]. This json structure should be the only thing you return, no other strings whatsoever. Ignore images in the file, and be as concise and fast as possible`;
 
   private intializeOpenAiClient() {
     try {
