@@ -30,7 +30,7 @@ import {
   defaultPageSize,
   generateQuestionsPrompt,
 } from 'src/constants';
-import { extractQuestionsFromMessages } from 'src/utils';
+import { extractJSONDataFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 
 @Controller('course')
@@ -181,7 +181,7 @@ export class CourseController {
       );
 
       const mostRecentlyGeneratedQuestions =
-        extractQuestionsFromMessages(messages);
+        extractJSONDataFromMessages(messages);
 
       await this.createQuestionHandler.handle({
         payload: {

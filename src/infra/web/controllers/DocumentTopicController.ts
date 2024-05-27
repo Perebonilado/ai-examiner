@@ -22,7 +22,7 @@ import { DocumentTopicQueryService } from 'src/query/services/DocumentTopicQuery
 import { FileInterceptor } from '@nestjs/platform-express';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { generateTopicPrompt } from 'src/constants';
-import { extractQuestionsFromMessages } from 'src/utils';
+import { extractJSONDataFromMessages } from 'src/utils';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 
 @Controller('document-topic')
@@ -115,7 +115,7 @@ export class DocumentTopicController {
         updatedThread.id,
       );
 
-      const generatedTopics = extractQuestionsFromMessages(messages);
+      const generatedTopics = extractJSONDataFromMessages(messages);
 
       //return response at this point
       response.status(201).json(generatedTopics);

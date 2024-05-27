@@ -24,7 +24,7 @@ import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQues
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { generateQuestionsPrompt } from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
-import { extractQuestionsFromMessages } from 'src/utils';
+import { extractJSONDataFromMessages } from 'src/utils';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 
 @Controller('course-document')
@@ -168,7 +168,7 @@ export class CourseDocumentController {
       );
 
       const mostRecentlyGeneratedQuestions =
-        extractQuestionsFromMessages(messages);
+        extractJSONDataFromMessages(messages);
 
       const createdQuestion = await this.createQuestionHandler.handle({
         payload: {

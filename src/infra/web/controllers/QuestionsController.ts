@@ -18,7 +18,7 @@ import { Request } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { GetQuestionByIdDto } from 'src/dto/GetQuestionByIdDto';
-import { extractQuestionsFromMessages } from 'src/utils';
+import { extractJSONDataFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { generateQuestionsPrompt } from 'src/constants';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
@@ -121,7 +121,7 @@ export class QuestionsController {
         );
 
         const mostRecentlyGeneratedQuestions =
-          extractQuestionsFromMessages(messages);
+          extractJSONDataFromMessages(messages);
 
         return await this.createQuestionHandler.handle({
           payload: {
