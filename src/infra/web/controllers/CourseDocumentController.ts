@@ -22,7 +22,7 @@ import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
-import { getGenerationPropmt } from 'src/constants';
+import { generateQuestionsPrompt } from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { extractQuestionsFromMessages } from 'src/utils';
 
@@ -142,7 +142,7 @@ export class CourseDocumentController {
 
       await this.examinerService.createThreadMessage(
         existingThread.id,
-        getGenerationPropmt(questionCount || 5),
+        generateQuestionsPrompt(questionCount || 5),
       );
 
       await this.examinerService.createRun(

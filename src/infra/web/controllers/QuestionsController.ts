@@ -20,7 +20,7 @@ import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { GetQuestionByIdDto } from 'src/dto/GetQuestionByIdDto';
 import { extractQuestionsFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
-import { getGenerationPropmt } from 'src/constants';
+import { generateQuestionsPrompt } from 'src/constants';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
@@ -108,7 +108,7 @@ export class QuestionsController {
 
         await this.examinerService.createThreadMessage(
           existingThread.id,
-          getGenerationPropmt(questionCount || 5),
+          generateQuestionsPrompt(questionCount || 5),
         );
 
         await this.examinerService.createRun(

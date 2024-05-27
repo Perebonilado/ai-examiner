@@ -28,7 +28,7 @@ import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerServi
 import {
   defaultPageNumber,
   defaultPageSize,
-  getGenerationPropmt,
+  generateQuestionsPrompt,
 } from 'src/constants';
 import { extractQuestionsFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
@@ -168,7 +168,7 @@ export class CourseController {
 
       await this.examinerService.createThreadMessage(
         updatedThread.id,
-        getGenerationPropmt(questionCount || 5),
+        generateQuestionsPrompt(questionCount || 5),
       );
 
       await this.examinerService.createRun(
