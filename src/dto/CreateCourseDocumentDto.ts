@@ -4,4 +4,5 @@ export interface CreateCourseDocumentDto {
   userId: string;
   threadId: string;
   fileId: string;
+  topics?: string[] | null
 }

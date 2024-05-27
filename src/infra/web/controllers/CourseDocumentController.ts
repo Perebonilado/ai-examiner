@@ -26,6 +26,7 @@ import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerServi
 import { generateQuestionsPrompt, generateTopicPrompt } from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { extractQuestionsFromMessages } from 'src/utils';
+import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -37,6 +38,8 @@ export class CourseDocumentController {
     @Inject(ExaminerService) private examinerService: ExaminerService,
     @Inject(CreateQuestionHandler)
     private createQuestionHandler: CreateQuestionHandler,
+    @Inject(CreateDocumentTopicHandler)
+    private createDocumentTopicHandler: CreateDocumentTopicHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -119,6 +122,16 @@ export class CourseDocumentController {
         },
       });
 
+      if (body.topics && body.topics.length) {
+        const mappedTopics = body.topics.map((topic) => ({
+          title: topic,
+          documentId: createdDocument.data.id,
+          userId: userToken.sub,
+        }));
+
+        await this.createDocumentTopicHandler.handle({ payload: mappedTopics });
+      }
+
       const existingThread = await this.examinerService.findThread(
         createdDocument.data.threadId,
       );
@@ -188,7 +201,7 @@ export class CourseDocumentController {
   public async generateDocumentTopics(
     @UploadedFile() file: Express.Multer.File,
     @Req() request: Request,
-    @Res() response: Response
+    @Res() response: Response,
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
@@ -232,7 +245,7 @@ export class CourseDocumentController {
       const generatedTopics = extractQuestionsFromMessages(messages);
 
       //return response at this point
-      response.status(201).json(generatedTopics)
+      response.status(201).json(generatedTopics);
 
       /* ===== Delete file, vectore store, and thread ==== */
 
