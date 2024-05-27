@@ -5,15 +5,14 @@ import {
   DataType,
   BeforeCreate,
   ForeignKey,
-  HasMany,
 } from 'sequelize-typescript';
 import * as moment from 'moment';
 import { generateUUID } from 'src/utils';
+import { CourseDocumentModel } from './CourseDocumentModel';
 import { UserModel } from './UserModel';
-import { QuestionModel } from './QuestionModel';
 
-@Table({ tableName: 'course_document' })
-export class CourseDocumentModel extends Model<CourseDocumentModel> {
+@Table({ tableName: 'document_topic' })
+export class DocumentTopicModel extends Model<DocumentTopicModel> {
   @Column({
     type: DataType.STRING,
     primaryKey: true,
@@ -27,12 +26,13 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
   })
   title: string;
 
+  @ForeignKey(() => CourseDocumentModel)
   @Column({
     type: DataType.STRING,
-    allowNull: true,
-    field: 'course_id',
+    field: 'document_id',
+    allowNull: false,
   })
-  courseId: string;
+  documentId: string;
 
   @ForeignKey(() => UserModel)
   @Column({
@@ -43,28 +43,11 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
   userId: string;
 
   @Column({
-    type: DataType.STRING,
-    field: 'open_ai_thread_id',
-    allowNull: false,
-  })
-  openAiThreadId: string;
-
-  @Column({
-    type: DataType.STRING,
-    field: 'open_ai_file_id',
-    allowNull: false,
-  })
-  openAiFileId: string;
-
-  @Column({
     type: DataType.DATE,
     field: 'created_on',
     allowNull: true,
   })
   createdOn: Date;
-
-  @HasMany(() => QuestionModel, 'course_document_id')
-  question: QuestionModel;
 
   @BeforeCreate
   static addUUID(instance: CourseDocumentModel) {

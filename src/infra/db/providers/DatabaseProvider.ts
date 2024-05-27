@@ -6,6 +6,7 @@ import { CourseModel } from '../models/CourseModel';
 import { CourseDocumentModel } from '../models/CourseDocumentModel';
 import { QuestionModel } from '../models/QuestionModel';
 import { ScoreModel } from '../models/ScoreModel';
+import { DocumentTopicModel } from '../models/DocumentTopicModel';
 
 export let sequelize: Sequelize;
 
@@ -30,7 +31,8 @@ export const databaseProviders = [
         CourseModel,
         CourseDocumentModel,
         QuestionModel,
-        ScoreModel
+        ScoreModel,
+        DocumentTopicModel
       ]);
 
       try {
