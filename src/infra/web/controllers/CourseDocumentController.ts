@@ -12,18 +12,17 @@ import {
   Get,
   Query,
   ParseIntPipe,
-  Res,
 } from '@nestjs/common';
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
-import { generateQuestionsPrompt, generateTopicPrompt } from 'src/constants';
+import { generateQuestionsPrompt } from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { extractQuestionsFromMessages } from 'src/utils';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
@@ -190,74 +189,6 @@ export class CourseDocumentController {
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to create document',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  @UseGuards(AuthGuard)
-  @Post('/generate-topics')
-  @UseInterceptors(FileInterceptor('document'))
-  public async generateDocumentTopics(
-    @UploadedFile() file: Express.Multer.File,
-    @Req() request: Request,
-    @Res() response: Response,
-  ) {
-    try {
-      const userToken = request['user'] as VerifiedTokenModel;
-
-      const uploadedFile = await this.examinerService.uploadFile(file);
-
-      const temporaryVectorStoreName = `${userToken.sub}_${new Date().getTime()}`;
-
-      const temporaryVectorStore = await this.examinerService.createVectorStore(
-        temporaryVectorStoreName,
-      );
-
-      const updatedVectorStore =
-        await this.examinerService.attachFileToVectorStore(
-          uploadedFile.id,
-          temporaryVectorStore.id,
-        );
-
-      const thread = await this.examinerService.createThread();
-
-      const updatedThread =
-        await this.examinerService.attachVectorStoreToThread(
-          thread.id,
-          updatedVectorStore.id,
-        );
-
-      await this.examinerService.createThreadMessage(
-        updatedThread.id,
-        generateTopicPrompt,
-      );
-
-      await this.examinerService.createRun(
-        EnvironmentVariables.config.assistantId,
-        updatedThread.id,
-      );
-
-      const messages = await this.examinerService.retrieveThreadMessages(
-        updatedThread.id,
-      );
-
-      const generatedTopics = extractQuestionsFromMessages(messages);
-
-      //return response at this point
-      response.status(201).json(generatedTopics);
-
-      /* ===== Delete file, vectore store, and thread ==== */
-
-      await this.examinerService.deleteVectorStoreFile({
-        fileId: uploadedFile.id,
-        vectorStoreId: updatedVectorStore.id,
-      });
-      await this.examinerService.deleteVectorStore(updatedVectorStore.id);
-      await this.examinerService.deleteThread(updatedThread.id);
-    } catch (error) {
-      throw new HttpException(
-        error?.response ?? 'Failed to generate topics for document',
         HttpStatus.BAD_REQUEST,
       );
     }
