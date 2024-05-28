@@ -111,15 +111,15 @@ export class CourseDocumentController {
         },
       });
 
-      if (body.topics && body.topics.length) {
-        const mappedTopics = body.topics.map((topic) => ({
-          title: topic,
-          documentId: createdDocument.data.id,
-          userId: userToken.sub,
-        }));
+      // if (body.topics && body.topics.length) {
+      //   const mappedTopics = body.topics.map((topic) => ({
+      //     title: topic,
+      //     documentId: createdDocument.data.id,
+      //     userId: userToken.sub,
+      //   }));
 
-        await this.createDocumentTopicHandler.handle({ payload: mappedTopics });
-      }
+      //   await this.createDocumentTopicHandler.handle({ payload: mappedTopics });
+      // }
 
       const existingThread = await this.examinerService.findThread(
         createdDocument.data.threadId,
@@ -145,7 +145,7 @@ export class CourseDocumentController {
 
       await this.examinerService.createThreadMessage(
         existingThread.id,
-        generateQuestionsPrompt(questionCount || 5),
+        generateQuestionsPrompt(questionCount || 5, body.topics || undefined),
       );
 
       const run = await this.examinerService.createRun(
@@ -178,6 +178,7 @@ export class CourseDocumentController {
         },
       };
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,

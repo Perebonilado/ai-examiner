@@ -1,7 +1,10 @@
 export const saltRounds = 10;
 
-export const generateQuestionsPrompt = (questionCount: number = 5) => {
-  return `Generate ${questionCount} unique multiple choice questions from the file, different from any previously generated. For each question, evaluate what the answer is, provide 4 options, and generate an id for the question, and an ids for each option. Return only a JSON array in this format:
+export const generateQuestionsPrompt = (
+  questionCount: number = 5,
+  focusAreas?: string[],
+) => {
+  return `Generate ${questionCount} unique multiple choice questions from the file, different from any previously generated. For each question, evaluate what the answer is, provide 4 options, and generate an id for the question, and an ids for each option. ${focusAreas?.length ? `The questions should the following areas within the file: ${focusAreas.join(', ')}.` : ''} Return only a JSON array in this format:
   
   [
     {
@@ -15,7 +18,7 @@ export const generateQuestionsPrompt = (questionCount: number = 5) => {
     }
   ]
   
-  Ignore images. Provide only the JSON array, nothing else. Be concise and fast.
+  Ignore images. Provide only the JSON array, nothing else. Be concise and fast .
 
   `;
 };
