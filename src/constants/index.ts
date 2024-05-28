@@ -1,7 +1,7 @@
 export const saltRounds = 10;
 
 export const generateQuestionsPrompt = (questionCount: number = 5) => {
-  return `Generate ${questionCount} unique multiple choice questions from the file, different from any previously generated. Return only a JSON array in this format:
+  return `Generate ${questionCount} unique multiple choice questions from the file, different from any previously generated. For each question, evaluate what the answer is, provide 4 options, and generate an id for the question, and an ids for each option. Return only a JSON array in this format:
   
   [
     {
