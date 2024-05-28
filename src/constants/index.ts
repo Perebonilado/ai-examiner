@@ -1,7 +1,23 @@
 export const saltRounds = 10;
 
 export const generateQuestionsPrompt = (questionCount: number = 5) => {
-  return `Based off the file, generate a new set of unique ${questionCount} multiple choice questions different from previously generated questions and return only a json array format like this: [{ id: string, question: string, options: { value: string, id: string }[], correctAnswerId: string, explanation: string}]. This json structure should be the only thing you return, no other strings whatsoever. Ignore images in the file, and be as concise and fast as possible`;
+  return `Generate ${questionCount} unique multiple choice questions from the file, different from any previously generated. Return only a JSON array in this format:
+  
+  [
+    {
+      "id": "string",
+      "question": "string",
+      "options": [
+        { "value": "string", "id": "string" }
+      ],
+      "correctAnswerId": "string",
+      "explanation": "string"
+    }
+  ]
+  
+  Ignore images. Provide only the JSON array, nothing else. Be concise and fast.
+
+  `;
 };
 
 export const generateTopicPrompt = `

@@ -100,9 +100,11 @@ export class ExaminerService {
     }
   }
 
-  public async retrieveThreadMessages(threadId: string) {
+  public async retrieveThreadMessages(threadId: string, runId: string) {
     try {
-      return await this.openAiClient.beta.threads.messages.list(threadId);
+      return await this.openAiClient.beta.threads.messages.list(threadId, {
+        run_id: runId,
+      });
     } catch (error) {
       throw new HttpException(
         'Falied to retrieve thread messages',
@@ -113,7 +115,7 @@ export class ExaminerService {
 
   public async createRun(assistantId: string, threadId: string) {
     try {
-      await this.openAiClient.beta.threads.runs.createAndPoll(threadId, {
+      return await this.openAiClient.beta.threads.runs.createAndPoll(threadId, {
         assistant_id: assistantId,
       });
     } catch (error) {
@@ -196,13 +198,17 @@ export class ExaminerService {
   public async attachFileToVectorStore(
     fileId: string,
     vectorStoreId: string,
-  ): Promise<OpenAI.Beta.VectorStores.VectorStore> {
+  ): Promise<string> {
     try {
-      await this.openAiClient.beta.vectorStores.files.create(vectorStoreId, {
-        file_id: fileId,
-      });
+      const createdVectorStore =
+        await this.openAiClient.beta.vectorStores.files.createAndPoll(
+          vectorStoreId,
+          {
+            file_id: fileId,
+          },
+        );
 
-      return await this.retrieveVectorStore(vectorStoreId);
+      return createdVectorStore.vector_store_id;
     } catch (error) {
       throw new HttpException(
         'Falied to attach file to vector store',

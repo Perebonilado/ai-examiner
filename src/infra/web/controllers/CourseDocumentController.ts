@@ -87,7 +87,7 @@ export class CourseDocumentController {
         body.title,
       );
 
-      const updatedVectorStore =
+      const updatedVectorStoreId =
         await this.examinerService.attachFileToVectorStore(
           body.fileId,
           vectorStore.id,
@@ -98,7 +98,7 @@ export class CourseDocumentController {
       const updatedThread =
         await this.examinerService.attachVectorStoreToThread(
           thread.id,
-          updatedVectorStore.id,
+          updatedVectorStoreId,
         );
 
       const createdDocument = await this.createCourseDocumentHander.handle({
@@ -131,7 +131,7 @@ export class CourseDocumentController {
         const newVectorStore = await this.examinerService.createVectorStore(
           document.title,
         );
-        const updatedVectorStore =
+        const updatedVectorStoreId =
           await this.examinerService.attachFileToVectorStore(
             createdDocument.data.fileId,
             newVectorStore.id,
@@ -139,7 +139,7 @@ export class CourseDocumentController {
 
         await this.examinerService.attachVectorStoreToThread(
           existingThread.id,
-          updatedVectorStore.id,
+          updatedVectorStoreId,
         );
       }
 
@@ -148,13 +148,14 @@ export class CourseDocumentController {
         generateQuestionsPrompt(questionCount || 5),
       );
 
-      await this.examinerService.createRun(
+      const run = await this.examinerService.createRun(
         EnvironmentVariables.config.assistantId,
         existingThread.id,
       );
 
       const messages = await this.examinerService.retrieveThreadMessages(
         existingThread.id,
+        run.id
       );
 
       const mostRecentlyGeneratedQuestions =

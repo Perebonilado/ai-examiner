@@ -81,7 +81,7 @@ export class DocumentTopicController {
         temporaryVectorStoreName,
       );
 
-      const updatedVectorStore =
+      const updatedVectorStoreId =
         await this.examinerService.attachFileToVectorStore(
           fileId,
           temporaryVectorStore.id,
@@ -92,7 +92,7 @@ export class DocumentTopicController {
       const updatedThread =
         await this.examinerService.attachVectorStoreToThread(
           thread.id,
-          updatedVectorStore.id,
+          updatedVectorStoreId,
         );
 
       await this.examinerService.createThreadMessage(
@@ -100,13 +100,14 @@ export class DocumentTopicController {
         generateTopicPrompt,
       );
 
-      await this.examinerService.createRun(
+      const run = await this.examinerService.createRun(
         EnvironmentVariables.config.assistantId,
         updatedThread.id,
       );
 
       const messages = await this.examinerService.retrieveThreadMessages(
         updatedThread.id,
+        run.id
       );
 
       const generatedTopics = extractJSONDataFromMessages(messages);
@@ -116,7 +117,7 @@ export class DocumentTopicController {
 
       /* ===== Delete vectore store, and thread ==== */
 
-      await this.examinerService.deleteVectorStore(updatedVectorStore.id);
+      await this.examinerService.deleteVectorStore(updatedVectorStoreId);
       await this.examinerService.deleteThread(updatedThread.id);
     } catch (error) {
       throw new HttpException(

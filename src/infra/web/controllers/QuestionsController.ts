@@ -94,7 +94,7 @@ export class QuestionsController {
           const newVectorStore = await this.examinerService.createVectorStore(
             document.title,
           );
-          const updatedVectorStore =
+          const updatedVectorStoreId =
             await this.examinerService.attachFileToVectorStore(
               document.openAiFileId,
               newVectorStore.id,
@@ -102,7 +102,7 @@ export class QuestionsController {
 
           await this.examinerService.attachVectorStoreToThread(
             existingThread.id,
-            updatedVectorStore.id,
+            updatedVectorStoreId,
           );
         }
 
@@ -111,13 +111,14 @@ export class QuestionsController {
           generateQuestionsPrompt(questionCount || 5),
         );
 
-        await this.examinerService.createRun(
+        const run = await this.examinerService.createRun(
           EnvironmentVariables.config.assistantId,
           existingThread.id,
         );
 
         const messages = await this.examinerService.retrieveThreadMessages(
           existingThread.id,
+          run.id
         );
 
         const mostRecentlyGeneratedQuestions =
