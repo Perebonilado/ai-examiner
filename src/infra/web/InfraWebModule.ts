@@ -10,6 +10,7 @@ import { CourseController } from './controllers/CourseController';
 import { CourseDocumentController } from './controllers/CourseDocumentController';
 import { GoogleStrategy } from '../auth/strategies/google.strategy';
 import { DocumentTopicController } from './controllers/DocumentTopicController';
+import { FileUploadController } from './controllers/FileUploadController';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { DocumentTopicController } from './controllers/DocumentTopicController';
     AuthController,
     CourseController,
     CourseDocumentController,
-    DocumentTopicController
+    DocumentTopicController,
+    FileUploadController
   ],
 })
 export class InfraWebModule {}

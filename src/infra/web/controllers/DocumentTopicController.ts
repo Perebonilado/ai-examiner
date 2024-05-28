@@ -11,15 +11,12 @@ import {
   Res,
   Param,
   Post,
-  UploadedFile,
-  UseInterceptors,
 } from '@nestjs/common';
 import { DeleteDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/DeleteDocumentTopicHandler';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { Request, Response } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { DocumentTopicQueryService } from 'src/query/services/DocumentTopicQueryService';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { generateTopicPrompt } from 'src/constants';
 import { extractJSONDataFromMessages } from 'src/utils';
@@ -69,17 +66,14 @@ export class DocumentTopicController {
   }
 
   @UseGuards(AuthGuard)
-  @Post('/generate')
-  @UseInterceptors(FileInterceptor('document'))
+  @Post('/generate/:fileId')
   public async generateDocumentTopics(
-    @UploadedFile() file: Express.Multer.File,
+    @Param('fileId') fileId: string,
     @Req() request: Request,
     @Res() response: Response,
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
-
-      const uploadedFile = await this.examinerService.uploadFile(file);
 
       const temporaryVectorStoreName = `${userToken.sub}_${new Date().getTime()}`;
 
@@ -89,7 +83,7 @@ export class DocumentTopicController {
 
       const updatedVectorStore =
         await this.examinerService.attachFileToVectorStore(
-          uploadedFile.id,
+          fileId,
           temporaryVectorStore.id,
         );
 
@@ -120,12 +114,8 @@ export class DocumentTopicController {
       //return response at this point
       response.status(201).json(generatedTopics);
 
-      /* ===== Delete file, vectore store, and thread ==== */
+      /* ===== Delete vectore store, and thread ==== */
 
-      await this.examinerService.deleteVectorStoreFile({
-        fileId: uploadedFile.id,
-        vectorStoreId: updatedVectorStore.id,
-      });
       await this.examinerService.deleteVectorStore(updatedVectorStore.id);
       await this.examinerService.deleteThread(updatedThread.id);
     } catch (error) {

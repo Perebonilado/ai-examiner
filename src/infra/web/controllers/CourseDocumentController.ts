@@ -2,8 +2,6 @@ import {
   Controller,
   Inject,
   Post,
-  UploadedFile,
-  UseInterceptors,
   Body,
   UseGuards,
   Req,
@@ -14,7 +12,6 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { Request } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
@@ -77,21 +74,14 @@ export class CourseDocumentController {
 
   @UseGuards(AuthGuard)
   @Post('')
-  @UseInterceptors(FileInterceptor('document'))
   public async createCourseDocumentAndGenerateQuestions(
-    @UploadedFile() file: Express.Multer.File,
     @Query('questionCount') questionCount: number,
     @Body()
-    body: Omit<
-      CreateCourseDocumentDto,
-      'userId' | 'threadId' | 'fileId' | 'courseId'
-    >,
+    body: Omit<CreateCourseDocumentDto, 'userId' | 'threadId' | 'courseId'>,
     @Req() request: Request,
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
-
-      const uploadedFile = await this.examinerService.uploadFile(file);
 
       const vectorStore = await this.examinerService.createVectorStore(
         body.title,
@@ -99,7 +89,7 @@ export class CourseDocumentController {
 
       const updatedVectorStore =
         await this.examinerService.attachFileToVectorStore(
-          uploadedFile.id,
+          body.fileId,
           vectorStore.id,
         );
 
@@ -116,7 +106,7 @@ export class CourseDocumentController {
           courseId: '',
           title: body.title,
           userId: userToken.sub,
-          fileId: uploadedFile.id,
+          fileId: body.fileId,
           threadId: updatedThread.id,
         },
       });
