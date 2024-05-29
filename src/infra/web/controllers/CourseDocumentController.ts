@@ -178,7 +178,6 @@ export class CourseDocumentController {
         },
       };
     } catch (error) {
-      console.log(error)
       throw new HttpException(
         error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,
