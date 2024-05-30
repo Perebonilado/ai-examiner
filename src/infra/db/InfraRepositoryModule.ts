@@ -12,6 +12,8 @@ import { ScoreRepository } from 'src/business/repository/ScoreRepository';
 import { ScoreSequelizeRepository } from './repository/ScoreSequelizeRepository';
 import { DocumentTopicRepository } from 'src/business/repository/DocumentTopicRepository';
 import { DocumentTopicSequelizeRepository } from './repository/DocumentTopicSequelizeRepository';
+import { QuestionTopicRepository } from 'src/business/repository/QuestionTopicRepository';
+import { QuestionTopicSequelizeRepository } from './repository/QuestionTopicSequelizeRepository';
 
 @Module({
   imports: [InfraDbModule],
@@ -40,6 +42,10 @@ import { DocumentTopicSequelizeRepository } from './repository/DocumentTopicSequ
       provide: DocumentTopicRepository,
       useClass: DocumentTopicSequelizeRepository,
     },
+    {
+      provide: QuestionTopicRepository,
+      useClass: QuestionTopicSequelizeRepository
+    }
   ],
   exports: [
     UserRepository,
@@ -48,6 +54,7 @@ import { DocumentTopicSequelizeRepository } from './repository/DocumentTopicSequ
     QuestionRepository,
     ScoreRepository,
     DocumentTopicRepository,
+    QuestionTopicRepository
   ],
 })
 export class InfraRepositoryModule {}
