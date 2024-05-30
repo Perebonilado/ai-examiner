@@ -10,9 +10,10 @@ export class DocumentTopicDbConnector {
     documentTopics: DocumentTopicModel[],
   ): Promise<DocumentTopicModel[]> {
     try {
-      return await DocumentTopicModel.bulkCreate(documentTopics);
+      return await DocumentTopicModel.bulkCreate(documentTopics, {
+        updateOnDuplicate: ['title'],
+      });
     } catch (error) {
-      console.log(error)
       throw new DatabaseError(
         'Failed to bulk create document topics',
       ).InnerError(error);
@@ -21,7 +22,7 @@ export class DocumentTopicDbConnector {
 
   public async delete(documentTopic: DocumentTopicModel) {
     try {
-      return await documentTopic.destroy() 
+      return await documentTopic.destroy();
     } catch (error) {
       throw new DatabaseError('Failed to delete document topic').InnerError(
         error,
