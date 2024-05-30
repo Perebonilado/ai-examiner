@@ -8,7 +8,9 @@ export class QuestionTopicDbConnector {
 
   public async bulkCreate(questionTopics: QuestionTopicModel[]) {
     try {
-      return await QuestionTopicModel.bulkCreate(questionTopics);
+      return await QuestionTopicModel.bulkCreate(questionTopics, {
+        updateOnDuplicate: ['documentTopicTitle', 'questionId'],
+      });
     } catch (error) {
       throw new DatabaseError(
         'Failed to bulk create question topics',
