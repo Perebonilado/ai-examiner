@@ -25,7 +25,13 @@ export class CreateQuestionTopicHandler extends AbstractRequestHandlerTemplate<
     try {
       const createdQuestionTopics =
         await this.questionTopicRepository.bulkCreate(
-          request.payload as QuestionTopicModel[],
+          request.payload.map((p)=>{
+            return {
+              documentTopicId: p.documentTopicId,
+              documentTopicTitle: p.documentTopicTitle,
+              questionId: p.questionId
+            }
+          }) as QuestionTopicModel[],
         );
 
       return {

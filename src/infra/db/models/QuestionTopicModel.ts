@@ -18,10 +18,10 @@ export class QuestionTopicModel extends Model<QuestionTopicModel> {
     autoIncrement: true,
     unique: true,
   })
-  id: string;
+  id: number;
 
   @Column({
-    type: DataType.BIGINT,
+    type: DataType.STRING,
     field: 'document_topic_title',
     allowNull: false,
   })

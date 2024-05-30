@@ -26,4 +26,17 @@ export class DocumentTopicQueryService {
       ).InnerError(error);
     }
   }
+
+  public async findDocumentTopicsByTitleAndId(
+    title: string,
+    documentId: string,
+  ) {
+    try {
+      return await DocumentTopicModel.findOne({ where: { title, documentId } });
+    } catch (error) {
+      throw new QueryError(
+        'Failed to find document topics by title and id',
+      ).InnerError(error);
+    }
+  }
 }

@@ -19,7 +19,7 @@ export class DocumentTopicModel extends Model<DocumentTopicModel> {
     autoIncrement: true,
     unique: true,
   })
-  id: string;
+  id: number;
 
   @Column({
     type: DataType.STRING,

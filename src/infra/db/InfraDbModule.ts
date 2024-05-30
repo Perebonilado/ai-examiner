@@ -7,8 +7,10 @@ import { QuestionDbConnector } from './connectors/QuestionDbConnector';
 import { ScoreDbConnector } from './connectors/ScoreDbConnnector';
 import { DocumentTopicDbConnector } from './connectors/DocumentTopicDbConnector';
 import { QuestionTopicDbConnector } from './connectors/QuestionTopicDbConnector';
+import { QueryModule } from 'src/query/QueryModule';
 
 @Module({
+  imports: [QueryModule],
   providers: [
     ...databaseProviders,
     UserDbConnector,

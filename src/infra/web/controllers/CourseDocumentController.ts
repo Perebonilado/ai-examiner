@@ -23,6 +23,8 @@ import { generateQuestionsPrompt } from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { extractJSONDataFromMessages } from 'src/utils';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
+import { CreateQuestionTopicHandler } from 'src/business/handlers/QuestionTopic/CreateQuestionTopicHandler';
+import { DocumentTopicModel } from 'src/infra/db/models/DocumentTopicModel';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -36,6 +38,8 @@ export class CourseDocumentController {
     private createQuestionHandler: CreateQuestionHandler,
     @Inject(CreateDocumentTopicHandler)
     private createDocumentTopicHandler: CreateDocumentTopicHandler,
+    @Inject(CreateQuestionTopicHandler)
+    private createQuestionTopicHandler: CreateQuestionTopicHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -111,6 +115,8 @@ export class CourseDocumentController {
         },
       });
 
+      let createdDocumentTopics: DocumentTopicModel[] | null = null;
+
       if (body.topics && body.topics.length) {
         const mappedTopics = body.topics.map((topic) => ({
           title: topic,
@@ -118,7 +124,12 @@ export class CourseDocumentController {
           userId: userToken.sub,
         }));
 
-        await this.createDocumentTopicHandler.handle({ payload: mappedTopics });
+        const createdDocumentTopicsResponse =
+          await this.createDocumentTopicHandler.handle({
+            payload: mappedTopics,
+          });
+
+        createdDocumentTopics = createdDocumentTopicsResponse.data.data;
       }
 
       const existingThread = await this.examinerService.findThread(
@@ -155,7 +166,7 @@ export class CourseDocumentController {
 
       const messages = await this.examinerService.retrieveThreadMessages(
         existingThread.id,
-        run.id
+        run.id,
       );
 
       const mostRecentlyGeneratedQuestions =
@@ -168,6 +179,26 @@ export class CourseDocumentController {
           userId: userToken.sub,
         },
       });
+
+      if (
+        body.selectedQuestionTopics &&
+        body.selectedQuestionTopics.length &&
+        createdDocumentTopics
+      ) {
+        const questionTopicsToCreate = createdDocumentTopics
+          .filter((dt) => {
+            return body.selectedQuestionTopics.some((sq) => dt.title === sq);
+          })
+          ?.map((dt) => ({
+            documentTopicTitle: dt.title,
+            documentTopicId: dt.id,
+            questionId: createdQuestion.data.id,
+          }));
+
+        await this.createQuestionTopicHandler.handle({
+          payload: questionTopicsToCreate,
+        });
+      }
 
       return {
         status: HttpStatus.CREATED,
