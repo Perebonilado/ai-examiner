@@ -19,6 +19,7 @@ export class DocumentTopicSequelizeRepository
     try {
       return await this.documentDbConnector.bulkCreate(topics);
     } catch (error) {
+      console.log(error)
       throw new RepositoryError(
         'Failed to bulk create document topics',
       ).InnerError(error);

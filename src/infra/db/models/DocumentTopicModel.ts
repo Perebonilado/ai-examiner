@@ -3,19 +3,21 @@ import {
   Column,
   Model,
   DataType,
-  BeforeCreate,
   ForeignKey,
 } from 'sequelize-typescript';
 import * as moment from 'moment';
-import { generateUUID } from 'src/utils';
 import { CourseDocumentModel } from './CourseDocumentModel';
 import { UserModel } from './UserModel';
 
 @Table({ tableName: 'document_topic' })
 export class DocumentTopicModel extends Model<DocumentTopicModel> {
+
   @Column({
-    type: DataType.STRING,
+    type: DataType.BIGINT,
     primaryKey: true,
+    allowNull: false,
+    autoIncrement: true,
+    unique: true,
   })
   id: string;
 
@@ -46,12 +48,7 @@ export class DocumentTopicModel extends Model<DocumentTopicModel> {
     type: DataType.DATE,
     field: 'created_on',
     allowNull: true,
+    defaultValue: moment(new Date()).utc().toDate(),
   })
   createdOn: Date;
-
-  @BeforeCreate
-  static addUUID(instance: CourseDocumentModel) {
-    instance.id = generateUUID();
-    instance.createdOn = moment(new Date()).utc().toDate();
-  }
 }

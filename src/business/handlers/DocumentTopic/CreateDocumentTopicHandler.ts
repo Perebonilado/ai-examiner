@@ -34,6 +34,7 @@ export class CreateDocumentTopicHandler extends AbstractRequestHandlerTemplate<
         status: HttpStatus.CREATED,
       };
     } catch (error) {
+      console.log(error)
       throw new HandlerError(
         'Failed to handle Document topic creation',
       ).InnerError(error);

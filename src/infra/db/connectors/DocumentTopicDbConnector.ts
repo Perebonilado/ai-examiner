@@ -12,6 +12,7 @@ export class DocumentTopicDbConnector {
     try {
       return await DocumentTopicModel.bulkCreate(documentTopics);
     } catch (error) {
+      console.log(error)
       throw new DatabaseError(
         'Failed to bulk create document topics',
       ).InnerError(error);
