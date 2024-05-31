@@ -40,10 +40,18 @@ export class DocumentTopicController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
-      return await this.documentTopicQueryService.findAllByDocumentTopicsByDocumentIdAndUserId(
-        documentId,
-        userToken.sub,
-      );
+      const topics =
+        await this.documentTopicQueryService.findAllByDocumentTopicsByDocumentIdAndUserId(
+          documentId,
+          userToken.sub,
+        );
+
+      return topics.map((t) => {
+        return {
+          id: t.id,
+          title: t.title,
+        };
+      });
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find document topics',
@@ -107,13 +115,13 @@ export class DocumentTopicController {
 
       const messages = await this.examinerService.retrieveThreadMessages(
         updatedThread.id,
-        run.id
+        run.id,
       );
 
-      const generatedTopics = extractJSONDataFromMessages(messages);
+      const generatedTopics = extractJSONDataFromMessages(messages) as string[];
 
       //return response at this point
-      response.status(201).json(generatedTopics);
+      response.status(201).json(Array.from(new Set(generatedTopics)));
 
       /* ===== Delete vectore store, and thread ==== */
 

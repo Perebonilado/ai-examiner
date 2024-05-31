@@ -31,7 +31,7 @@ export const extractJSONDataFromMessages = (
 
   return JSON.parse(
     data.replace(/^```json\s*|\s*```$/g, ''),
-  ) as unknown as MCQModel[];
+  ) as any;
 };
 
 export const getPagination = (page: number, size: number) => {
