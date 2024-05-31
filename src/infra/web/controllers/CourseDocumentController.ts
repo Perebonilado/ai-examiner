@@ -115,6 +115,8 @@ export class CourseDocumentController {
         },
       });
 
+      // save all topics to the document topic table and save them in the createdDocumentTopics
+      // in order to use the ids to save the question topics further down
       let createdDocumentTopics: DocumentTopicModel[] | null = null;
 
       if (body.topics && body.topics.length) {
@@ -180,6 +182,7 @@ export class CourseDocumentController {
         },
       });
 
+      // check if there are selected question topics, if so, map using the document topic id and save
       if (
         body.selectedQuestionTopics &&
         body.selectedQuestionTopics.length &&
