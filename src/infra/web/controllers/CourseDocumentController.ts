@@ -10,10 +10,11 @@ import {
   Get,
   Query,
   ParseIntPipe,
+  Res,
 } from '@nestjs/common';
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
@@ -83,6 +84,7 @@ export class CourseDocumentController {
     @Body()
     body: Omit<CreateCourseDocumentDto, 'userId' | 'threadId' | 'courseId'>,
     @Req() request: Request,
+    @Res() response: Response
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
@@ -158,7 +160,7 @@ export class CourseDocumentController {
 
       await this.examinerService.createThreadMessage(
         existingThread.id,
-        generateQuestionsPrompt(questionCount || 5, body.topics || undefined),
+        generateQuestionsPrompt(questionCount || 5, body.selectedQuestionTopics || undefined),
       );
 
       const run = await this.examinerService.createRun(

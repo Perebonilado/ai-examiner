@@ -92,59 +92,6 @@ export class QuestionsController {
         );
 
       if (document) {
-        if (body.topics && body.topics.length) {
-          //topics have not been previously created if this is passed
-          const mappedTopics = body.topics.map((topic) => ({
-            title: topic,
-            documentId: document.id,
-            userId: userToken.sub,
-          }));
-
-          const createdDocumentTopics =
-            await this.createDocumentTopicHandler.handle({
-              payload: mappedTopics,
-            });
-
-          const questionTopicsToCreate = createdDocumentTopics.data.data
-            .filter((dt) => {
-              return body.selectedQuestionTopics.some((sq) => dt.title === sq);
-            })
-            ?.map((dt) => ({
-              documentTopicTitle: dt.title,
-              documentTopicId: dt.id,
-              questionId: id,
-            }));
-
-          await this.createQuestionTopicHandler.handle({
-            payload: questionTopicsToCreate,
-          });
-        } else {
-          if (
-            body.selectedQuestionTopics &&
-            body.selectedQuestionTopics.length
-          ) {
-            const questionTopicsToCreate = await Promise.all(
-              body.selectedQuestionTopics.map(async (t) => {
-                const topic =
-                  await this.documentTopicQueryService.findDocumentTopicsByTitleAndDocumentId(
-                    t,
-                    document.id,
-                  );
-
-                return {
-                  documentTopicTitle: topic.title,
-                  documentTopicId: topic.id,
-                  questionId: id,
-                };
-              }),
-            );
-
-            await this.createQuestionTopicHandler.handle({
-              payload: questionTopicsToCreate,
-            });
-          }
-        }
-
         const existingThread = await this.examinerService.findThread(
           document.openAiThreadId,
         );
@@ -171,7 +118,10 @@ export class QuestionsController {
 
         await this.examinerService.createThreadMessage(
           existingThread.id,
-          generateQuestionsPrompt(questionCount || 5),
+          generateQuestionsPrompt(
+            questionCount || 5,
+            body.selectedQuestionTopics,
+          ),
         );
 
         const run = await this.examinerService.createRun(
@@ -187,13 +137,68 @@ export class QuestionsController {
         const mostRecentlyGeneratedQuestions =
           extractJSONDataFromMessages(messages);
 
-        return await this.createQuestionHandler.handle({
+        const createdQuestions = await this.createQuestionHandler.handle({
           payload: {
             courseDocumentId: document.id,
             data: mostRecentlyGeneratedQuestions,
             userId: userToken.sub,
           },
         });
+
+        if (body.topics && body.topics.length) {
+          //topics have not been previously created if this is passed
+          const mappedTopics = body.topics.map((topic) => ({
+            title: topic,
+            documentId: id,
+            userId: userToken.sub,
+          }));
+
+          const createdDocumentTopics =
+            await this.createDocumentTopicHandler.handle({
+              payload: mappedTopics,
+            });
+
+          const questionTopicsToCreate = createdDocumentTopics.data.data
+            .filter((dt) => {
+              return body.selectedQuestionTopics.some((sq) => dt.title === sq);
+            })
+            ?.map((dt) => ({
+              documentTopicTitle: dt.title,
+              documentTopicId: dt.id,
+              questionId: createdQuestions.data.id,
+            }));
+
+          await this.createQuestionTopicHandler.handle({
+            payload: questionTopicsToCreate,
+          });
+        } else {
+          if (
+            body.selectedQuestionTopics &&
+            body.selectedQuestionTopics.length
+          ) {
+            const questionTopicsToCreate = await Promise.all(
+              body.selectedQuestionTopics.map(async (t) => {
+                const topic =
+                  await this.documentTopicQueryService.findDocumentTopicsByTitleAndDocumentId(
+                    t,
+                    document.id,
+                  );
+
+                return {
+                  documentTopicTitle: topic.title,
+                  documentTopicId: topic.id,
+                  questionId: createdQuestions.data.id,
+                };
+              }),
+            );
+
+            await this.createQuestionTopicHandler.handle({
+              payload: questionTopicsToCreate,
+            });
+          }
+        }
+
+        return createdQuestions;
       } else {
         throw new HttpException(
           'Document does not exist',
@@ -201,6 +206,7 @@ export class QuestionsController {
         );
       }
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         error?.response ?? 'Failed to generate questions for document',
         HttpStatus.BAD_REQUEST,
