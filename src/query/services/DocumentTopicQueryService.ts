@@ -27,7 +27,7 @@ export class DocumentTopicQueryService {
     }
   }
 
-  public async findDocumentTopicsByTitleAndId(
+  public async findDocumentTopicsByTitleAndDocumentId(
     title: string,
     documentId: string,
   ) {

@@ -23,7 +23,7 @@ export class DocumentTopicDbConnector {
 
       const documentTopicsWithIds = await Promise.all(
         createdDocumentTopics.map(async (topic) => {
-          return await this.documentTopicQueryService.findDocumentTopicsByTitleAndId(
+          return await this.documentTopicQueryService.findDocumentTopicsByTitleAndDocumentId(
             topic.title,
             topic.documentId,
           );

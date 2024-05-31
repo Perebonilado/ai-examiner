@@ -29,6 +29,9 @@ import { CreateScoreHandler } from 'src/business/handlers/Score/CreateScoreHandl
 import { CreateScoreDto } from 'src/dto/CreateScoreDto';
 import { ScoreQueryService } from 'src/query/services/ScoreQueryService';
 import { UpdateScoreHandler } from 'src/business/handlers/Score/UpdateScoreHandler';
+import { DocumentTopicQueryService } from 'src/query/services/DocumentTopicQueryService';
+import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
+import { CreateQuestionTopicHandler } from 'src/business/handlers/QuestionTopic/CreateQuestionTopicHandler';
 
 @Controller('questions')
 export class QuestionsController {
@@ -43,6 +46,12 @@ export class QuestionsController {
     @Inject(CreateScoreHandler) private createScoreHandler: CreateScoreHandler,
     @Inject(ScoreQueryService) private scoreQueryService: ScoreQueryService,
     @Inject(UpdateScoreHandler) private updateScoreHandler: UpdateScoreHandler,
+    @Inject(DocumentTopicQueryService)
+    private documentTopicQueryService: DocumentTopicQueryService,
+    @Inject(CreateDocumentTopicHandler)
+    private createDocumentTopicHandler: CreateDocumentTopicHandler,
+    @Inject(CreateQuestionTopicHandler)
+    private createQuestionTopicHandler: CreateQuestionTopicHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -69,19 +78,73 @@ export class QuestionsController {
   @UseGuards(AuthGuard)
   @Post('/:id/generate-questions')
   public async generateDocumentQuestions(
-    @Param() params: GenerateCourseDocumentQuestionDto,
+    @Param('id') id: string,
     @Req() request: Request,
     @Query('questionCount') questionCount: number,
+    @Body() body: GenerateCourseDocumentQuestionDto,
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
       const document =
         await this.courseDocumentQueryService.findCourseDocumentById(
-          params.id,
+          id,
           userToken.sub,
         );
 
       if (document) {
+        if (body.topics && body.topics.length) {
+          //topics have not been previously created if this is passed
+          const mappedTopics = body.topics.map((topic) => ({
+            title: topic,
+            documentId: document.id,
+            userId: userToken.sub,
+          }));
+
+          const createdDocumentTopics =
+            await this.createDocumentTopicHandler.handle({
+              payload: mappedTopics,
+            });
+
+          const questionTopicsToCreate = createdDocumentTopics.data.data
+            .filter((dt) => {
+              return body.selectedQuestionTopics.some((sq) => dt.title === sq);
+            })
+            ?.map((dt) => ({
+              documentTopicTitle: dt.title,
+              documentTopicId: dt.id,
+              questionId: id,
+            }));
+
+          await this.createQuestionTopicHandler.handle({
+            payload: questionTopicsToCreate,
+          });
+        } else {
+          if (
+            body.selectedQuestionTopics &&
+            body.selectedQuestionTopics.length
+          ) {
+            const questionTopicsToCreate = await Promise.all(
+              body.selectedQuestionTopics.map(async (t) => {
+                const topic =
+                  await this.documentTopicQueryService.findDocumentTopicsByTitleAndDocumentId(
+                    t,
+                    document.id,
+                  );
+
+                return {
+                  documentTopicTitle: topic.title,
+                  documentTopicId: topic.id,
+                  questionId: id,
+                };
+              }),
+            );
+
+            await this.createQuestionTopicHandler.handle({
+              payload: questionTopicsToCreate,
+            });
+          }
+        }
+
         const existingThread = await this.examinerService.findThread(
           document.openAiThreadId,
         );
@@ -118,7 +181,7 @@ export class QuestionsController {
 
         const messages = await this.examinerService.retrieveThreadMessages(
           existingThread.id,
-          run.id
+          run.id,
         );
 
         const mostRecentlyGeneratedQuestions =
@@ -169,6 +232,7 @@ export class QuestionsController {
         id: q.id,
         count: JSON.parse(q.data).length,
         score: q.score,
+        topics: q.topics,
       }));
 
       return {
