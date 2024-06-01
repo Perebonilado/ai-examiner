@@ -21,6 +21,8 @@ import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { generateTopicPrompt } from 'src/constants';
 import { extractJSONDataFromMessages } from 'src/utils';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
+import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
+import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 
 @Controller('document-topic')
 export class DocumentTopicController {
@@ -30,6 +32,10 @@ export class DocumentTopicController {
     @Inject(DocumentTopicQueryService)
     private documentTopicQueryService: DocumentTopicQueryService,
     @Inject(ExaminerService) private examinerService: ExaminerService,
+    @Inject(CreateDocumentTopicHandler)
+    private createDocumentTopicHandler: CreateDocumentTopicHandler,
+    @Inject(CourseDocumentQueryService)
+    private courseDocumentQueryService: CourseDocumentQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -77,6 +83,7 @@ export class DocumentTopicController {
   @Post('/generate/:fileId')
   public async generateDocumentTopics(
     @Param('fileId') fileId: string,
+    @Query('documentId') documentId: string,
     @Req() request: Request,
     @Res() response: Response,
   ) {
@@ -119,6 +126,27 @@ export class DocumentTopicController {
       );
 
       const generatedTopics = extractJSONDataFromMessages(messages) as string[];
+
+      if (documentId && generatedTopics.length) {
+        const document =
+          await this.courseDocumentQueryService.findCourseDocumentById(
+            documentId,
+            userToken.sub,
+          );
+        if (document) {
+          const mappedTopics = generatedTopics.map((topic) => {
+            return {
+              title: topic,
+              documentId,
+              userId: userToken.sub,
+            };
+          });
+
+          await this.createDocumentTopicHandler.handle({
+            payload: mappedTopics,
+          });
+        }
+      }
 
       //return response at this point
       response.status(201).json(Array.from(new Set(generatedTopics)));

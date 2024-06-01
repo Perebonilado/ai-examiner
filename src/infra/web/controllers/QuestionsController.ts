@@ -206,7 +206,7 @@ export class QuestionsController {
         );
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to generate questions for document',
         HttpStatus.BAD_REQUEST,
@@ -232,6 +232,12 @@ export class QuestionsController {
           page,
         );
 
+      const document =
+        await this.courseDocumentQueryService.findCourseDocumentById(
+          courseDocumentId,
+          userToken.sub,
+        );
+
       const mappedQuestions = questions.questions.map((q) => ({
         courseDocumentId: q.courseDocumentId,
         createdOn: q.createdOn,
@@ -242,7 +248,10 @@ export class QuestionsController {
       }));
 
       return {
-        data: mappedQuestions,
+        data: {
+          data: mappedQuestions,
+          fileId: document.openAiFileId
+        },
         meta: questions.meta,
         status: HttpStatus.OK,
       };
