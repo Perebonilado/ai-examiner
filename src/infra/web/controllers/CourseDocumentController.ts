@@ -84,7 +84,6 @@ export class CourseDocumentController {
     @Body()
     body: Omit<CreateCourseDocumentDto, 'userId' | 'threadId' | 'courseId'>,
     @Req() request: Request,
-    @Res() response: Response
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
@@ -146,6 +145,7 @@ export class CourseDocumentController {
         const newVectorStore = await this.examinerService.createVectorStore(
           document.title,
         );
+
         const updatedVectorStoreId =
           await this.examinerService.attachFileToVectorStore(
             createdDocument.data.fileId,
@@ -160,7 +160,10 @@ export class CourseDocumentController {
 
       await this.examinerService.createThreadMessage(
         existingThread.id,
-        generateQuestionsPrompt(questionCount || 5, body.selectedQuestionTopics || undefined),
+        generateQuestionsPrompt(
+          questionCount || 5,
+          body.selectedQuestionTopics || undefined,
+        ),
       );
 
       const run = await this.examinerService.createRun(
@@ -214,6 +217,7 @@ export class CourseDocumentController {
         },
       };
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,
