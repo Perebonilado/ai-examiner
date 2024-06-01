@@ -1,3 +1,4 @@
 export interface GenerateCourseDocumentQuestionDto {
-  id: string;
+  topics?: string[] | null;
+  selectedQuestionTopics?: string[] | null;
 }

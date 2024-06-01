@@ -24,14 +24,14 @@ export const replaceAllSpacesInStringWithHyphen = (str: string) => {
   return str.replace(/\s+/g, '-');
 };
 
-export const extractQuestionsFromMessages = (
+export const extractJSONDataFromMessages = (
   messages: OpenAI.Beta.Threads.Messages.MessagesPage,
 ) => {
-  const questions = (messages.data[0].content[0] as any).text.value;
+  const data = (messages.data[0].content[0] as any).text.value;
 
   return JSON.parse(
-    questions.replace(/^```json\s*|\s*```$/g, ''),
-  ) as unknown as MCQModel[];
+    data.replace(/^```json\s*|\s*```$/g, ''),
+  ) as any;
 };
 
 export const getPagination = (page: number, size: number) => {

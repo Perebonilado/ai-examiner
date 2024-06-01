@@ -106,11 +106,6 @@ export class AuthController {
         response.redirect(
           `${EnvironmentVariables.config.frontendBaseUrl}/auth/login?token=${createdUser.data.token}`,
         );
-
-        // response.cookie('access_token', createdUser.data.token);
-        // response.redirect(
-        //   `${EnvironmentVariables.config.frontendBaseUrl}/dashboard`,
-        // );
       }
     } catch (error) {
       throw new HttpException(

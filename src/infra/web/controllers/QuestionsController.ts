@@ -18,9 +18,9 @@ import { Request } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { GetQuestionByIdDto } from 'src/dto/GetQuestionByIdDto';
-import { extractQuestionsFromMessages } from 'src/utils';
+import { extractJSONDataFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
-import { getGenerationPropmt } from 'src/constants';
+import { generateQuestionsPrompt } from 'src/constants';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
@@ -29,6 +29,9 @@ import { CreateScoreHandler } from 'src/business/handlers/Score/CreateScoreHandl
 import { CreateScoreDto } from 'src/dto/CreateScoreDto';
 import { ScoreQueryService } from 'src/query/services/ScoreQueryService';
 import { UpdateScoreHandler } from 'src/business/handlers/Score/UpdateScoreHandler';
+import { DocumentTopicQueryService } from 'src/query/services/DocumentTopicQueryService';
+import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
+import { CreateQuestionTopicHandler } from 'src/business/handlers/QuestionTopic/CreateQuestionTopicHandler';
 
 @Controller('questions')
 export class QuestionsController {
@@ -43,6 +46,12 @@ export class QuestionsController {
     @Inject(CreateScoreHandler) private createScoreHandler: CreateScoreHandler,
     @Inject(ScoreQueryService) private scoreQueryService: ScoreQueryService,
     @Inject(UpdateScoreHandler) private updateScoreHandler: UpdateScoreHandler,
+    @Inject(DocumentTopicQueryService)
+    private documentTopicQueryService: DocumentTopicQueryService,
+    @Inject(CreateDocumentTopicHandler)
+    private createDocumentTopicHandler: CreateDocumentTopicHandler,
+    @Inject(CreateQuestionTopicHandler)
+    private createQuestionTopicHandler: CreateQuestionTopicHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -69,15 +78,16 @@ export class QuestionsController {
   @UseGuards(AuthGuard)
   @Post('/:id/generate-questions')
   public async generateDocumentQuestions(
-    @Param() params: GenerateCourseDocumentQuestionDto,
+    @Param('id') id: string,
     @Req() request: Request,
     @Query('questionCount') questionCount: number,
+    @Body() body: GenerateCourseDocumentQuestionDto,
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
       const document =
         await this.courseDocumentQueryService.findCourseDocumentById(
-          params.id,
+          id,
           userToken.sub,
         );
 
@@ -94,7 +104,7 @@ export class QuestionsController {
           const newVectorStore = await this.examinerService.createVectorStore(
             document.title,
           );
-          const updatedVectorStore =
+          const updatedVectorStoreId =
             await this.examinerService.attachFileToVectorStore(
               document.openAiFileId,
               newVectorStore.id,
@@ -102,34 +112,93 @@ export class QuestionsController {
 
           await this.examinerService.attachVectorStoreToThread(
             existingThread.id,
-            updatedVectorStore.id,
+            updatedVectorStoreId,
           );
         }
 
         await this.examinerService.createThreadMessage(
           existingThread.id,
-          getGenerationPropmt(questionCount || 5),
+          generateQuestionsPrompt(
+            questionCount || 5,
+            body.selectedQuestionTopics,
+          ),
         );
 
-        await this.examinerService.createRun(
+        const run = await this.examinerService.createRun(
           EnvironmentVariables.config.assistantId,
           existingThread.id,
         );
 
         const messages = await this.examinerService.retrieveThreadMessages(
           existingThread.id,
+          run.id,
         );
 
         const mostRecentlyGeneratedQuestions =
-          extractQuestionsFromMessages(messages);
+          extractJSONDataFromMessages(messages);
 
-        return await this.createQuestionHandler.handle({
+        const createdQuestions = await this.createQuestionHandler.handle({
           payload: {
             courseDocumentId: document.id,
             data: mostRecentlyGeneratedQuestions,
             userId: userToken.sub,
           },
         });
+
+        if (body.topics && body.topics.length) {
+          //topics have not been previously created if this is passed
+          const mappedTopics = body.topics.map((topic) => ({
+            title: topic,
+            documentId: id,
+            userId: userToken.sub,
+          }));
+
+          const createdDocumentTopics =
+            await this.createDocumentTopicHandler.handle({
+              payload: mappedTopics,
+            });
+
+          const questionTopicsToCreate = createdDocumentTopics.data.data
+            .filter((dt) => {
+              return body.selectedQuestionTopics.some((sq) => dt.title === sq);
+            })
+            ?.map((dt) => ({
+              documentTopicTitle: dt.title,
+              documentTopicId: dt.id,
+              questionId: createdQuestions.data.id,
+            }));
+
+          await this.createQuestionTopicHandler.handle({
+            payload: questionTopicsToCreate,
+          });
+        } else {
+          if (
+            body.selectedQuestionTopics &&
+            body.selectedQuestionTopics.length
+          ) {
+            const questionTopicsToCreate = await Promise.all(
+              body.selectedQuestionTopics.map(async (t) => {
+                const topic =
+                  await this.documentTopicQueryService.findDocumentTopicsByTitleAndDocumentId(
+                    t,
+                    document.id,
+                  );
+
+                return {
+                  documentTopicTitle: topic.title,
+                  documentTopicId: topic.id,
+                  questionId: createdQuestions.data.id,
+                };
+              }),
+            );
+
+            await this.createQuestionTopicHandler.handle({
+              payload: questionTopicsToCreate,
+            });
+          }
+        }
+
+        return createdQuestions;
       } else {
         throw new HttpException(
           'Document does not exist',
@@ -137,6 +206,7 @@ export class QuestionsController {
         );
       }
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to generate questions for document',
         HttpStatus.BAD_REQUEST,
@@ -162,16 +232,26 @@ export class QuestionsController {
           page,
         );
 
+      const document =
+        await this.courseDocumentQueryService.findCourseDocumentById(
+          courseDocumentId,
+          userToken.sub,
+        );
+
       const mappedQuestions = questions.questions.map((q) => ({
         courseDocumentId: q.courseDocumentId,
         createdOn: q.createdOn,
         id: q.id,
         count: JSON.parse(q.data).length,
         score: q.score,
+        topics: q.topics,
       }));
 
       return {
-        data: mappedQuestions,
+        data: {
+          data: mappedQuestions,
+          fileId: document.openAiFileId
+        },
         meta: questions.meta,
         status: HttpStatus.OK,
       };

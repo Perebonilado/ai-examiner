@@ -9,7 +9,6 @@ import {
 } from 'sequelize-typescript';
 import * as moment from 'moment';
 import { generateUUID } from 'src/utils';
-import { CourseModel } from './CourseModel';
 import { UserModel } from './UserModel';
 import { QuestionModel } from './QuestionModel';
 

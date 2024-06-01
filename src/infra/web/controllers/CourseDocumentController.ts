@@ -2,8 +2,6 @@ import {
   Controller,
   Inject,
   Post,
-  UploadedFile,
-  UseInterceptors,
   Body,
   UseGuards,
   Req,
@@ -12,19 +10,22 @@ import {
   Get,
   Query,
   ParseIntPipe,
+  Res,
 } from '@nestjs/common';
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
-import { getGenerationPropmt } from 'src/constants';
+import { generateQuestionsPrompt } from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
-import { extractQuestionsFromMessages } from 'src/utils';
+import { extractJSONDataFromMessages } from 'src/utils';
+import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
+import { CreateQuestionTopicHandler } from 'src/business/handlers/QuestionTopic/CreateQuestionTopicHandler';
+import { DocumentTopicModel } from 'src/infra/db/models/DocumentTopicModel';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -36,6 +37,10 @@ export class CourseDocumentController {
     @Inject(ExaminerService) private examinerService: ExaminerService,
     @Inject(CreateQuestionHandler)
     private createQuestionHandler: CreateQuestionHandler,
+    @Inject(CreateDocumentTopicHandler)
+    private createDocumentTopicHandler: CreateDocumentTopicHandler,
+    @Inject(CreateQuestionTopicHandler)
+    private createQuestionTopicHandler: CreateQuestionTopicHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -74,29 +79,22 @@ export class CourseDocumentController {
 
   @UseGuards(AuthGuard)
   @Post('')
-  @UseInterceptors(FileInterceptor('document'))
   public async createCourseDocumentAndGenerateQuestions(
-    @UploadedFile() file: Express.Multer.File,
     @Query('questionCount') questionCount: number,
     @Body()
-    body: Omit<
-      CreateCourseDocumentDto,
-      'userId' | 'threadId' | 'fileId' | 'courseId'
-    >,
+    body: Omit<CreateCourseDocumentDto, 'userId' | 'threadId' | 'courseId'>,
     @Req() request: Request,
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
 
-      const uploadedFile = await this.examinerService.uploadFile(file);
-
       const vectorStore = await this.examinerService.createVectorStore(
         body.title,
       );
 
-      const updatedVectorStore =
+      const updatedVectorStoreId =
         await this.examinerService.attachFileToVectorStore(
-          uploadedFile.id,
+          body.fileId,
           vectorStore.id,
         );
 
@@ -105,7 +103,7 @@ export class CourseDocumentController {
       const updatedThread =
         await this.examinerService.attachVectorStoreToThread(
           thread.id,
-          updatedVectorStore.id,
+          updatedVectorStoreId,
         );
 
       const createdDocument = await this.createCourseDocumentHander.handle({
@@ -113,10 +111,29 @@ export class CourseDocumentController {
           courseId: '',
           title: body.title,
           userId: userToken.sub,
-          fileId: uploadedFile.id,
+          fileId: body.fileId,
           threadId: updatedThread.id,
         },
       });
+
+      // save all topics to the document topic table and save them in the createdDocumentTopics
+      // in order to use the ids to save the question topics further down
+      let createdDocumentTopics: DocumentTopicModel[] | null = null;
+
+      if (body.topics && body.topics.length) {
+        const mappedTopics = body.topics.map((topic) => ({
+          title: topic,
+          documentId: createdDocument.data.id,
+          userId: userToken.sub,
+        }));
+
+        const createdDocumentTopicsResponse =
+          await this.createDocumentTopicHandler.handle({
+            payload: mappedTopics,
+          });
+
+        createdDocumentTopics = createdDocumentTopicsResponse.data.data;
+      }
 
       const existingThread = await this.examinerService.findThread(
         createdDocument.data.threadId,
@@ -128,7 +145,8 @@ export class CourseDocumentController {
         const newVectorStore = await this.examinerService.createVectorStore(
           document.title,
         );
-        const updatedVectorStore =
+
+        const updatedVectorStoreId =
           await this.examinerService.attachFileToVectorStore(
             createdDocument.data.fileId,
             newVectorStore.id,
@@ -136,26 +154,30 @@ export class CourseDocumentController {
 
         await this.examinerService.attachVectorStoreToThread(
           existingThread.id,
-          updatedVectorStore.id,
+          updatedVectorStoreId,
         );
       }
 
       await this.examinerService.createThreadMessage(
         existingThread.id,
-        getGenerationPropmt(questionCount || 5),
+        generateQuestionsPrompt(
+          questionCount || 5,
+          body.selectedQuestionTopics || undefined,
+        ),
       );
 
-      await this.examinerService.createRun(
+      const run = await this.examinerService.createRun(
         EnvironmentVariables.config.assistantId,
         existingThread.id,
       );
 
       const messages = await this.examinerService.retrieveThreadMessages(
         existingThread.id,
+        run.id,
       );
 
       const mostRecentlyGeneratedQuestions =
-        extractQuestionsFromMessages(messages);
+        extractJSONDataFromMessages(messages);
 
       const createdQuestion = await this.createQuestionHandler.handle({
         payload: {
@@ -164,6 +186,27 @@ export class CourseDocumentController {
           userId: userToken.sub,
         },
       });
+
+      // check if there are selected question topics, if so, map using the document topic id and save
+      if (
+        body.selectedQuestionTopics &&
+        body.selectedQuestionTopics.length &&
+        createdDocumentTopics
+      ) {
+        const questionTopicsToCreate = createdDocumentTopics
+          .filter((dt) => {
+            return body.selectedQuestionTopics.some((sq) => dt.title === sq);
+          })
+          ?.map((dt) => ({
+            documentTopicTitle: dt.title,
+            documentTopicId: dt.id,
+            questionId: createdQuestion.data.id,
+          }));
+
+        await this.createQuestionTopicHandler.handle({
+          payload: questionTopicsToCreate,
+        });
+      }
 
       return {
         status: HttpStatus.CREATED,
@@ -174,6 +217,7 @@ export class CourseDocumentController {
         },
       };
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,

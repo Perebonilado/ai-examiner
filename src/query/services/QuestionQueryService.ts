@@ -4,11 +4,14 @@ import { CourseDocumentModel } from 'src/infra/db/models/CourseDocumentModel';
 import { QuestionModel } from 'src/infra/db/models/QuestionModel';
 import { getPagination } from 'src/utils';
 import { ScoreQueryService } from './ScoreQueryService';
+import { QuestionTopicQueryService } from './QuestionTopicQueryService';
 
 @Injectable()
 export class QuestionQueryService {
   constructor(
     @Inject(ScoreQueryService) private scoreQueryService: ScoreQueryService,
+    @Inject(QuestionTopicQueryService)
+    private questionTopicService: QuestionTopicQueryService,
   ) {}
 
   public async findAllQuestionsByDocumentIdAndUserId(
@@ -29,17 +32,29 @@ export class QuestionQueryService {
         offset,
       });
 
-      const questionsWithScores = await Promise.all(
+      const questionsWithScoresAndTopics = await Promise.all(
         questions.map(async (q) => {
           const score = await this.scoreQueryService.findScoreByQuestionId(
             q.id,
           );
-          return { ...q.get({ plain: true }), score: score ? score.score : null };
+
+          const topics =
+            await this.questionTopicService.findQuestionTopicsByQuestionId(
+              q.id,
+            );
+
+          return {
+            ...q.get({ plain: true }),
+            score: score ? score.score : null,
+            topics: topics
+              ? topics.map((t) => ({ id: t.id, title: t.documentTopicTitle }))
+              : null,
+          };
         }),
       );
 
       return {
-        questions: questionsWithScores,
+        questions: questionsWithScoresAndTopics,
         meta: {
           currentPage: page,
           pageSize,
@@ -57,7 +72,10 @@ export class QuestionQueryService {
       const courseDocument = await CourseDocumentModel.findOne({
         where: { id: question.courseDocumentId, userId },
       });
-      const score = await this.scoreQueryService.findScoreByQuestionId(question.id)
+      const score = await this.scoreQueryService.findScoreByQuestionId(
+        question.id,
+      );
+      const topics = await this.questionTopicService.findQuestionTopicsByQuestionId(id)
 
       return {
         id: question.id,
@@ -65,7 +83,10 @@ export class QuestionQueryService {
         documentId: courseDocument.id,
         createdOn: question.createdOn,
         questions: JSON.parse(question.data),
-        score: score ? score.score : null
+        score: score ? score.score : null,
+        topics: topics
+        ? topics.map((t) => ({ id: t.id, title: t.documentTopicTitle }))
+        : null,
       };
     } catch (error) {
       throw new QueryError('Failed to find questions by id').InnerError(error);
