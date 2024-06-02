@@ -134,6 +134,8 @@ export class QuestionsController {
           run.id,
         );
 
+        console.log(messages.data[0].content)
+
         const mostRecentlyGeneratedQuestions =
           extractJSONDataFromMessages(messages);
 
