@@ -26,13 +26,13 @@ export const generateQuestionsPrompt = (
 };
 
 export const generateTopicPrompt = `
-Go through this document, check if it is broken down into topics covering small subsects in the document. If it does, return all the topics to me, else, try to break down the different concepts in the book and group each of them by a topic and return that to me. 
+Please review the document and determine if it is divided into distinct topics covering various subsects. If it is, extract and return all the topics. If not, analyze the document, identify different concepts, group them into relevant topics, and return those.
 
-return to me in a json format like this:
+Output the result in the following JSON format:
 
 ["title1", "title2", ... ]
 
-return nothing but this json`;
+Provide only the JSON array, nothing else. Be concise and fast`;
 
 export const defaultPageSize = 10;
 
