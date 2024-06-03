@@ -24,7 +24,7 @@ export const generateQuestionsPrompt = (
     }
   ]
   
-  Ignore images. Provide only the JSON array, nothing else. Be concise and fast. Your response should contain only a JSON array, nothing else but this!
+  Ignore images. Ensure that you generate a total of ${questionCount} questions. Provide only the JSON array, nothing else. Be concise and fast. Your response should contain only a JSON array, nothing else but this!
 
   `;
 };
