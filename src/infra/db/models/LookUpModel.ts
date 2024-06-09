@@ -3,17 +3,18 @@ import {
   Column,
   Model,
   DataType,
-  BeforeCreate,
 } from 'sequelize-typescript';
-import { generateUUID } from 'src/utils';
 
 @Table({ tableName: 'lookup' })
 export class LookUpModel extends Model<LookUpModel> {
   @Column({
-    type: DataType.STRING,
+    type: DataType.BIGINT,
     primaryKey: true,
+    allowNull: false,
+    autoIncrement: true,
+    unique: true,
   })
-  id: string;
+  id: number;
 
   @Column({
     type: DataType.STRING,
@@ -28,9 +29,4 @@ export class LookUpModel extends Model<LookUpModel> {
     field: 'type',
   })
   type: string;
-
-  @BeforeCreate
-  static addUUID(instance: LookUpModel) {
-    instance.id = generateUUID();
-  }
 }

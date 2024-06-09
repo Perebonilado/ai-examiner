@@ -4,4 +4,5 @@ export interface CreateQuestionDto {
   data: MCQModel[];
   userId: string;
   courseDocumentId: string;
+  questionTypeId: number;
 }

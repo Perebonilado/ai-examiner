@@ -127,6 +127,7 @@ export class CourseController {
     @UploadedFile() file: Express.Multer.File,
     @Body() body: CreateCourseDocumentQuestionDto,
     @Query('questionCount') questionCount: number,
+    @Query('questionType') questionType: number,
     @Req() request: Request,
   ) {
     try {
@@ -189,6 +190,7 @@ export class CourseController {
           courseDocumentId: createdDocument.data.id,
           data: mostRecentlyGeneratedQuestions,
           userId: userToken.sub,
+          questionTypeId: questionType
         },
       });
 

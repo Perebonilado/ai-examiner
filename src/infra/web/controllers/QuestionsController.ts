@@ -81,6 +81,7 @@ export class QuestionsController {
     @Param('id') id: string,
     @Req() request: Request,
     @Query('questionCount') questionCount: number,
+    @Query('questionType') questionType: number,
     @Body() body: GenerateCourseDocumentQuestionDto,
   ) {
     try {
@@ -134,8 +135,6 @@ export class QuestionsController {
           run.id,
         );
 
-        console.log(messages.data[0].content)
-
         const mostRecentlyGeneratedQuestions =
           extractJSONDataFromMessages(messages);
 
@@ -144,6 +143,7 @@ export class QuestionsController {
             courseDocumentId: document.id,
             data: mostRecentlyGeneratedQuestions,
             userId: userToken.sub,
+            questionTypeId: questionType
           },
         });
 
@@ -247,6 +247,7 @@ export class QuestionsController {
         count: JSON.parse(q.data).length,
         score: q.score,
         topics: q.topics,
+        type: q.type
       }));
 
       return {

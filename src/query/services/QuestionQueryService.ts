@@ -5,6 +5,7 @@ import { QuestionModel } from 'src/infra/db/models/QuestionModel';
 import { getPagination } from 'src/utils';
 import { ScoreQueryService } from './ScoreQueryService';
 import { QuestionTopicQueryService } from './QuestionTopicQueryService';
+import { LookUpQueryService } from './LookUpQueryService';
 
 @Injectable()
 export class QuestionQueryService {
@@ -12,6 +13,7 @@ export class QuestionQueryService {
     @Inject(ScoreQueryService) private scoreQueryService: ScoreQueryService,
     @Inject(QuestionTopicQueryService)
     private questionTopicService: QuestionTopicQueryService,
+    @Inject(LookUpQueryService) private lookUpQueryService: LookUpQueryService,
   ) {}
 
   public async findAllQuestionsByDocumentIdAndUserId(
@@ -43,12 +45,17 @@ export class QuestionQueryService {
               q.id,
             );
 
+          const type = await this.lookUpQueryService.findLookUpById(
+            q.questionTypeId,
+          );
+
           return {
             ...q.get({ plain: true }),
             score: score ? score.score : null,
             topics: topics
               ? topics.map((t) => ({ id: t.id, title: t.documentTopicTitle }))
               : null,
+            type: type ? type.title : null,
           };
         }),
       );
@@ -75,7 +82,12 @@ export class QuestionQueryService {
       const score = await this.scoreQueryService.findScoreByQuestionId(
         question.id,
       );
-      const topics = await this.questionTopicService.findQuestionTopicsByQuestionId(id)
+      const topics =
+        await this.questionTopicService.findQuestionTopicsByQuestionId(id);
+
+      const type = await this.lookUpQueryService.findLookUpById(
+        question.questionTypeId,
+      );
 
       return {
         id: question.id,
@@ -85,8 +97,9 @@ export class QuestionQueryService {
         questions: JSON.parse(question.data),
         score: score ? score.score : null,
         topics: topics
-        ? topics.map((t) => ({ id: t.id, title: t.documentTopicTitle }))
-        : null,
+          ? topics.map((t) => ({ id: t.id, title: t.documentTopicTitle }))
+          : null,
+        type: type ? type.title : null
       };
     } catch (error) {
       throw new QueryError('Failed to find questions by id').InnerError(error);
