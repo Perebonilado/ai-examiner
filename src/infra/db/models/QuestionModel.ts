@@ -27,6 +27,13 @@ export class QuestionModel extends Model<QuestionModel> {
   data: string;
 
   @Column({
+    type: DataType.BIGINT,
+    allowNull: false,
+    field: 'question_type_id',
+  })
+  questionTypeId: number;
+
+  @Column({
     type: DataType.DATE,
     field: 'created_on',
     allowNull: true,
@@ -52,6 +59,6 @@ export class QuestionModel extends Model<QuestionModel> {
   @BeforeCreate
   static addUUID(instance: QuestionModel) {
     instance.id = generateUUID();
-    instance.createdOn = moment(new Date()).utc().toDate()
+    instance.createdOn = moment(new Date()).utc().toDate();
   }
 }

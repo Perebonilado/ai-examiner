@@ -89,10 +89,7 @@ export class AuthController {
         response.redirect(
           `${EnvironmentVariables.config.frontendBaseUrl}/auth/login?token=${token}`,
         );
-        // response.cookie('access_token', token);
-        // response.redirect(
-        //   `${EnvironmentVariables.config.frontendBaseUrl}/dashboard`,
-        // );
+        
       } else {
         const createdUser = await this.createUserHandler.handle({
           payload: {

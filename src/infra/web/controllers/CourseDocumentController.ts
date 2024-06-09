@@ -26,6 +26,7 @@ import { extractJSONDataFromMessages } from 'src/utils';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 import { CreateQuestionTopicHandler } from 'src/business/handlers/QuestionTopic/CreateQuestionTopicHandler';
 import { DocumentTopicModel } from 'src/infra/db/models/DocumentTopicModel';
+import { LookUpQueryService } from 'src/query/services/LookUpQueryService';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -41,6 +42,7 @@ export class CourseDocumentController {
     private createDocumentTopicHandler: CreateDocumentTopicHandler,
     @Inject(CreateQuestionTopicHandler)
     private createQuestionTopicHandler: CreateQuestionTopicHandler,
+    @Inject(LookUpQueryService) private lookUpQueryService: LookUpQueryService
   ) {}
 
   @UseGuards(AuthGuard)
@@ -81,6 +83,7 @@ export class CourseDocumentController {
   @Post('')
   public async createCourseDocumentAndGenerateQuestions(
     @Query('questionCount') questionCount: number,
+    @Query('questionType') questionType: number,
     @Body()
     body: Omit<CreateCourseDocumentDto, 'userId' | 'threadId' | 'courseId'>,
     @Req() request: Request,
@@ -184,6 +187,7 @@ export class CourseDocumentController {
           courseDocumentId: createdDocument.data.id,
           data: mostRecentlyGeneratedQuestions,
           userId: userToken.sub,
+          questionTypeId: questionType
         },
       });
 
@@ -207,13 +211,15 @@ export class CourseDocumentController {
           payload: questionTopicsToCreate,
         });
       }
-
+      const type = await this.lookUpQueryService.findLookUpById(questionType)
+      
       return {
         status: HttpStatus.CREATED,
         message: 'Questions successfully generated for document',
         data: {
           documentId: createdDocument.data.id,
           questionId: createdQuestion.data.id,
+          type: type.title
         },
       };
     } catch (error) {
