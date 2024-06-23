@@ -23,6 +23,13 @@ import { Request, Response } from 'express';
 import { UserQueryService } from 'src/query/services/UserQueryService';
 import { JwtService } from '@nestjs/jwt';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
+import { ForgotPasswordDto } from 'src/dto/ForgotPasswordDto';
+import { ForgotPasswordValidationSchema } from '../zod-validation-schemas/ForgotPasswordValidationSchema';
+import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
+import { MailerService } from 'src/integrations/mailer/services/MailerService';
+import { ResetPasswordValidationSchema } from '../zod-validation-schemas/ResetPasswordValidationSchema';
+import { ResetPasswordDto } from 'src/dto/ResetPasswordDto';
+import { UpdateUserHandler } from 'src/business/handlers/User/UpdateUserHandler';
 
 @Controller('auth')
 export class AuthController {
@@ -30,6 +37,8 @@ export class AuthController {
     @Inject(CreateUserHandler) private createUserHandler: CreateUserHandler,
     @Inject(AuthService) private authService: AuthService,
     @Inject(UserQueryService) private userQueryService: UserQueryService,
+    @Inject(MailerService) private mailerService: MailerService,
+    @Inject(UpdateUserHandler) private updateUserHandler: UpdateUserHandler,
     private jwtService: JwtService,
   ) {}
 
@@ -54,6 +63,75 @@ export class AuthController {
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to login user',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Post('/forgot-password')
+  @UsePipes(new ZodValidationPipe(ForgotPasswordValidationSchema))
+  public async forgotPasswword(@Body() body: ForgotPasswordDto) {
+    try {
+      const user = await this.userQueryService.findOne(body.email);
+
+      if (user) {
+        const payload: VerifiedTokenModel = {
+          sub: user.id,
+          email: user.email,
+        };
+
+        const token = await this.jwtService.signAsync(payload, {
+          secret: EnvironmentVariables.config.jwtSecret,
+          expiresIn: '10m',
+        });
+        const resetPasswordLink = `${EnvironmentVariables.config.frontendBaseUrl}/auth/reset-password?token=${token}`;
+
+        const email = `
+          Hi ${user.firstName},
+
+          Please follow the link below to reset your password :)
+
+          Link: ${resetPasswordLink}
+        `;
+
+        await this.mailerService.sendEmail({
+          subject: 'Reset Password',
+          receiverEmail: user.email,
+          text: email,
+        });
+
+        return {
+          message: 'Reset password email sent successfully!',
+          status: HttpStatus.OK,
+        };
+      } else {
+        throw new HttpException(
+          'User does not exist with this email',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to handle forgot password',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Post('reset-password')
+  @UsePipes(new ZodValidationPipe(ResetPasswordValidationSchema))
+  public async resetPassword(@Body() body: ResetPasswordDto) {
+    try {
+      const { sub } = (await this.jwtService.verifyAsync(body.token, {
+        secret: EnvironmentVariables.config.jwtSecret,
+      })) as VerifiedTokenModel;
+
+      return await this.updateUserHandler.handle({
+        payload: { id: sub, password: body.password },
+      });
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to handle reset password',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -89,7 +167,6 @@ export class AuthController {
         response.redirect(
           `${EnvironmentVariables.config.frontendBaseUrl}/auth/login?token=${token}`,
         );
-        
       } else {
         const createdUser = await this.createUserHandler.handle({
           payload: {

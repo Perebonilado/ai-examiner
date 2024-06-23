@@ -11,4 +11,17 @@ export class UserDbConnector {
       throw new DatabaseError('Failed to create user').InnerError(error);
     }
   }
+
+  public async update(user: UserModel) {
+    try {
+      await UserModel.update(user, {
+        where: { id: user.id },
+        fields: ['firstName', 'lastName', 'password'],
+      });
+
+      return await UserModel.findOne({ where: { id: user.id } });
+    } catch (error) {
+      throw new DatabaseError('Failed to update user').InnerError(error);
+    }
+  }
 }
