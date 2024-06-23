@@ -14,4 +14,12 @@ export class UserSequelizeRepository implements UserRepository {
       throw new RepositoryError('Failed to create user').InnerError(error);
     }
   }
+
+  public async update(user: UserModel) {
+    try {
+      return await this.dbConnector.update(user)
+    } catch (error) {
+      throw new RepositoryError('Failed to updateuser').InnerError(error);
+    }
+  }
 }
