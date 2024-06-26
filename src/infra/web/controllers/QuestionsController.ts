@@ -99,9 +99,11 @@ export class QuestionsController {
 
         // check if vector store has expired, if so:
         // create new store, attach file and attach to thread
-        if (
-          !existingThread.tool_resources.file_search.vector_store_ids.length
-        ) {
+        
+        const vectorStore = await this.examinerService.retrieveVectorStore(
+          existingThread.tool_resources.file_search.vector_store_ids[0],
+        );
+        if (vectorStore.status === 'expired') {
           const newVectorStore = await this.examinerService.createVectorStore(
             document.title,
           );
@@ -143,7 +145,7 @@ export class QuestionsController {
             courseDocumentId: document.id,
             data: mostRecentlyGeneratedQuestions,
             userId: userToken.sub,
-            questionTypeId: questionType
+            questionTypeId: questionType,
           },
         });
 
@@ -247,13 +249,13 @@ export class QuestionsController {
         count: JSON.parse(q.data).length,
         score: q.score,
         topics: q.topics,
-        type: q.type
+        type: q.type,
       }));
 
       return {
         data: {
           data: mappedQuestions,
-          fileId: document.openAiFileId
+          fileId: document.openAiFileId,
         },
         meta: questions.meta,
         status: HttpStatus.OK,
