@@ -48,7 +48,7 @@ export const extractAndParseJSON = (text: string): any => {
       throw new Error('Failed to Parse JSON')
     }
   } else {
-    throw new Error('No JSON object or array found in the text.')
+    throw new Error('No JSON object or array found in the text: ' + text,)
   }
 };
 
