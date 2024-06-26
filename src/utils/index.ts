@@ -29,9 +29,27 @@ export const extractJSONDataFromMessages = (
 ) => {
   const data = (messages.data[0].content[0] as any).text.value;
 
-  return JSON.parse(
-    data.replace(/^```json\s*|\s*```$/g, ''),
-  ) as any;
+  return extractAndParseJSON(data);
+};
+
+export const extractAndParseJSON = (text: string): any => {
+  // Regular expression to match JSON arrays or objects
+  const jsonRegex =
+    /(\{(?:[^{}]|\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\})*\}|\[(?:[^\[\]]|\[(?:[^\[\]]|\[(?:[^\[\]]|\[[^\[\]]*\])*\])*\])*\])/;
+  const match = text.match(jsonRegex);
+
+  if (match) {
+    try {
+      // Parse the extracted JSON string
+      const jsonString = match[0];
+      const parsedJSON = JSON.parse(jsonString);
+      return parsedJSON;
+    } catch (error) {
+      throw new Error('Failed to Parse JSON')
+    }
+  } else {
+    throw new Error('No JSON object or array found in the text.')
+  }
 };
 
 export const getPagination = (page: number, size: number) => {
