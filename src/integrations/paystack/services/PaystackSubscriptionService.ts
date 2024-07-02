@@ -22,7 +22,7 @@ import {
 } from '../models/EnableSubscriptionModel';
 
 @Injectable()
-export class SubscriptionService {
+export class PaystackSubscriptionService {
   constructor(private httpService: HttpService) {}
 
   baseUrl = 'https://api.paystack.co';
