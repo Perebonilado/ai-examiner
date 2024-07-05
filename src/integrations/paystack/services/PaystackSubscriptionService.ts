@@ -128,6 +128,7 @@ export class PaystackSubscriptionService {
         subscrptionInformation: {
           code: data.data.subscription_code,
           token: data.data.email_token,
+          status: data.data.status
         },
       };
     } catch (error) {

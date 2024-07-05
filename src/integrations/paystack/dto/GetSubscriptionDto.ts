@@ -60,7 +60,7 @@ export interface GetSubscriptionDto {
     };
     domain: string;
     start: number;
-    status: string;
+    status: 'active' | 'non-renewing' | 'attention' | 'completed' | 'cancelled';
     quantity: number;
     amount: number;
     subscription_code: string;

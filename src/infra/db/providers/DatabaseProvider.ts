@@ -8,6 +8,7 @@ import { QuestionModel } from '../models/QuestionModel';
 import { ScoreModel } from '../models/ScoreModel';
 import { DocumentTopicModel } from '../models/DocumentTopicModel';
 import { QuestionTopicModel } from '../models/QuestionTopicModel';
+import { SubscriptionModel } from '../models/SubscriptionModel';
 
 export let sequelize: Sequelize;
 
@@ -34,7 +35,8 @@ export const databaseProviders = [
         QuestionModel,
         ScoreModel,
         DocumentTopicModel,
-        QuestionTopicModel
+        QuestionTopicModel,
+        SubscriptionModel
       ]);
 
       try {

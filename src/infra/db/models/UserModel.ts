@@ -5,12 +5,14 @@ import {
   DataType,
   BeforeCreate,
   HasMany,
+  HasOne,
 } from 'sequelize-typescript';
 import { generateUUID } from 'src/utils';
 import * as moment from 'moment';
 import { CourseModel } from './CourseModel';
 import { CourseDocumentModel } from './CourseDocumentModel';
 import { QuestionModel } from './QuestionModel';
+import { SubscriptionModel } from './SubscriptionModel';
 
 @Table({ tableName: 'user' })
 export class UserModel extends Model<UserModel> {
@@ -74,6 +76,9 @@ export class UserModel extends Model<UserModel> {
 
   @HasMany(() => QuestionModel, 'user_id')
   question: QuestionModel;
+
+  @HasOne(()=>SubscriptionModel, 'user_id')
+  subscription: SubscriptionModel
 
   @BeforeCreate
   static addUUID(instance: UserModel) {

@@ -16,5 +16,6 @@ export interface GetSubscriptionModel {
   subscrptionInformation: {
     code: string;
     token: string;
+    status: 'active' | 'non-renewing' | 'attention' | 'completed' | 'cancelled';
   }
 }

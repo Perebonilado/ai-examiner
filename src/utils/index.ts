@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
 import { saltRounds } from 'src/constants';
-import { MCQModel } from 'src/integrations/open-ai/models/MCQModel';
 import OpenAI from 'openai';
+import { createHmac } from 'crypto';
+import { EnvironmentVariables } from 'src/EnvironmentVariables';
 
 export const generateUUID = (): string => {
   return uuidv4();
@@ -45,10 +46,10 @@ export const extractAndParseJSON = (text: string): any => {
       const parsedJSON = JSON.parse(jsonString);
       return parsedJSON;
     } catch (error) {
-      throw new Error('Failed to Parse JSON')
+      throw new Error('Failed to Parse JSON');
     }
   } else {
-    throw new Error('No JSON object or array found in the text: ' + text,)
+    throw new Error('No JSON object or array found in the text: ' + text);
   }
 };
 
@@ -57,4 +58,15 @@ export const getPagination = (page: number, size: number) => {
   const offset = (page - 1) * size;
 
   return { offset, limit: size };
+};
+
+export const getPaystackHash = (data: string): string => {
+  const hash = createHmac(
+    'sha512',
+    EnvironmentVariables.config.paystackSecretKey,
+  )
+    .update(data)
+    .digest('hex');
+
+  return hash;
 };
