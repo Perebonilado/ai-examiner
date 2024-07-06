@@ -14,9 +14,12 @@ import { DocumentTopicRepository } from 'src/business/repository/DocumentTopicRe
 import { DocumentTopicSequelizeRepository } from './repository/DocumentTopicSequelizeRepository';
 import { QuestionTopicRepository } from 'src/business/repository/QuestionTopicRepository';
 import { QuestionTopicSequelizeRepository } from './repository/QuestionTopicSequelizeRepository';
+import { SubscriptionRepository } from 'src/business/repository/SubscriptionRepository';
+import { SubscriptionSequelizeRepository } from './repository/SubscriptionSequelizeRepository';
+import { QueryModule } from 'src/query/QueryModule';
 
 @Module({
-  imports: [InfraDbModule],
+  imports: [InfraDbModule, QueryModule],
   providers: [
     {
       provide: UserRepository,
@@ -45,6 +48,10 @@ import { QuestionTopicSequelizeRepository } from './repository/QuestionTopicSequ
     {
       provide: QuestionTopicRepository,
       useClass: QuestionTopicSequelizeRepository
+    },
+    {
+      provide: SubscriptionRepository,
+      useClass: SubscriptionSequelizeRepository
     }
   ],
   exports: [
@@ -54,7 +61,8 @@ import { QuestionTopicSequelizeRepository } from './repository/QuestionTopicSequ
     QuestionRepository,
     ScoreRepository,
     DocumentTopicRepository,
-    QuestionTopicRepository
+    QuestionTopicRepository,
+    SubscriptionRepository
   ],
 })
 export class InfraRepositoryModule {}

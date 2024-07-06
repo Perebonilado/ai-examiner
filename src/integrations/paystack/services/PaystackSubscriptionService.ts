@@ -38,6 +38,9 @@ export class PaystackSubscriptionService {
       email: payload.email,
       amount: '50',
       plan: payload.plan,
+      metadata: {
+        userId: payload.userId
+      }
     } as Record<string, any>;
 
     if (payload.startDate) {
