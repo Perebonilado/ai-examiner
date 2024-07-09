@@ -210,7 +210,6 @@ export class QuestionsController {
         );
       }
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to generate questions for document',
         HttpStatus.BAD_REQUEST,

@@ -7,6 +7,7 @@ import { InfraRepositoryModule } from './infra/db/InfraRepositoryModule';
 import { QueryModule } from './query/QueryModule';
 import { BusinessModule } from './business/BusinessModule';
 import { WebHooksModule } from './webhooks/WebHooksModule';
+import { NotificationsModule } from './notification/NotificationsModule';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { WebHooksModule } from './webhooks/WebHooksModule';
     InfraRepositoryModule,
     QueryModule,
     BusinessModule,
-    WebHooksModule
+    WebHooksModule,
+    NotificationsModule
   ],
   providers: []
 })

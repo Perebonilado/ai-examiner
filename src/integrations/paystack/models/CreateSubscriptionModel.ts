@@ -1,7 +1,6 @@
 export interface CreateSubscriptionPayloadModel {
   email: string;
   plan: string;
-  userId: string
   startDate?: Date;
 }
 

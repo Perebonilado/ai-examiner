@@ -8,6 +8,7 @@ import { HandlerError } from 'src/error-handlers/business/HandlerError';
 import * as moment from 'moment';
 import { SubscriptionModel } from 'src/infra/db/models/SubscriptionModel';
 import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
+import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
 
 @Injectable()
 export class UpdateSubscriptionHandler extends AbstractRequestHandlerTemplate<
@@ -19,6 +20,8 @@ export class UpdateSubscriptionHandler extends AbstractRequestHandlerTemplate<
     private subscriptionRepository: SubscriptionRepository,
     @Inject(SubscriptionQueryService)
     private subscriptionQueryService: SubscriptionQueryService,
+    @Inject(PaystackSubscriptionService)
+    private paystackSucscriptionService: PaystackSubscriptionService,
   ) {
     super();
   }
@@ -30,10 +33,17 @@ export class UpdateSubscriptionHandler extends AbstractRequestHandlerTemplate<
       const subscription = await this.subscriptionQueryService.findByUserId(
         request.payload.userId,
       );
+
+      const subscriptionInfo =
+        await this.paystackSucscriptionService.getActiveSubscriptions({
+          customer: request.payload.subscriptionData.customer.id,
+        });
+
       await this.subscriptionRepository.update({
+        id: subscription.id,
         userId: subscription.userId,
         createdOn: subscription.createdOn,
-        subscriptionCode: request.payload.subscriptionData.subscription_code,
+        subscriptionCode: subscriptionInfo[0].subscrptionInformation.code,
         modifiedOn: moment(new Date()).utc().toDate(),
       } as SubscriptionModel);
 

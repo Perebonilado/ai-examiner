@@ -11,7 +11,8 @@ import { Response } from 'express';
 import { PaystackEventDto } from '../dto/PaystackEventDto';
 import { CreateSubscriptionHandler } from 'src/business/handlers/Subscription/CreateSubscriptionHandler';
 import { UserQueryService } from 'src/query/services/UserQueryService';
-import { PaystackSubscriptionCreatedDto } from '../dto/PaystackSubscriptionCreatedDto';
+import { NotificationsGateway } from 'src/notification/services/NotificationsGateway';
+import { ChargeSuccessEventDto } from '../dto/ChargeSuccessDto';
 
 @Controller('webhook/paystack')
 export class PaystackWebhook {
@@ -19,6 +20,7 @@ export class PaystackWebhook {
     @Inject(CreateSubscriptionHandler)
     private createSubscriptionHandler: CreateSubscriptionHandler,
     @Inject(UserQueryService) private userQueryService: UserQueryService,
+    private notificationsGateway: NotificationsGateway,
   ) {}
 
   @Post('')
@@ -28,20 +30,27 @@ export class PaystackWebhook {
   ) {
     try {
       // acknowledge
-      response.send(200);
+      response.sendStatus(200);
 
       switch (body.event) {
-        case 'subscription.create':
+        case 'charge.success':
           {
             const subscriptionData =
-              body.body as PaystackSubscriptionCreatedDto;
+              body.data as ChargeSuccessEventDto;
+
 
             const user = await this.userQueryService.findOne(
               subscriptionData.customer.email,
             );
-            
+
+
             await this.createSubscriptionHandler.handle({
               payload: { subscriptionData, userId: user.id },
+            });
+
+            this.notificationsGateway.notifyClient(user.email, {
+              status: 'successful',
+              message: 'Payment for subscription successful',
             });
           }
           break;

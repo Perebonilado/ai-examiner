@@ -1,8 +1,8 @@
-import { PaystackSubscriptionCreatedDto } from 'src/webhooks/dto/PaystackSubscriptionCreatedDto';
+import { ChargeSuccessEventDto } from 'src/webhooks/dto/ChargeSuccessDto';
 
 export interface CreateSubscriptionRequest {
   payload: {
-    subscriptionData: PaystackSubscriptionCreatedDto;
+    subscriptionData: ChargeSuccessEventDto;
     userId: string;
   };
 }

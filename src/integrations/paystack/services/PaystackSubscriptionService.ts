@@ -20,6 +20,8 @@ import {
   EnableSubscriptionModel,
   EnableSubscriptionPayloadModel,
 } from '../models/EnableSubscriptionModel';
+import { ListSubscriptionDto } from '../dto/ListSubscriptionDto';
+import { ListSubscriptionsPayloadModel } from '../models/ListSubscriptionModel';
 
 @Injectable()
 export class PaystackSubscriptionService {
@@ -38,9 +40,6 @@ export class PaystackSubscriptionService {
       email: payload.email,
       amount: '50',
       plan: payload.plan,
-      metadata: {
-        userId: payload.userId
-      }
     } as Record<string, any>;
 
     if (payload.startDate) {
@@ -100,40 +99,49 @@ export class PaystackSubscriptionService {
     }
   }
 
-  public async getSubscription(
-    subscriptionCode: string,
-  ): Promise<GetSubscriptionModel> {
+  public async getActiveSubscriptions({
+    customer,
+    page = 1,
+    perPage = 10,
+    plan = '',
+  }: ListSubscriptionsPayloadModel): Promise<GetSubscriptionModel[]> {
     try {
       const { data } = await this.httpService.axiosRef.get<
         any,
-        AxiosResponse<GetSubscriptionDto>
-      >(`${this.baseUrl}/subscription/${subscriptionCode}`, {
+        AxiosResponse<ListSubscriptionDto>
+      >(`${this.baseUrl}/subscription`, {
         headers: {
           Authorization: `Bearer ${EnvironmentVariables.config.paystackSecretKey}`,
         },
+        params: {
+          customer,
+          page,
+          perPage,
+          plan,
+        },
       });
-
-      return {
+      
+      return data.data.filter((sub)=>sub.status.toLowerCase() === 'active').map((subscription) => ({
         cardInformation: {
-          accountName: data.data.authorization.account_name,
-          bank: data.data.authorization.bank,
-          brand: data.data.authorization.brand,
-          expirationMonth: data.data.authorization.exp_month,
-          expirationYear: data.data.authorization.exp_year,
-          last4: data.data.authorization.last4,
+          accountName: subscription.authorization.account_name,
+          bank: subscription.authorization.bank,
+          brand: subscription.authorization.brand,
+          expirationMonth: subscription.authorization.exp_month,
+          expirationYear: subscription.authorization.exp_year,
+          last4: subscription.authorization.last4,
         },
         planInformation: {
-          amount: data.data.plan.amount,
-          currency: data.data.plan.currency,
-          name: data.data.plan.name,
-          planCode: data.data.plan.plan_code,
+          amount: subscription.plan.amount,
+          currency: subscription.plan.currency,
+          name: subscription.plan.name,
+          planCode: subscription.plan.plan_code,
         },
         subscrptionInformation: {
-          code: data.data.subscription_code,
-          token: data.data.email_token,
-          status: data.data.status
+          code: subscription.subscription_code,
+          token: subscription.email_token,
+          status: subscription.status,
         },
-      };
+      }));
     } catch (error) {
       throw new HttpException(
         'An error occured while trying to get subscription information',
