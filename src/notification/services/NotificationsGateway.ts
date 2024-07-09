@@ -27,6 +27,6 @@ export class NotificationsGateway
   }
 
   notifyClient(userEmail: string, message: NotificationModel) {
-    this.server.to(userEmail).emit('notification', message);
+    this.server.emit(`notification-${userEmail}`, message);
   }
 }
