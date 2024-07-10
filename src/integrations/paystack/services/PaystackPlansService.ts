@@ -37,7 +37,6 @@ export class PaystackPlansService {
         description: pl.description,
       }));
     } catch (error) {
-      console.log(error);
       throw new HttpException('Failed to get plans', HttpStatus.BAD_GATEWAY);
     }
   }
