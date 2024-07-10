@@ -10,7 +10,6 @@ import { CreateSubscriptionDto } from '../dto/CreateSubscriptionDto';
 import { UpdateCardModel } from '../models/UpdateCardModel';
 import { UpdateCardDto } from '../dto/UpdateCardDto';
 import { GetSubscriptionModel } from '../models/GetSubscriptionModel';
-import { GetSubscriptionDto } from '../dto/GetSubscriptionDto';
 import {
   DisableSubscriptionModel,
   DisableSubscriptionPayloadModel,
@@ -27,7 +26,7 @@ import { ListSubscriptionsPayloadModel } from '../models/ListSubscriptionModel';
 export class PaystackSubscriptionService {
   constructor(private httpService: HttpService) {}
 
-  baseUrl = 'https://api.paystack.co';
+  private baseUrl = 'https://api.paystack.co';
 
   public async createSubscription(
     payload: CreateSubscriptionPayloadModel,
