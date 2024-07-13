@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpException,
@@ -12,6 +13,8 @@ import {
 import { Request } from 'express';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
+import { DisableSubscriptionPayloadModel } from 'src/integrations/paystack/models/DisableSubscriptionModel';
+import { EnableSubscriptionPayloadModel } from 'src/integrations/paystack/models/EnableSubscriptionModel';
 import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
 
 @Controller('subscription')
@@ -43,6 +46,38 @@ export class SubscriptionController {
     } catch (error) {
       throw new HttpException(
         'An Error occured while trying to create a subscription',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/cancel')
+  public async cancelSubscription(
+    @Body() payload: DisableSubscriptionPayloadModel,
+  ) {
+    try {
+      return await this.paystackSubscriptionService.disableSubscription(
+        payload,
+      );
+    } catch (error) {
+      throw new HttpException(
+        'An Error occured while trying to cancel your subscription',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/restart')
+  public async restartSubscription(
+    @Body() payload: EnableSubscriptionPayloadModel,
+  ) {
+    try {
+      return await this.paystackSubscriptionService.enableSubscription(payload);
+    } catch (error) {
+      throw new HttpException(
+        'An Error occured while trying to restart your subscription',
         HttpStatus.BAD_REQUEST,
       );
     }
