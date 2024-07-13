@@ -9,6 +9,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
