@@ -14,6 +14,7 @@ import { FileUploadController } from './controllers/FileUploadController';
 import { LookUpController } from './controllers/LookUpController';
 import { SubscriptionController } from './controllers/SubscriptionController';
 import { PlanController } from './controllers/PlanController';
+import { UserController } from './controllers/UserController';
 
 @Module({
   imports: [
@@ -34,7 +35,8 @@ import { PlanController } from './controllers/PlanController';
     FileUploadController,
     LookUpController,
     SubscriptionController,
-    PlanController
+    PlanController,
+    UserController
   ],
 })
 export class InfraWebModule {}

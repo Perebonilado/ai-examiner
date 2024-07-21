@@ -19,7 +19,10 @@ import {
   EnableSubscriptionModel,
   EnableSubscriptionPayloadModel,
 } from '../models/EnableSubscriptionModel';
-import { ListSubscriptionDto } from '../dto/ListSubscriptionDto';
+import {
+  FetchSubscriptionDto,
+  ListSubscriptionDto,
+} from '../dto/ListSubscriptionDto';
 import { ListSubscriptionsPayloadModel } from '../models/ListSubscriptionModel';
 
 @Injectable()
@@ -119,8 +122,54 @@ export class PaystackSubscriptionService {
           plan,
         },
       });
-      
-      return data.data.filter((sub)=>sub.status.toLowerCase() === 'active').map((subscription) => ({
+
+      return data.data
+        .filter((sub) => sub.status.toLowerCase() === 'active')
+        .map((subscription) => ({
+          cardInformation: {
+            accountName: subscription.authorization.account_name,
+            bank: subscription.authorization.bank,
+            brand: subscription.authorization.brand,
+            expirationMonth: subscription.authorization.exp_month,
+            expirationYear: subscription.authorization.exp_year,
+            last4: subscription.authorization.last4,
+          },
+          planInformation: {
+            amount: subscription.plan.amount,
+            currency: subscription.plan.currency,
+            name: subscription.plan.name,
+            planCode: subscription.plan.plan_code,
+          },
+          subscrptionInformation: {
+            code: subscription.subscription_code,
+            token: subscription.email_token,
+            status: subscription.status,
+          },
+        }));
+    } catch (error) {
+      throw new HttpException(
+        'An error occured while trying to get subscription information',
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+  }
+
+  public async fetchSubscriptionBySubscriptionCode(
+    subscriptionCode: string,
+  ): Promise<GetSubscriptionModel> {
+    try {
+      const {
+        data: { data: subscription },
+      } = await this.httpService.axiosRef.get<
+        any,
+        AxiosResponse<FetchSubscriptionDto>
+      >(`${this.baseUrl}/subscription/${subscriptionCode}`, {
+        headers: {
+          Authorization: `Bearer ${EnvironmentVariables.config.paystackSecretKey}`,
+        },
+      });
+
+      return {
         cardInformation: {
           accountName: subscription.authorization.account_name,
           bank: subscription.authorization.bank,
@@ -140,10 +189,10 @@ export class PaystackSubscriptionService {
           token: subscription.email_token,
           status: subscription.status,
         },
-      }));
+      };
     } catch (error) {
       throw new HttpException(
-        'An error occured while trying to get subscription information',
+        `An error occured while trying to get subscription information using subscription code ${subscriptionCode}`,
         HttpStatus.BAD_GATEWAY,
       );
     }
