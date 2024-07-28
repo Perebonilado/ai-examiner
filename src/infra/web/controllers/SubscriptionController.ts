@@ -25,10 +25,10 @@ export class SubscriptionController {
   ) {}
 
   @UseGuards(AuthGuard)
-  @Get('')
-  public async createSubscription(
+  @Get('/initiate')
+  public async initiateSubscription(
     @Req() request: Request,
-    @Query('plan') plan: string,
+    @Query('planId') plan: string,
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;

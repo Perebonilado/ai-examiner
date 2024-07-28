@@ -31,7 +31,7 @@ export class PlanController {
       const ipAddress = request.ip;
 
       const currencyCodesWithSpeicifcPlans = ['NGN'];
-      const defaultCurrencyCode = 'USD';
+      const defaultCurrencyCode = 'NGN';
 
       const ipDetails =
         await this.ipStackIpDetailsService.getIpDetails(ipAddress);

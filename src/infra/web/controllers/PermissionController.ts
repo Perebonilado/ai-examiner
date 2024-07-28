@@ -59,7 +59,7 @@ export class PermissionController {
 
           permission.permissions = modifiedPermissions;
 
-          return permission;
+          return permission.permissions;
         } else {
           // return free plan permissions
           const permission =
@@ -80,7 +80,7 @@ export class PermissionController {
 
           permission.permissions = modifiedPermissions;
 
-          return permission;
+          return permission.permissions;
         }
       } else {
         // return free plan permissions
@@ -102,7 +102,7 @@ export class PermissionController {
 
         permission.permissions = modifiedPermissions;
 
-        return permission;
+        return permission.permissions;
       }
     } catch (error) {
       throw new HttpException(
