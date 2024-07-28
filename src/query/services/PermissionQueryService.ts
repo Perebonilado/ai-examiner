@@ -7,7 +7,8 @@ import { PlanType } from 'src/infra/web/models/PlanTypeModel';
 export class PermissionQueryService {
   public async findPermissionById(id: string) {
     try {
-      return await PermissionModel.findOne({ where: { id } });
+      const permissions = await PermissionModel.findOne({ where: { id } });
+      return permissions || {} as PermissionModel
     } catch (error) {
       throw new QueryError('Failed to find permission by id').InnerError(error);
     }
@@ -15,7 +16,8 @@ export class PermissionQueryService {
 
   public async findPermissionByPlanType(planType: PlanType) {
     try {
-      return await PermissionModel.findOne({ where: { planType } });
+      const permissions = await PermissionModel.findOne({ where: { planType } });
+      return permissions || {} as PermissionModel
     } catch (error) {
       throw new QueryError('Failed to find permission by plan type').InnerError(
         error,

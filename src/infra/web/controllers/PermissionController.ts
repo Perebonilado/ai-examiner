@@ -1,4 +1,12 @@
-import { Controller, Get, HttpException, HttpStatus, Inject, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
@@ -29,15 +37,16 @@ export class PermissionController {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
 
-      const { subscriptionCode } =
-        await this.subscriptionQueryService.findByUserId(userToken.sub);
+      const subInfo = await this.subscriptionQueryService.findByUserId(
+        userToken.sub,
+      );
 
       const maxNumberOfQuestionGenerationForFreePlanTier = 3;
 
-      if (subscriptionCode) {
+      if (subInfo?.subscriptionCode) {
         const subscriptionDetails =
           await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
-            subscriptionCode,
+            subInfo?.subscriptionCode,
           );
 
         const inactiveSubscriptionStatuses = ['completed', 'cancelled'];
@@ -54,7 +63,9 @@ export class PermissionController {
           const permission =
             await this.permissionQueryService.findPermissionById(permissionId);
 
-          const modifiedPermissions = JSON.parse(permission.permissions);
+          const modifiedPermissions = permission.permissions
+            ? JSON.parse(permission.permissions)
+            : {};
           modifiedPermissions.maxGenerationReached = false;
 
           permission.permissions = modifiedPermissions;
@@ -70,10 +81,12 @@ export class PermissionController {
               userToken.sub,
             );
 
-          const modifiedPermissions = JSON.parse(permission.permissions);
+          const modifiedPermissions = permission.permissions
+            ? JSON.parse(permission.permissions)
+            : {};
 
           modifiedPermissions.maxGenerationReached =
-            numberOfQuestionsGeneratedForCurrentMonth >
+            numberOfQuestionsGeneratedForCurrentMonth >=
             maxNumberOfQuestionGenerationForFreePlanTier
               ? true
               : false;
@@ -87,7 +100,9 @@ export class PermissionController {
         const permission =
           await this.permissionQueryService.findPermissionByPlanType('free');
 
-        const modifiedPermissions = JSON.parse(permission.permissions);
+        const modifiedPermissions = permission.permissions
+          ? JSON.parse(permission.permissions)
+          : {};
 
         const numberOfQuestionsGeneratedForCurrentMonth =
           await this.questionQueryService.getUserQuestionsCountForCurrentMonth(
@@ -95,7 +110,7 @@ export class PermissionController {
           );
 
         modifiedPermissions.maxGenerationReached =
-          numberOfQuestionsGeneratedForCurrentMonth >
+          numberOfQuestionsGeneratedForCurrentMonth >=
           maxNumberOfQuestionGenerationForFreePlanTier
             ? true
             : false;
