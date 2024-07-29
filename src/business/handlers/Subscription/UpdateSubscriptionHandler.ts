@@ -21,7 +21,7 @@ export class UpdateSubscriptionHandler extends AbstractRequestHandlerTemplate<
     @Inject(SubscriptionQueryService)
     private subscriptionQueryService: SubscriptionQueryService,
     @Inject(PaystackSubscriptionService)
-    private paystackSucscriptionService: PaystackSubscriptionService,
+    private paystackSubscriptionService: PaystackSubscriptionService,
   ) {
     super();
   }
@@ -35,7 +35,7 @@ export class UpdateSubscriptionHandler extends AbstractRequestHandlerTemplate<
       );
 
       const subscriptionInfo =
-        await this.paystackSucscriptionService.getActiveSubscriptions({
+        await this.paystackSubscriptionService.getActiveSubscriptions({
           customer: request.payload.subscriptionData.customer.id,
         });
 

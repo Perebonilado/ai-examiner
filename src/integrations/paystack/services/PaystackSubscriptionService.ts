@@ -169,6 +169,10 @@ export class PaystackSubscriptionService {
         },
       });
 
+      if (!subscription) {
+        return null;
+      }
+
       return {
         cardInformation: {
           accountName: subscription.authorization.account_name,

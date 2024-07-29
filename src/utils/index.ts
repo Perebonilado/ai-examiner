@@ -33,6 +33,10 @@ export const extractJSONDataFromMessages = (
   return extractAndParseJSON(data);
 };
 
+export const convertSmallerDemoninationtoLarger = (amount: number, factor: number) => {
+  return amount/factor
+}
+
 export const extractAndParseJSON = (text: string): any => {
   // Regular expression to match JSON arrays or objects
   const jsonRegex =

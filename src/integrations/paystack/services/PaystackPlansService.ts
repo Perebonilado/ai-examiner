@@ -4,6 +4,7 @@ import { ListPlansPayloadModel, PlanModel } from '../models/ListPlansModel';
 import { AxiosResponse } from 'axios';
 import { PlanDto } from '../dto/ListPlanDto';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
+import { convertSmallerDemoninationtoLarger } from 'src/utils';
 
 @Injectable()
 export class PaystackPlansService {
@@ -25,15 +26,15 @@ export class PaystackPlansService {
           perPage,
         },
         headers: {
-            Authorization: `Bearer ${EnvironmentVariables.config.paystackSecretKey}`,
-          },
+          Authorization: `Bearer ${EnvironmentVariables.config.paystackSecretKey}`,
+        },
       });
 
       return data.data.map((pl) => ({
         planName: pl.name,
-        planId: pl.id,
+        planId: pl.plan_code,
         currency: pl.currency,
-        amount: pl.amount,
+        amount: convertSmallerDemoninationtoLarger(pl.amount, 100),
         description: pl.description,
       }));
     } catch (error) {

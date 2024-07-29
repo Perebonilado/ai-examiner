@@ -5,7 +5,7 @@ export interface ListPlansPayloadModel {
 
 export interface PlanModel {
   planName: string;
-  planId: number;
+  planId: string;
   currency: string;
   amount: number;
   description: string;

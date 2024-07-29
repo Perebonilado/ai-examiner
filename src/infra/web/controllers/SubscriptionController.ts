@@ -11,33 +11,65 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { InitiateSubscriptionDto } from 'src/dto/InitiateSubscriptionDto';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
+import { CreateSubscriptionModel } from 'src/integrations/paystack/models/CreateSubscriptionModel';
 import { DisableSubscriptionPayloadModel } from 'src/integrations/paystack/models/DisableSubscriptionModel';
 import { EnableSubscriptionPayloadModel } from 'src/integrations/paystack/models/EnableSubscriptionModel';
 import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
+import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
 
 @Controller('subscription')
 export class SubscriptionController {
   constructor(
     @Inject(PaystackSubscriptionService)
     private paystackSubscriptionService: PaystackSubscriptionService,
+    @Inject(SubscriptionQueryService)
+    private subscriptionQueryService: SubscriptionQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
-  @Get('/initiate')
+  @Post('/initiate')
   public async initiateSubscription(
     @Req() request: Request,
-    @Query('planId') plan: string,
+    @Body() body: InitiateSubscriptionDto
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
+      let subscriptionProcessingInfo: CreateSubscriptionModel;
 
-      const subscriptionProcessingInfo =
-        await this.paystackSubscriptionService.createSubscription({
-          email: userToken.email,
-          plan: plan,
-        });
+      const subscriptionDetails =
+        await this.subscriptionQueryService.findByUserId(userToken.sub);
+
+      if (!subscriptionDetails) {
+        subscriptionProcessingInfo =
+          await this.paystackSubscriptionService.createSubscription({
+            email: userToken.email,
+            plan: body.planId,
+          });
+      } else {
+        const subscriptionInfo =
+          await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+            subscriptionDetails.subscriptionCode,
+          );
+
+        const userHasActiveSubscription =
+          subscriptionInfo.subscrptionInformation.status === 'active';
+
+        if (userHasActiveSubscription) {
+          throw new HttpException(
+            'Please, cancel your active subscription first',
+            HttpStatus.BAD_REQUEST,
+          );
+        } else {
+          subscriptionProcessingInfo =
+            await this.paystackSubscriptionService.createSubscription({
+              email: userToken.email,
+              plan: body.planId,
+            });
+        }
+      }
 
       return {
         data: subscriptionProcessingInfo,
@@ -45,7 +77,7 @@ export class SubscriptionController {
       };
     } catch (error) {
       throw new HttpException(
-        'An Error occured while trying to create a subscription',
+        error?.response ?? 'An Error occured while trying to create a subscription',
         HttpStatus.BAD_REQUEST,
       );
     }
