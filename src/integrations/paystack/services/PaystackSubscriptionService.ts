@@ -24,6 +24,7 @@ import {
   ListSubscriptionDto,
 } from '../dto/ListSubscriptionDto';
 import { ListSubscriptionsPayloadModel } from '../models/ListSubscriptionModel';
+import { convertSmallerDemoninationtoLarger } from 'src/utils';
 
 @Injectable()
 export class PaystackSubscriptionService {
@@ -183,7 +184,7 @@ export class PaystackSubscriptionService {
           last4: subscription.authorization.last4,
         },
         planInformation: {
-          amount: subscription.plan.amount,
+          amount: convertSmallerDemoninationtoLarger(subscription.plan.amount, 100),
           currency: subscription.plan.currency,
           name: subscription.plan.name,
           planCode: subscription.plan.plan_code,

@@ -33,7 +33,7 @@ export class SubscriptionController {
   @Post('/initiate')
   public async initiateSubscription(
     @Req() request: Request,
-    @Body() body: InitiateSubscriptionDto
+    @Body() body: InitiateSubscriptionDto,
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
@@ -77,7 +77,8 @@ export class SubscriptionController {
       };
     } catch (error) {
       throw new HttpException(
-        error?.response ?? 'An Error occured while trying to create a subscription',
+        error?.response ??
+          'An Error occured while trying to create a subscription',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -94,7 +95,8 @@ export class SubscriptionController {
       );
     } catch (error) {
       throw new HttpException(
-        'An Error occured while trying to cancel your subscription',
+        error?.response ??
+          'An Error occured while trying to cancel your subscription',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -109,7 +111,55 @@ export class SubscriptionController {
       return await this.paystackSubscriptionService.enableSubscription(payload);
     } catch (error) {
       throw new HttpException(
-        'An Error occured while trying to restart your subscription',
+        error?.response ??
+          'An Error occured while trying to restart your subscription',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/details')
+  public async getSubscriptionDetails(@Req() request: Request) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      const subscription = await this.subscriptionQueryService.findByUserId(
+        userToken.sub,
+      );
+      if (subscription) {
+        const details =
+          await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+            subscription.subscriptionCode,
+          );
+
+        return details;
+      }
+
+      return {
+        cardInformation: {
+          accountName: null,
+          bank: null,
+          brand: null,
+          expirationMonth: null,
+          expirationYear: null,
+          last4: null,
+        },
+        planInformation: {
+          amount: null,
+          currency: null,
+          name: null,
+          planCode: null,
+        },
+        subscrptionInformation: {
+          code: null,
+          token: null,
+          status: null,
+        },
+      };
+    } catch (error) {
+      throw new HttpException(
+        error?.response ??
+          'An Error occured while trying to get your subscription information',
         HttpStatus.BAD_REQUEST,
       );
     }
