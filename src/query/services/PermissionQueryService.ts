@@ -5,9 +5,9 @@ import { PlanType } from 'src/infra/web/models/PlanTypeModel';
 
 @Injectable()
 export class PermissionQueryService {
-  public async findPermissionById(id: string) {
+  public async findPermissionById(id: number) {
     try {
-      const permissions = await PermissionModel.findOne({ where: { id } });
+      const permissions = await PermissionModel.findOne({ where: { id }, raw: true });
       return permissions || {} as PermissionModel
     } catch (error) {
       throw new QueryError('Failed to find permission by id').InnerError(error);

@@ -19,9 +19,9 @@ export class PlanPermissionModel extends Model<PlanPermissionModel> {
   planId: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.BIGINT,
     allowNull: false,
     field: 'permission_id',
   })
-  permissionId: string;
+  permissionId: number;
 }

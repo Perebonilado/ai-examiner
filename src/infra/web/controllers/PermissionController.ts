@@ -50,21 +50,22 @@ export class PermissionController {
           );
 
         const inactiveSubscriptionStatuses = ['completed', 'cancelled'];
+        
         if (
           !inactiveSubscriptionStatuses.includes(
             subscriptionDetails.subscrptionInformation.status,
           )
         ) {
-          const { permissionId } =
+          const planPermission =
             await this.planPermissionQueryService.findPlanPermissionByPlanId(
               subscriptionDetails.planInformation.planCode,
             );
 
           const permission =
-            await this.permissionQueryService.findPermissionById(permissionId);
+            await this.permissionQueryService.findPermissionById(planPermission.permissionId);
 
           const modifiedPermissions = permission.permissions
-            ? JSON.parse(permission.permissions)
+            ? (permission.permissions as any)
             : {};
           modifiedPermissions.maxGenerationReached = false;
 
@@ -82,7 +83,7 @@ export class PermissionController {
             );
 
           const modifiedPermissions = permission.permissions
-            ? JSON.parse(permission.permissions)
+            ? (permission.permissions as any)
             : {};
 
           modifiedPermissions.maxGenerationReached =
@@ -101,7 +102,7 @@ export class PermissionController {
           await this.permissionQueryService.findPermissionByPlanType('free');
 
         const modifiedPermissions = permission.permissions
-          ? JSON.parse(permission.permissions)
+          ? (permission.permissions as any)
           : {};
 
         const numberOfQuestionsGeneratedForCurrentMonth =
