@@ -178,7 +178,7 @@ export class AuthController {
         });
 
         response.redirect(
-          `${EnvironmentVariables.config.frontendBaseUrl}/auth/login?token=${createdUser.data.token}`,
+          `${EnvironmentVariables.config.frontendBaseUrl}/auth/login?token=${createdUser.data.token}&redirectUrl=${EnvironmentVariables.config.frontendBaseUrl}/pricing`,
         );
       }
     } catch (error) {
