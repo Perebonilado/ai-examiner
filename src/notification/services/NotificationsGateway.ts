@@ -8,7 +8,13 @@ import {
 import { Server, Socket } from 'socket.io';
 import { NotificationModel } from '../models/NotificationModel';
 
-@WebSocketGateway()
+@WebSocketGateway({
+  cors: {
+    origin: '*', 
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+})
 export class NotificationsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
