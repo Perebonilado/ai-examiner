@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { InitiateSubscriptionDto } from 'src/dto/InitiateSubscriptionDto';
+import { UpdateSubscriptionPaymentCardDto } from 'src/dto/UpdateSubscriptionPaymentCardDto';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { CreateSubscriptionModel } from 'src/integrations/paystack/models/CreateSubscriptionModel';
@@ -160,6 +161,22 @@ export class SubscriptionController {
       throw new HttpException(
         error?.response ??
           'An Error occured while trying to get your subscription information',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/update-card-information')
+  public async updateCardInfo(@Body() body: UpdateSubscriptionPaymentCardDto) {
+    try {
+      return await this.paystackSubscriptionService.getUpdateCardLink(
+        body.subscriptionCode,
+      );
+    } catch (error) {
+      throw new HttpException(
+        error?.response ??
+          'An Error occured while trying to create a subscription',
         HttpStatus.BAD_REQUEST,
       );
     }
