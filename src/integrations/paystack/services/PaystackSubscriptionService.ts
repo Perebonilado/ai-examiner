@@ -96,7 +96,7 @@ export class PaystackSubscriptionService {
       };
     } catch (error) {
       throw new HttpException(
-        'An error occured while trying to get card update link',
+        'An error occured while trying to get card update link.',
         HttpStatus.BAD_GATEWAY,
       );
     }
