@@ -41,14 +41,18 @@ export class PlanController {
         perPage: count || 50,
       });
 
+      const mappedPlans = allPlans.map((p)=>{
+        return {...p, description: JSON.parse(p.description)}
+      })
+
       if (
         currencyCodesWithSpeicifcPlans.indexOf(ipDetails.currencyCode) !== -1
       ) {
-        return allPlans.filter(
+        return mappedPlans.filter(
           (plan) => plan.currency === ipDetails.currencyCode,
         );
       } else {
-        return allPlans.filter((plan) => plan.currency === defaultCurrencyCode);
+        return mappedPlans.filter((plan) => plan.currency === defaultCurrencyCode);
       }
     } catch (error) {
       throw new HttpException(
