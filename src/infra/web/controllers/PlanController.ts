@@ -27,7 +27,6 @@ export class PlanController {
     @Req() request: Request,
   ) {
     try {
-      // use the ip address to determine the location and show plans accordingly. IP STACK
       const ipAddress = request.ip;
 
       const currencyCodesWithSpeicifcPlans = ['NGN'];
