@@ -17,9 +17,11 @@ export interface Config {
   mailChimpServerPrefix: string;
   mailChimpAudienceId: string;
   flutterwaveSecretKey: string;
+  paystackSecretKey: string;
   emailUser: string;
   emailPass: string;
   emailHost: string;
+  ipStackApiKey: string;
 }
 
 export default (): Config => ({
@@ -41,7 +43,9 @@ export default (): Config => ({
   mailChimpServerPrefix: process.env.MAILCHIMP_SERVER_PREFIX,
   mailChimpAudienceId: process.env.MAILCHIMP_AUDIENCE_ID,
   flutterwaveSecretKey: process.env.FLUTTERWAVE_SECRET_KEY,
+  paystackSecretKey: process.env.PAYSTACK_SECRET_KEY,
   emailPass: process.env.Email_pass,
   emailUser: process.env.Email_user,
   emailHost: process.env.Email_host,
+  ipStackApiKey: process.env.IP_STACK_API_KEY
 });

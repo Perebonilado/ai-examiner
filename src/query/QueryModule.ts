@@ -7,6 +7,9 @@ import { ScoreQueryService } from './services/ScoreQueryService';
 import { DocumentTopicQueryService } from './services/DocumentTopicQueryService';
 import { QuestionTopicQueryService } from './services/QuestionTopicQueryService';
 import { LookUpQueryService } from './services/LookUpQueryService';
+import { SubscriptionQueryService } from './services/SubscriptionQueryService';
+import { PlanPermissionQueryService } from './services/PlanPermissionQueryService';
+import { PermissionQueryService } from './services/PermissionQueryService';
 
 @Module({
   providers: [
@@ -17,7 +20,10 @@ import { LookUpQueryService } from './services/LookUpQueryService';
     ScoreQueryService,
     DocumentTopicQueryService,
     QuestionTopicQueryService,
-    LookUpQueryService
+    LookUpQueryService,
+    SubscriptionQueryService,
+    PlanPermissionQueryService,
+    PermissionQueryService
   ],
   exports: [
     UserQueryService,
@@ -27,7 +33,10 @@ import { LookUpQueryService } from './services/LookUpQueryService';
     ScoreQueryService,
     DocumentTopicQueryService,
     QuestionTopicQueryService,
-    LookUpQueryService
+    LookUpQueryService,
+    SubscriptionQueryService,
+    PlanPermissionQueryService,
+    PermissionQueryService
   ],
 })
 export class QueryModule {}

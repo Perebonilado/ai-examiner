@@ -6,7 +6,8 @@ import { InfraDbModule } from './infra/db/InfraDbModule';
 import { InfraRepositoryModule } from './infra/db/InfraRepositoryModule';
 import { QueryModule } from './query/QueryModule';
 import { BusinessModule } from './business/BusinessModule';
-import { GoogleStrategy } from './infra/auth/strategies/google.strategy';
+import { WebHooksModule } from './webhooks/WebHooksModule';
+import { NotificationsModule } from './notification/NotificationsModule';
 
 @Module({
   imports: [
@@ -16,7 +17,9 @@ import { GoogleStrategy } from './infra/auth/strategies/google.strategy';
     InfraDbModule,
     InfraRepositoryModule,
     QueryModule,
-    BusinessModule
+    BusinessModule,
+    WebHooksModule,
+    NotificationsModule
   ],
   providers: []
 })

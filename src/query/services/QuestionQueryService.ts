@@ -6,6 +6,8 @@ import { getPagination } from 'src/utils';
 import { ScoreQueryService } from './ScoreQueryService';
 import { QuestionTopicQueryService } from './QuestionTopicQueryService';
 import { LookUpQueryService } from './LookUpQueryService';
+import * as moment from 'moment';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class QuestionQueryService {
@@ -99,10 +101,30 @@ export class QuestionQueryService {
         topics: topics
           ? topics.map((t) => ({ id: t.id, title: t.documentTopicTitle }))
           : null,
-        type: type ? type.title : null
+        type: type ? type.title : null,
       };
     } catch (error) {
       throw new QueryError('Failed to find questions by id').InnerError(error);
+    }
+  }
+
+  public async getUserQuestionsCountForCurrentMonth(userId: string) {
+    try {
+      const startOfMonth = moment().startOf('month').toDate();
+      const endOfMonth = moment().endOf('month').toDate();
+
+      return await QuestionModel.count({
+        where: {
+          userId: userId,
+          createdOn: {
+            [Op.between]: [startOfMonth, endOfMonth],
+          },
+        },
+      })
+    } catch (error) {
+      throw new QueryError(
+        'Failed to get number of questions generated for the user for current month',
+      ).InnerError(error);
     }
   }
 }

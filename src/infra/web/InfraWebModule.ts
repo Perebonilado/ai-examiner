@@ -12,6 +12,10 @@ import { GoogleStrategy } from '../auth/strategies/google.strategy';
 import { DocumentTopicController } from './controllers/DocumentTopicController';
 import { FileUploadController } from './controllers/FileUploadController';
 import { LookUpController } from './controllers/LookUpController';
+import { SubscriptionController } from './controllers/SubscriptionController';
+import { PlanController } from './controllers/PlanController';
+import { UserController } from './controllers/UserController';
+import { PermissionController } from './controllers/PermissionController';
 
 @Module({
   imports: [
@@ -30,7 +34,11 @@ import { LookUpController } from './controllers/LookUpController';
     CourseDocumentController,
     DocumentTopicController,
     FileUploadController,
-    LookUpController
+    LookUpController,
+    SubscriptionController,
+    PlanController,
+    UserController,
+    PermissionController
   ],
 })
 export class InfraWebModule {}

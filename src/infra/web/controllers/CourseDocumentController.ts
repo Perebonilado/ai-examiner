@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
@@ -223,7 +223,7 @@ export class CourseDocumentController {
         },
       };
     } catch (error) {
-      console.log(error);
+      console.log(error)
       throw new HttpException(
         error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,
