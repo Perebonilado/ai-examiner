@@ -99,7 +99,7 @@ export class QuestionsController {
 
         // check if vector store has expired, if so:
         // create new store, attach file and attach to thread
-        
+
         const vectorStore = await this.examinerService.retrieveVectorStore(
           existingThread.tool_resources.file_search.vector_store_ids[0],
         );
@@ -137,8 +137,20 @@ export class QuestionsController {
           run.id,
         );
 
-        const mostRecentlyGeneratedQuestions =
+        let mostRecentlyGeneratedQuestions =
           extractJSONDataFromMessages(messages);
+
+        if (
+          mostRecentlyGeneratedQuestions instanceof Array &&
+          mostRecentlyGeneratedQuestions.length
+        ) {
+          mostRecentlyGeneratedQuestions = [...mostRecentlyGeneratedQuestions];
+        } else {
+          throw new HttpException(
+            `An error occurred while generating questions: more questions require more content to be provided in the document.`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
 
         const createdQuestions = await this.createQuestionHandler.handle({
           payload: {
@@ -210,6 +222,7 @@ export class QuestionsController {
         );
       }
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to generate questions for document',
         HttpStatus.BAD_REQUEST,

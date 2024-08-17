@@ -179,18 +179,30 @@ export class CourseController {
 
       const messages = await this.examinerService.retrieveThreadMessages(
         updatedThread.id,
-        run.id
+        run.id,
       );
 
-      const mostRecentlyGeneratedQuestions =
+      let mostRecentlyGeneratedQuestions =
         extractJSONDataFromMessages(messages);
+
+      if (
+        mostRecentlyGeneratedQuestions instanceof Array &&
+        mostRecentlyGeneratedQuestions.length
+      ) {
+        mostRecentlyGeneratedQuestions = [...mostRecentlyGeneratedQuestions];
+      } else {
+        throw new HttpException(
+          `An error occurred while generating questions: more questions require more content to be provided in the document.`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
 
       await this.createQuestionHandler.handle({
         payload: {
           courseDocumentId: createdDocument.data.id,
           data: mostRecentlyGeneratedQuestions,
           userId: userToken.sub,
-          questionTypeId: questionType
+          questionTypeId: questionType,
         },
       });
 
