@@ -42,7 +42,7 @@ export class CourseDocumentController {
     private createDocumentTopicHandler: CreateDocumentTopicHandler,
     @Inject(CreateQuestionTopicHandler)
     private createQuestionTopicHandler: CreateQuestionTopicHandler,
-    @Inject(LookUpQueryService) private lookUpQueryService: LookUpQueryService
+    @Inject(LookUpQueryService) private lookUpQueryService: LookUpQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -179,15 +179,27 @@ export class CourseDocumentController {
         run.id,
       );
 
-      const mostRecentlyGeneratedQuestions =
+      let mostRecentlyGeneratedQuestions =
         extractJSONDataFromMessages(messages);
+
+      if (
+        mostRecentlyGeneratedQuestions instanceof Array &&
+        mostRecentlyGeneratedQuestions.length
+      ) {
+        mostRecentlyGeneratedQuestions = [...mostRecentlyGeneratedQuestions];
+      } else {
+        throw new HttpException(
+          `An error occurred while generating questions: more questions require more content to be provided in the document.`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
 
       const createdQuestion = await this.createQuestionHandler.handle({
         payload: {
           courseDocumentId: createdDocument.data.id,
           data: mostRecentlyGeneratedQuestions,
           userId: userToken.sub,
-          questionTypeId: questionType
+          questionTypeId: questionType,
         },
       });
 
@@ -211,19 +223,19 @@ export class CourseDocumentController {
           payload: questionTopicsToCreate,
         });
       }
-      const type = await this.lookUpQueryService.findLookUpById(questionType)
-      
+      const type = await this.lookUpQueryService.findLookUpById(questionType);
+
       return {
         status: HttpStatus.CREATED,
         message: 'Questions successfully generated for document',
         data: {
           documentId: createdDocument.data.id,
           questionId: createdQuestion.data.id,
-          type: type.title
+          type: type.title,
         },
       };
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,
