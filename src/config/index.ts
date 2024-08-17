@@ -7,7 +7,8 @@ export interface Config {
   database: string;
   databaseHost: string;
   jwtSecret: string;
-  assistantId: string;
+  assistantIdFreePlan: string;
+  assistantIdPaidPlan: string;
   googleClientId: string;
   googleClientSecret: string;
   googleCallbackUrl: string;
@@ -33,7 +34,8 @@ export default (): Config => ({
   database: process.env.Database,
   databaseHost: process.env.Database_Host,
   jwtSecret: process.env.JWT_SECRET,
-  assistantId: process.env.OPEN_AI_ASSITANT_ID,
+  assistantIdFreePlan: process.env.OPEN_AI_ASSITANT_ID_FREE_PLAN,
+  assistantIdPaidPlan: process.env.OPEN_AI_ASSITANT_ID_PAID_PLAN,
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
   googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL,
