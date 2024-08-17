@@ -23,6 +23,8 @@ import { extractJSONDataFromMessages } from 'src/utils';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
+import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
+import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
 
 @Controller('document-topic')
 export class DocumentTopicController {
@@ -36,6 +38,10 @@ export class DocumentTopicController {
     private createDocumentTopicHandler: CreateDocumentTopicHandler,
     @Inject(CourseDocumentQueryService)
     private courseDocumentQueryService: CourseDocumentQueryService,
+    @Inject(SubscriptionQueryService)
+    private subscriptionQueryService: SubscriptionQueryService,
+    @Inject(PaystackSubscriptionService)
+    private paystackSubscriptionService: PaystackSubscriptionService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -89,6 +95,32 @@ export class DocumentTopicController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
+      const subscriptionInfo = await this.subscriptionQueryService.findByUserId(
+        userToken.sub,
+      );
+
+      let isUserOnFreePlan = true;
+
+      if (subscriptionInfo?.subscriptionCode) {
+        const subscriptionDetails =
+          await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+            subscriptionInfo?.subscriptionCode,
+          );
+
+        const inactiveSubscriptionStatuses = ['completed', 'cancelled'];
+
+        if (
+          !inactiveSubscriptionStatuses.includes(
+            subscriptionDetails.subscrptionInformation.status,
+          )
+        ) {
+          isUserOnFreePlan = false;
+        }
+      }
+
+      const assistantId = isUserOnFreePlan
+        ? EnvironmentVariables.config.assistantIdFreePlan
+        : EnvironmentVariables.config.assistantIdPaidPlan;
 
       const temporaryVectorStoreName = `${userToken.sub}_${new Date().getTime()}`;
 
@@ -116,7 +148,7 @@ export class DocumentTopicController {
       );
 
       const run = await this.examinerService.createRun(
-        EnvironmentVariables.config.assistantId,
+        assistantId,
         updatedThread.id,
       );
 

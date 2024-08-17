@@ -32,6 +32,8 @@ import { UpdateScoreHandler } from 'src/business/handlers/Score/UpdateScoreHandl
 import { DocumentTopicQueryService } from 'src/query/services/DocumentTopicQueryService';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 import { CreateQuestionTopicHandler } from 'src/business/handlers/QuestionTopic/CreateQuestionTopicHandler';
+import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
+import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
 
 @Controller('questions')
 export class QuestionsController {
@@ -52,6 +54,10 @@ export class QuestionsController {
     private createDocumentTopicHandler: CreateDocumentTopicHandler,
     @Inject(CreateQuestionTopicHandler)
     private createQuestionTopicHandler: CreateQuestionTopicHandler,
+    @Inject(SubscriptionQueryService)
+    private subscriptionQueryService: SubscriptionQueryService,
+    @Inject(PaystackSubscriptionService)
+    private paystackSubscriptionService: PaystackSubscriptionService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -86,6 +92,33 @@ export class QuestionsController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
+      const subscriptionInfo = await this.subscriptionQueryService.findByUserId(
+        userToken.sub,
+      );
+
+      let isUserOnFreePlan = true;
+
+      if (subscriptionInfo?.subscriptionCode) {
+        const subscriptionDetails =
+          await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+            subscriptionInfo?.subscriptionCode,
+          );
+
+        const inactiveSubscriptionStatuses = ['completed', 'cancelled'];
+
+        if (
+          !inactiveSubscriptionStatuses.includes(
+            subscriptionDetails.subscrptionInformation.status,
+          )
+        ) {
+          isUserOnFreePlan = false;
+        }
+      }
+
+      const assistantId = isUserOnFreePlan
+        ? EnvironmentVariables.config.assistantIdFreePlan
+        : EnvironmentVariables.config.assistantIdPaidPlan;
+
       const document =
         await this.courseDocumentQueryService.findCourseDocumentById(
           id,
@@ -128,7 +161,7 @@ export class QuestionsController {
         );
 
         const run = await this.examinerService.createRun(
-          EnvironmentVariables.config.assistantId,
+          assistantId,
           existingThread.id,
         );
 
