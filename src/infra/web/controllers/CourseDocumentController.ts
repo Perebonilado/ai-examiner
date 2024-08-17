@@ -27,6 +27,8 @@ import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/
 import { CreateQuestionTopicHandler } from 'src/business/handlers/QuestionTopic/CreateQuestionTopicHandler';
 import { DocumentTopicModel } from 'src/infra/db/models/DocumentTopicModel';
 import { LookUpQueryService } from 'src/query/services/LookUpQueryService';
+import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
+import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -43,6 +45,10 @@ export class CourseDocumentController {
     @Inject(CreateQuestionTopicHandler)
     private createQuestionTopicHandler: CreateQuestionTopicHandler,
     @Inject(LookUpQueryService) private lookUpQueryService: LookUpQueryService,
+    @Inject(SubscriptionQueryService)
+    private subscriptionQueryService: SubscriptionQueryService,
+    @Inject(PaystackSubscriptionService)
+    private paystackSubscriptionService: PaystackSubscriptionService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -90,6 +96,33 @@ export class CourseDocumentController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
+
+      const subscriptionInfo = await this.subscriptionQueryService.findByUserId(
+        userToken.sub,
+      );
+
+      let isUserOnFreePlan = true;
+
+      if (subscriptionInfo?.subscriptionCode) {
+        const subscriptionDetails =
+          await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+            subscriptionInfo?.subscriptionCode,
+          );
+
+        const inactiveSubscriptionStatuses = ['completed', 'cancelled'];
+
+        if (
+          !inactiveSubscriptionStatuses.includes(
+            subscriptionDetails.subscrptionInformation.status,
+          )
+        ) {
+          isUserOnFreePlan = false;
+        }
+      }
+
+      const assistantId = isUserOnFreePlan
+        ? EnvironmentVariables.config.assistantIdFreePlan
+        : EnvironmentVariables.config.assistantIdPaidPlan;
 
       const vectorStore = await this.examinerService.createVectorStore(
         body.title,
@@ -170,7 +203,7 @@ export class CourseDocumentController {
       );
 
       const run = await this.examinerService.createRun(
-        EnvironmentVariables.config.assistantId,
+        assistantId,
         existingThread.id,
       );
 

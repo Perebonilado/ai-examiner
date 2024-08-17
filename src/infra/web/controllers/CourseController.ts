@@ -32,6 +32,8 @@ import {
 } from 'src/constants';
 import { extractJSONDataFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
+import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
+import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
 
 @Controller('course')
 export class CourseController {
@@ -44,6 +46,10 @@ export class CourseController {
     @Inject(CreateQuestionHandler)
     private createQuestionHandler: CreateQuestionHandler,
     @Inject(ExaminerService) private examinerService: ExaminerService,
+    @Inject(SubscriptionQueryService)
+    private subscriptionQueryService: SubscriptionQueryService,
+    @Inject(PaystackSubscriptionService)
+    private paystackSubscriptionService: PaystackSubscriptionService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -132,6 +138,32 @@ export class CourseController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
+      const subscriptionInfo = await this.subscriptionQueryService.findByUserId(
+        userToken.sub,
+      );
+
+      let isUserOnFreePlan = true;
+
+      if (subscriptionInfo?.subscriptionCode) {
+        const subscriptionDetails =
+          await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+            subscriptionInfo?.subscriptionCode,
+          );
+
+        const inactiveSubscriptionStatuses = ['completed', 'cancelled'];
+
+        if (
+          !inactiveSubscriptionStatuses.includes(
+            subscriptionDetails.subscrptionInformation.status,
+          )
+        ) {
+          isUserOnFreePlan = false;
+        }
+      }
+
+      const assistantId = isUserOnFreePlan
+        ? EnvironmentVariables.config.assistantIdFreePlan
+        : EnvironmentVariables.config.assistantIdPaidPlan;
 
       const createdCourse = await this.createCourseHandler.handle({
         payload: {
@@ -173,7 +205,7 @@ export class CourseController {
       );
 
       const run = await this.examinerService.createRun(
-        EnvironmentVariables.config.assistantId,
+        assistantId,
         updatedThread.id,
       );
 
