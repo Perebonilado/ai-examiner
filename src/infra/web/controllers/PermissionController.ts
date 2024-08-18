@@ -41,7 +41,7 @@ export class PermissionController {
         userToken.sub,
       );
 
-      const maxNumberOfQuestionGenerationForFreePlanTier = 2;
+      const maxNumberOfQuestionGenerationForFreePlanTier = 1;
 
       if (subInfo?.subscriptionCode) {
         const subscriptionDetails =

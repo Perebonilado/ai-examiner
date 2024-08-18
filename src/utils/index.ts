@@ -25,12 +25,35 @@ export const replaceAllSpacesInStringWithHyphen = (str: string) => {
   return str.replace(/\s+/g, '-');
 };
 
+const extractJSONArray = (str: string): any[] => {
+  const firstOpen = str.indexOf('[');
+  const lastClose = str.lastIndexOf(']');
+
+  if (firstOpen === -1 || lastClose === -1) {
+      return []; // No valid JSON array found
+  }
+
+  const candidate = str.substring(firstOpen, lastClose + 1);
+
+  try {
+      const res = JSON.parse(candidate);
+      if (Array.isArray(res)) {
+          return res; // Return the valid JSON array
+      }
+  } catch (e) {
+    throw new Error('No JSON object or array found in the text');
+  }
+
+  return []; // Return null if no valid JSON array is found
+};
+
+
 export const extractJSONDataFromMessages = (
   messages: OpenAI.Beta.Threads.Messages.MessagesPage,
 ) => {
   const data = (messages.data[0].content[0] as any).text.value;
 
-  return extractAndParseJSON(data);
+  return extractJSONArray(data) as any;
 };
 
 export const convertSmallerDemoninationtoLarger = (amount: number, factor: number) => {
