@@ -117,6 +117,7 @@ export class ExaminerService {
     try {
       return await this.openAiClient.beta.threads.runs.createAndPoll(threadId, {
         assistant_id: assistantId,
+        tools: [{ type: 'file_search' }],
       });
     } catch (error) {
       throw new HttpException('Falied to create run', HttpStatus.BAD_GATEWAY);
