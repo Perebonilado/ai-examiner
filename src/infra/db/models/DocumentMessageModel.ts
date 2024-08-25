@@ -21,7 +21,7 @@ export class DocumentMessageModel extends Model<DocumentMessageModel> {
   id: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.TEXT,
     allowNull: false,
     field: 'message',
   })

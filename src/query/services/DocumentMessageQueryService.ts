@@ -26,7 +26,7 @@ export class DocumentMessageQueryService {
           courseDocumentId,
           ...paginationCondition,
         },
-        order: ['createdOn', 'DESC'],
+        order: [['createdOn', 'DESC']],
         limit,
       });
 
