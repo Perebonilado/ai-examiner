@@ -13,6 +13,7 @@ import { CourseModel } from './CourseModel';
 import { CourseDocumentModel } from './CourseDocumentModel';
 import { QuestionModel } from './QuestionModel';
 import { SubscriptionModel } from './SubscriptionModel';
+import { DocumentMessageModel } from './DocumentMessageModel';
 
 @Table({ tableName: 'user' })
 export class UserModel extends Model<UserModel> {
@@ -77,8 +78,11 @@ export class UserModel extends Model<UserModel> {
   @HasMany(() => QuestionModel, 'user_id')
   question: QuestionModel;
 
-  @HasOne(()=>SubscriptionModel, 'user_id')
-  subscription: SubscriptionModel
+  @HasOne(() => SubscriptionModel, 'user_id')
+  subscription: SubscriptionModel;
+
+  @HasMany(() => DocumentMessageModel, 'user_id')
+  documentMessage: DocumentMessageModel;
 
   @BeforeCreate
   static addUUID(instance: UserModel) {

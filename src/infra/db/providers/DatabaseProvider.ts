@@ -11,6 +11,7 @@ import { QuestionTopicModel } from '../models/QuestionTopicModel';
 import { SubscriptionModel } from '../models/SubscriptionModel';
 import { PermissionModel } from '../models/PermissionsModel';
 import { PlanPermissionModel } from '../models/PlanPermissionModel';
+import { DocumentMessageModel } from '../models/DocumentMessageModel';
 
 export let sequelize: Sequelize;
 
@@ -40,7 +41,8 @@ export const databaseProviders = [
         QuestionTopicModel,
         SubscriptionModel,
         PermissionModel,
-        PlanPermissionModel
+        PlanPermissionModel,
+        DocumentMessageModel
       ]);
 
       try {
