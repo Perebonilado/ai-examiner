@@ -14,7 +14,7 @@ export class DocumentMessageQueryService {
   }: {
     courseDocumentId: string;
     limit: number;
-    lastMessageCreatedOn: Date;
+    lastMessageCreatedOn?: Date;
   }) {
     try {
       const paginationCondition = lastMessageCreatedOn

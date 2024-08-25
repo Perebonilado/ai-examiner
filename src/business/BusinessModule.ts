@@ -14,6 +14,7 @@ import { CreateQuestionTopicHandler } from './handlers/QuestionTopic/CreateQuest
 import { UpdateUserHandler } from './handlers/User/UpdateUserHandler';
 import { CreateSubscriptionHandler } from './handlers/Subscription/CreateSubscriptionHandler';
 import { UpdateSubscriptionHandler } from './handlers/Subscription/UpdateSubscriptionHandler';
+import { CreateDocumentMessageHandler } from './handlers/DocumentMessage/CreateDocumentMessageHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -29,7 +30,8 @@ import { UpdateSubscriptionHandler } from './handlers/Subscription/UpdateSubscri
     CreateQuestionTopicHandler,
     UpdateUserHandler,
     CreateSubscriptionHandler,
-    UpdateSubscriptionHandler
+    UpdateSubscriptionHandler,
+    CreateDocumentMessageHandler
   ],
   exports: [
     CreateUserHandler,
@@ -43,7 +45,8 @@ import { UpdateSubscriptionHandler } from './handlers/Subscription/UpdateSubscri
     CreateQuestionTopicHandler,
     UpdateUserHandler,
     CreateSubscriptionHandler,
-    UpdateSubscriptionHandler
+    UpdateSubscriptionHandler,
+    CreateDocumentMessageHandler
   ],
 })
 export class BusinessModule {}
