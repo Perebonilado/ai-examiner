@@ -10,6 +10,7 @@ import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerServi
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { DocumentMessageModel } from 'src/infra/db/models/DocumentMessageModel';
+import { generateMessagePrompt } from 'src/constants';
 
 @Injectable()
 export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate<
@@ -74,7 +75,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
 
         await this.examinerService.createThreadMessage(
           updatedThread.id,
-          userMessage,
+          generateMessagePrompt(userMessage),
         );
 
         const run = await this.examinerService.createRun(
@@ -141,7 +142,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
 
         await this.examinerService.createThreadMessage(
           existingThread.id,
-          userMessage,
+          generateMessagePrompt(userMessage),
         );
 
         const run = await this.examinerService.createRun(
@@ -176,7 +177,11 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         } as DocumentMessageModel);
 
         return {
-          data: { data: null },
+          data: {
+            data: {
+              systemResponse: systemMessage,
+            },
+          },
           message: 'Messages successfully created',
           status: HttpStatus.CREATED,
         };

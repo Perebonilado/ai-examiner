@@ -42,6 +42,29 @@ Output the result in the following JSON format:
 
 Provide only the JSON array, nothing else. Be detailed and fast`;
 
+export const generateMessagePrompt = (message: string) => {
+return `
+Analyze the provided document thoroughly. Determine if the following request is within the context of the document:
+
+Request: ${message}
+
+If the request is relevant to the document's content:
+1. Evaluate the request comprehensively
+2. Provide a detailed response addressing all aspects of the request
+3. Format the response as follows:
+   - Use pure text
+   - Start each heading and bullet point on a new line, adding spaces between each line
+   - Do not include any HTML tags
+   - Do not cite sources
+   - Do not repeat the request message, omit this in your response
+
+If the request is not relevant to the document's content:
+Respond only with: "Your message is not within the context of the provided document."
+
+Adhere strictly to these guidelines in your response.
+`
+}
+
 export const defaultPageSize = 10;
 
 export const defaultPageNumber = 1;

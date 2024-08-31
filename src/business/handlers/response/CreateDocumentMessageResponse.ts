@@ -1,3 +1,5 @@
 export interface CreateDocumentMessageResponse {
-  data: null
+  data: {
+    systemResponse: string;
+  };
 }
