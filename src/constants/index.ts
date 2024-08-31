@@ -51,7 +51,9 @@ Request: ${message}
 If the request is relevant to the document's content:
 1. Evaluate the request comprehensively
 2. Provide a detailed response addressing all aspects of the request
-3. Format the response as follows:
+3. Simplify your response to make it understandable for the reader. Give relatable real life examples to buttress your explanations where possible.
+4. Provide pnemonics and patterns that might help the reader memorize or remember better where possible.
+5. Format the response as follows:
    - Use pure text
    - Start each heading and bullet point on a new line, adding spaces between each line
    - Do not include any HTML tags
