@@ -110,7 +110,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         } as DocumentMessageModel);
 
         return {
-          data: { data: null },
+          data: { systemResponse: systemMessage },
           message: 'Messages successfully created',
           status: HttpStatus.CREATED,
         };
@@ -178,9 +178,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
 
         return {
           data: {
-            data: {
-              systemResponse: systemMessage,
-            },
+            systemResponse: systemMessage,
           },
           message: 'Messages successfully created',
           status: HttpStatus.CREATED,

@@ -1,5 +1,4 @@
 export interface CreateDocumentMessageResponse {
-  data: {
-    systemResponse: string;
-  };
+  
+  systemResponse: string;
 }
