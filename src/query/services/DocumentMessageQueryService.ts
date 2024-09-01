@@ -30,7 +30,21 @@ export class DocumentMessageQueryService {
         limit,
       });
 
-      return messages;
+      const totalMessagesCount = await DocumentMessageModel.count({
+        where: { courseDocumentId },
+      });
+
+      return {
+        data: messages.map((m)=>{
+          return {
+            id: m.id,
+            message: m.message,
+            sender: m.sender,
+            createdOn: m.createdOn
+          }
+        }),
+        totalCount: totalMessagesCount,
+      };
     } catch (error) {
       throw new QueryError(
         'Failed to find document messages by course document id',
