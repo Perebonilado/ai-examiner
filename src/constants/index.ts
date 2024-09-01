@@ -44,7 +44,7 @@ Provide only the JSON array, nothing else. Be detailed and fast`;
 
 export const generateMessagePrompt = (message: string) => {
 return `
-Analyze the provided document thoroughly. Determine if the following request is within the context of the document:
+Analyze the provided document thoroughly. Analyze the request below:
 
 Request: ${message}
 
@@ -54,14 +54,12 @@ If the request is relevant to the document's content:
 3. Simplify your response to make it understandable for the reader. Give relatable real life examples to buttress your explanations where possible.
 4. Provide pnemonics and patterns that might help the reader memorize or remember better where possible.
 5. Format the response as follows:
-   - Use pure text
+   - Use markdown format
    - Start each heading and bullet point on a new line, adding spaces between each line
    - Do not include any HTML tags
    - Do not cite sources
    - Do not repeat the request message, omit this in your response
-
-If the request is not relevant to the document's content:
-Respond only with: "Your message is not within the context of the provided document."
+"
 
 Adhere strictly to these guidelines in your response.
 `
