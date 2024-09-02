@@ -4,7 +4,7 @@ export const generateQuestionsPrompt = (
   questionCount: number = 5,
   focusAreas?: string[],
 ) => {
-  return `Analyze the document thoroughly. Generate ${questionCount} unique multiple-choice questions based on key concepts. If insufficient content, generate the maximum possible.
+  return `Analyze the document thoroughly. Generate ${questionCount} unique multiple-choice questions based on key concepts.
 
 ${focusAreas?.length ? `Focus on these concepts: ${focusAreas.join(', ')}. Create specific, concept-focused questions that test core understanding. ${focusAreas.length > 1 ? 'Distribute questions evenly across concepts and shuffle their order.' : ''}` : ''}
 

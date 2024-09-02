@@ -21,28 +21,32 @@ export class DocumentMessageQueryService {
         ? { createdOn: { [Op.lt]: lastMessageCreatedOn } }
         : {};
 
-      const messages = await DocumentMessageModel.findAll({
-        where: {
-          courseDocumentId,
-          ...paginationCondition,
-        },
-        order: [['createdOn', 'ASC']],
-        limit,
-      });
+      // Fetch messages in descending order to get the latest ones first
+      const [messages, totalMessagesCount] = await Promise.all([
+        DocumentMessageModel.findAll({
+          where: {
+            courseDocumentId,
+            ...paginationCondition,
+          },
+          order: [['createdOn', 'DESC']], // Fetch newest messages first
+          limit,
+        }),
+        DocumentMessageModel.count({
+          where: { courseDocumentId },
+        }),
+      ]);
 
-      const totalMessagesCount = await DocumentMessageModel.count({
-        where: { courseDocumentId },
-      });
+      // Reverse the messages to have the most recent messages last
+      const orderedMessages = messages.reverse();
 
       return {
-        data: messages.map((m)=>{
-          return {
-            id: m.id,
-            message: m.message,
-            sender: m.sender,
-            createdOn: m.createdOn
-          }
-        }),
+        data: orderedMessages.map((m) => ({
+          id: m.id,
+          message: m.message,
+          sender: m.sender,
+          createdOn: m.createdOn,
+          threadId: m.openAiThreadId,
+        })),
         totalCount: totalMessagesCount,
       };
     } catch (error) {

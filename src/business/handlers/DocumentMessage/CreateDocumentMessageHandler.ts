@@ -53,7 +53,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           { courseDocumentId, limit: 1 },
         );
 
-      if (!existingMessage[0]) {
+      if (!existingMessage.data[0]) {
         // create thread/vector store
         const vectorStore = await this.examinerService.createVectorStore(
           `user_messages_vector_store_${courseDocument.title}`,
@@ -115,7 +115,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           status: HttpStatus.CREATED,
         };
       } else {
-        const threadId = existingMessage[0].openAiThreadId;
+        const threadId = existingMessage.data[0].threadId;
         const existingThread = await this.examinerService.findThread(threadId);
         const vectorStore = await this.examinerService.retrieveVectorStore(
           existingThread.tool_resources.file_search.vector_store_ids[0],

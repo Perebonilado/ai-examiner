@@ -172,8 +172,10 @@ export class ExaminerService {
     try {
       const tempFilePath = join(tmpdir(), file.originalname);
       await new Promise((resolve, reject) => {
-        const writeStream = createWriteStream(tempFilePath);
-        writeStream.write(file.buffer);
+        const writeStream = createWriteStream(tempFilePath, {
+          encoding: 'latin1',
+        });
+        writeStream.write(file.buffer, 'latin1');
         writeStream.on('error', reject);
         writeStream.on('finish', resolve);
         writeStream.end();
@@ -188,6 +190,8 @@ export class ExaminerService {
         purpose: 'assistants',
       });
 
+      console.log(uploadedFile)
+
       await unlink(tempFilePath);
 
       return uploadedFile;
@@ -200,24 +204,44 @@ export class ExaminerService {
     fileId: string,
     vectorStoreId: string,
   ): Promise<string> {
-    try {
-      const createdVectorStore =
-        await this.openAiClient.beta.vectorStores.files.createAndPoll(
+    const maxRetries = 3; // Maximum number of retries
+    let attempts = 0; // Counter for attempts
+  
+    while (attempts < maxRetries) {
+      try {
+        const createdVectorStore = await this.openAiClient.beta.vectorStores.files.createAndPoll(
           vectorStoreId,
           {
             file_id: fileId,
           },
         );
-
-      return createdVectorStore.vector_store_id;
-    } catch (error) {
-      throw new HttpException(
-        'Falied to attach file to vector store',
-        HttpStatus.BAD_GATEWAY,
-      );
+  
+        // Check if the status is not 'failed'
+        if (createdVectorStore.status !== 'failed') {
+          return createdVectorStore.vector_store_id; // Success, return the vector store ID
+        }
+  
+        // Increment the attempt counter if the status is 'failed'
+        attempts++;
+  
+      } catch (error) {
+        // Catch any errors thrown during the process
+        attempts++;
+        if (attempts >= maxRetries) {
+          throw new HttpException(
+            'Failed to attach file to vector store after 3 attempts',
+            HttpStatus.BAD_GATEWAY,
+          );
+        }
+      }
     }
+  
+    // If all attempts fail
+    throw new HttpException(
+      'Failed to attach file to vector store after 3 attempts',
+      HttpStatus.BAD_GATEWAY,
+    );
   }
-
   public async retrieveVectorStore(storeId: string) {
     try {
       return await this.openAiClient.beta.vectorStores.retrieve(storeId);
