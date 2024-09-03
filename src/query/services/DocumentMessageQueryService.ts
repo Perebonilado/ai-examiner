@@ -7,6 +7,16 @@ import { DocumentMessageModel } from 'src/infra/db/models/DocumentMessageModel';
 export class DocumentMessageQueryService {
   constructor() {}
 
+  public async countAllDocumentMessagesByCourseId(courseDocumentId: string) {
+    try {
+      return await DocumentMessageModel.count({ where: { courseDocumentId } });
+    } catch (error) {
+      throw new QueryError(
+        'Failed to count all document messages by course document id',
+      ).InnerError(error);
+    }
+  }
+
   public async findDocumentMessagesByCourseDocumentId({
     courseDocumentId,
     limit = 5,

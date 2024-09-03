@@ -90,27 +90,30 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
 
         const systemMessage = (messages.data[0].content[0] as any).text.value;
 
-        // save user message, then system message
-        await this.documentMessageRepository.create({
-          message: userMessage,
-          sender: 'user',
-          openAiFileId: courseDocument.openAiFileId,
-          openAiThreadId: updatedThread.id,
-          userId: userId,
-          courseDocumentId: courseDocument.id,
-        } as DocumentMessageModel);
-
-        await this.documentMessageRepository.create({
-          message: systemMessage,
-          sender: 'system',
-          openAiFileId: courseDocument.openAiFileId,
-          openAiThreadId: updatedThread.id,
-          userId: userId,
-          courseDocumentId: courseDocument.id,
-        } as DocumentMessageModel);
+        const [_, __, currentTotalMessagesCount] = await Promise.all([
+          this.documentMessageRepository.create({
+            message: userMessage,
+            sender: 'user',
+            openAiFileId: courseDocument.openAiFileId,
+            openAiThreadId: updatedThread.id,
+            userId: userId,
+            courseDocumentId: courseDocument.id,
+          } as DocumentMessageModel),
+          this.documentMessageRepository.create({
+            message: systemMessage,
+            sender: 'system',
+            openAiFileId: courseDocument.openAiFileId,
+            openAiThreadId: updatedThread.id,
+            userId: userId,
+            courseDocumentId: courseDocument.id,
+          } as DocumentMessageModel),
+          this.documentMessageQueryService.countAllDocumentMessagesByCourseId(
+            courseDocument.id,
+          ),
+        ]);
 
         return {
-          data: { systemResponse: systemMessage },
+          data: { systemResponse: systemMessage, currentTotalMessagesCount },
           message: 'Messages successfully created',
           status: HttpStatus.CREATED,
         };
@@ -157,28 +160,32 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
 
         const systemMessage = (messages.data[0].content[0] as any).text.value;
 
-        // save user message, then system message
-        await this.documentMessageRepository.create({
-          message: userMessage,
-          sender: 'user',
-          openAiFileId: courseDocument.openAiFileId,
-          openAiThreadId: existingThread.id,
-          userId: userId,
-          courseDocumentId: courseDocument.id,
-        } as DocumentMessageModel);
-
-        await this.documentMessageRepository.create({
-          message: systemMessage,
-          sender: 'system',
-          openAiFileId: courseDocument.openAiFileId,
-          openAiThreadId: existingThread.id,
-          userId: userId,
-          courseDocumentId: courseDocument.id,
-        } as DocumentMessageModel);
+        const [_, __, currentTotalMessagesCount] = await Promise.all([
+          this.documentMessageRepository.create({
+            message: userMessage,
+            sender: 'user',
+            openAiFileId: courseDocument.openAiFileId,
+            openAiThreadId: existingThread.id,
+            userId: userId,
+            courseDocumentId: courseDocument.id,
+          } as DocumentMessageModel),
+          this.documentMessageRepository.create({
+            message: systemMessage,
+            sender: 'system',
+            openAiFileId: courseDocument.openAiFileId,
+            openAiThreadId: existingThread.id,
+            userId: userId,
+            courseDocumentId: courseDocument.id,
+          } as DocumentMessageModel),
+         this.documentMessageQueryService.countAllDocumentMessagesByCourseId(
+            courseDocument.id,
+          ),
+        ]);
 
         return {
           data: {
             systemResponse: systemMessage,
+            currentTotalMessagesCount,
           },
           message: 'Messages successfully created',
           status: HttpStatus.CREATED,
