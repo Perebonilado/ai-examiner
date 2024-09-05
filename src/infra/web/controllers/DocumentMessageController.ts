@@ -39,7 +39,11 @@ export class DocumentMessageController {
       const userToken = request['user'] as VerifiedTokenModel;
 
       return await this.createDocumentMessageHandler.handle({
-        payload: { ...body, userId: userToken.sub },
+        payload: {
+          ...body,
+          userId: userToken.sub,
+          responseFormat: body.responseFormat || 'indepth',
+        },
       });
     } catch (error) {
       throw new HttpException(

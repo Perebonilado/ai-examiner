@@ -75,7 +75,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
 
         await this.examinerService.createThreadMessage(
           updatedThread.id,
-          generateMessagePrompt(userMessage),
+          generateMessagePrompt(userMessage, request.payload.responseFormat),
         );
 
         const run = await this.examinerService.createRun(
@@ -141,7 +141,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
 
         await this.examinerService.createThreadMessage(
           existingThread.id,
-          generateMessagePrompt(userMessage),
+          generateMessagePrompt(userMessage, request.payload.responseFormat),
         );
 
         const run = await this.examinerService.createRun(
