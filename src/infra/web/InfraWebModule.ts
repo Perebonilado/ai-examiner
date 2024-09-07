@@ -16,6 +16,7 @@ import { SubscriptionController } from './controllers/SubscriptionController';
 import { PlanController } from './controllers/PlanController';
 import { UserController } from './controllers/UserController';
 import { PermissionController } from './controllers/PermissionController';
+import { DocumentMessageController } from './controllers/DocumentMessageController';
 
 @Module({
   imports: [
@@ -38,7 +39,8 @@ import { PermissionController } from './controllers/PermissionController';
     SubscriptionController,
     PlanController,
     UserController,
-    PermissionController
+    PermissionController,
+    DocumentMessageController
   ],
 })
 export class InfraWebModule {}

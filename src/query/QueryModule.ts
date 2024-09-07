@@ -10,6 +10,7 @@ import { LookUpQueryService } from './services/LookUpQueryService';
 import { SubscriptionQueryService } from './services/SubscriptionQueryService';
 import { PlanPermissionQueryService } from './services/PlanPermissionQueryService';
 import { PermissionQueryService } from './services/PermissionQueryService';
+import { DocumentMessageQueryService } from './services/DocumentMessageQueryService';
 
 @Module({
   providers: [
@@ -23,7 +24,8 @@ import { PermissionQueryService } from './services/PermissionQueryService';
     LookUpQueryService,
     SubscriptionQueryService,
     PlanPermissionQueryService,
-    PermissionQueryService
+    PermissionQueryService,
+    DocumentMessageQueryService
   ],
   exports: [
     UserQueryService,
@@ -36,7 +38,8 @@ import { PermissionQueryService } from './services/PermissionQueryService';
     LookUpQueryService,
     SubscriptionQueryService,
     PlanPermissionQueryService,
-    PermissionQueryService
+    PermissionQueryService,
+    DocumentMessageQueryService
   ],
 })
 export class QueryModule {}
