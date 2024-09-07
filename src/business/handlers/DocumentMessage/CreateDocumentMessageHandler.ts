@@ -100,14 +100,16 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         } as DocumentMessageModel);
 
         if (savedUserMessage) {
-          await this.documentMessageRepository.create({
-            message: systemMessage,
-            sender: 'system',
-            openAiFileId: courseDocument.openAiFileId,
-            openAiThreadId: updatedThread.id,
-            userId: userId,
-            courseDocumentId: courseDocument.id,
-          } as DocumentMessageModel);
+          setTimeout(async () => {
+            await this.documentMessageRepository.create({
+              message: systemMessage,
+              sender: 'system',
+              openAiFileId: courseDocument.openAiFileId,
+              openAiThreadId: updatedThread.id,
+              userId: userId,
+              courseDocumentId: courseDocument.id,
+            } as DocumentMessageModel);
+          }, 1000);
         }
 
         return {
@@ -168,14 +170,16 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         } as DocumentMessageModel);
 
         if (savedUserMessage) {
-          await this.documentMessageRepository.create({
-            message: systemMessage,
-            sender: 'system',
-            openAiFileId: courseDocument.openAiFileId,
-            openAiThreadId: existingThread.id,
-            userId: userId,
-            courseDocumentId: courseDocument.id,
-          } as DocumentMessageModel);
+          setTimeout(async () => {
+            await this.documentMessageRepository.create({
+              message: systemMessage,
+              sender: 'system',
+              openAiFileId: courseDocument.openAiFileId,
+              openAiThreadId: existingThread.id,
+              userId: userId,
+              courseDocumentId: courseDocument.id,
+            } as DocumentMessageModel);
+          }, 1000);
         }
 
         return {
