@@ -5,16 +5,15 @@ import {
   DataType,
   BeforeCreate,
   ForeignKey,
-  HasMany,
 } from 'sequelize-typescript';
-import * as moment from 'moment';
 import { generateUUID } from 'src/utils';
 import { UserModel } from './UserModel';
-import { QuestionModel } from './QuestionModel';
-import { DocumentMessageModel } from './DocumentMessageModel';
+import { CourseDocumentModel } from './CourseDocumentModel';
+import { MessageSenderModel } from 'src/infra/web/models/MessageSenderModel';
+import * as moment from 'moment';
 
-@Table({ tableName: 'course_document' })
-export class CourseDocumentModel extends Model<CourseDocumentModel> {
+@Table({ tableName: 'document_message' })
+export class DocumentMessageModel extends Model<DocumentMessageModel> {
   @Column({
     type: DataType.STRING,
     primaryKey: true,
@@ -22,26 +21,18 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
   id: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.TEXT,
     allowNull: false,
-    field: 'title',
+    field: 'message',
   })
-  title: string;
+  message: string;
 
   @Column({
     type: DataType.STRING,
-    allowNull: true,
-    field: 'course_id',
-  })
-  courseId: string;
-
-  @ForeignKey(() => UserModel)
-  @Column({
-    type: DataType.STRING,
-    field: 'user_id',
     allowNull: false,
+    field: 'sender',
   })
-  userId: string;
+  sender: MessageSenderModel
 
   @Column({
     type: DataType.STRING,
@@ -57,22 +48,34 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
   })
   openAiFileId: string;
 
+  @ForeignKey(() => UserModel)
+  @Column({
+    type: DataType.STRING,
+    field: 'user_id',
+    allowNull: false,
+  })
+  userId: string;
+
   @Column({
     type: DataType.DATE,
     field: 'created_on',
     allowNull: true,
+    defaultValue: moment(new Date()).utc().toDate(),
   })
   createdOn: Date;
 
-  @HasMany(() => QuestionModel, 'course_document_id')
-  question: QuestionModel;
-
-  @HasMany(()=>DocumentMessageModel, 'course_document_id')
-  documentMessage: DocumentMessageModel
+  @ForeignKey(()=>CourseDocumentModel)
+  @Column({
+    type: DataType.STRING,
+    field: 'course_document_id',
+    allowNull: false,
+  })
+  courseDocumentId: string
 
   @BeforeCreate
   static addUUID(instance: CourseDocumentModel) {
     instance.id = generateUUID();
     instance.createdOn = moment(new Date()).utc().toDate();
   }
+
 }
