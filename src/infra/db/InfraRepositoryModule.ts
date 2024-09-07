@@ -17,6 +17,8 @@ import { QuestionTopicSequelizeRepository } from './repository/QuestionTopicSequ
 import { SubscriptionRepository } from 'src/business/repository/SubscriptionRepository';
 import { SubscriptionSequelizeRepository } from './repository/SubscriptionSequelizeRepository';
 import { QueryModule } from 'src/query/QueryModule';
+import { DocumentMessageRepository } from 'src/business/repository/DocumentMessageRepository';
+import { DocumentMessageSequelizeRepository } from './repository/DocumentMessageSequelizeRepository';
 
 @Module({
   imports: [InfraDbModule, QueryModule],
@@ -52,6 +54,10 @@ import { QueryModule } from 'src/query/QueryModule';
     {
       provide: SubscriptionRepository,
       useClass: SubscriptionSequelizeRepository
+    },
+    {
+      provide: DocumentMessageRepository,
+      useClass: DocumentMessageSequelizeRepository
     }
   ],
   exports: [
@@ -62,7 +68,8 @@ import { QueryModule } from 'src/query/QueryModule';
     ScoreRepository,
     DocumentTopicRepository,
     QuestionTopicRepository,
-    SubscriptionRepository
+    SubscriptionRepository,
+    DocumentMessageRepository
   ],
 })
 export class InfraRepositoryModule {}

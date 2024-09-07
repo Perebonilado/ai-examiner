@@ -1,10 +1,12 @@
+import { MessageReponseType } from 'src/infra/web/models/MessageResponseTypeModel';
+
 export const saltRounds = 10;
 
 export const generateQuestionsPrompt = (
   questionCount: number = 5,
   focusAreas?: string[],
 ) => {
-  return `Analyze the document thoroughly. Generate ${questionCount} unique multiple-choice questions based on key concepts. If insufficient content, generate the maximum possible.
+  return `Analyze the document thoroughly. Generate ${questionCount} unique multiple-choice questions based on key concepts.
 
 ${focusAreas?.length ? `Focus on these concepts: ${focusAreas.join(', ')}. Create specific, concept-focused questions that test core understanding. ${focusAreas.length > 1 ? 'Distribute questions evenly across concepts and shuffle their order.' : ''}` : ''}
 
@@ -41,6 +43,49 @@ Output the result in the following JSON format:
 ["title1", "title2", ... ]
 
 Provide only the JSON array, nothing else. Be detailed and fast`;
+
+const summaryResponse = `
+1. Evaluate the request above thoroughly.
+2. Evaluate what the detailed response to the request is, however, summarize your thoughts and make it concise, get right to the point and address only the focal point of the request.
+3. Your response should typically be a few lines, you may add more if necessary to pass across the point. 
+4. Do not provide memorization tips or mnemoics.
+4. Format the response as follows:
+   - Use markdown format
+   - Start each heading and bullet point on a new line, adding spaces between each line
+   - Do not include any HTML tags
+   - Do not cite sources
+   - Do not repeat the request message, omit this in your response
+
+`;
+
+const inDepthResponse = `
+1. Evaluate what the detailed response to the request is, however, summarize your thoughts.
+2. Simplify your response to make it understandable for the reader. Give relatable real life examples to buttress your explanations where possible.
+3. Provide mnemonics and patterns that might help the reader memorize or remember better where possible.
+4. Format the response as follows:
+   - Use markdown format
+   - Start each heading and bullet point on a new line, adding spaces between each line
+   - Do not include any HTML tags
+   - Do not cite sources
+   - Do not repeat the request message, omit this in your response
+`;
+
+export const generateMessagePrompt = (
+  message: string,
+  responseFormat: MessageReponseType,
+) => {
+  return `
+${message}
+
+Format the response as follows:
+   - Use markdown format
+   - Start each heading and bullet point on a new line, adding spaces between each line
+   - Do not include any HTML tags
+   - Do not cite sources
+   - Do not add any markdowns that translate to <code></code> in html
+   - Do not repeat the request message, omit this in your response
+`;
+};
 
 export const defaultPageSize = 10;
 
