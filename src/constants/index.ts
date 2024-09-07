@@ -82,6 +82,7 @@ Format the response as follows:
    - Start each heading and bullet point on a new line, adding spaces between each line
    - Do not include any HTML tags
    - Do not cite sources
+   - Do not add any markdowns that translate to <code></code> in html
    - Do not repeat the request message, omit this in your response
 `;
 };

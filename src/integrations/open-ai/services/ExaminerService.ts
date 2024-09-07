@@ -190,8 +190,6 @@ export class ExaminerService {
         purpose: 'assistants',
       });
 
-      console.log(uploadedFile)
-
       await unlink(tempFilePath);
 
       return uploadedFile;
