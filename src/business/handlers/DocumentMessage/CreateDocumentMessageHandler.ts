@@ -90,7 +90,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
 
         const systemMessage = (messages.data[0].content[0] as any).text.value;
 
-        await this.documentMessageRepository.create({
+        const savedUserMessage = await this.documentMessageRepository.create({
           message: userMessage,
           sender: 'user',
           openAiFileId: courseDocument.openAiFileId,
@@ -99,14 +99,16 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           courseDocumentId: courseDocument.id,
         } as DocumentMessageModel);
 
-        await this.documentMessageRepository.create({
-          message: systemMessage,
-          sender: 'system',
-          openAiFileId: courseDocument.openAiFileId,
-          openAiThreadId: updatedThread.id,
-          userId: userId,
-          courseDocumentId: courseDocument.id,
-        } as DocumentMessageModel);
+        if (savedUserMessage) {
+          await this.documentMessageRepository.create({
+            message: systemMessage,
+            sender: 'system',
+            openAiFileId: courseDocument.openAiFileId,
+            openAiThreadId: updatedThread.id,
+            userId: userId,
+            courseDocumentId: courseDocument.id,
+          } as DocumentMessageModel);
+        }
 
         return {
           data: { systemResponse: systemMessage },
@@ -156,7 +158,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
 
         const systemMessage = (messages.data[0].content[0] as any).text.value;
 
-        await this.documentMessageRepository.create({
+        const savedUserMessage = await this.documentMessageRepository.create({
           message: userMessage,
           sender: 'user',
           openAiFileId: courseDocument.openAiFileId,
@@ -165,14 +167,16 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           courseDocumentId: courseDocument.id,
         } as DocumentMessageModel);
 
-        await this.documentMessageRepository.create({
-          message: systemMessage,
-          sender: 'system',
-          openAiFileId: courseDocument.openAiFileId,
-          openAiThreadId: existingThread.id,
-          userId: userId,
-          courseDocumentId: courseDocument.id,
-        } as DocumentMessageModel);
+        if (savedUserMessage) {
+          await this.documentMessageRepository.create({
+            message: systemMessage,
+            sender: 'system',
+            openAiFileId: courseDocument.openAiFileId,
+            openAiThreadId: existingThread.id,
+            userId: userId,
+            courseDocumentId: courseDocument.id,
+          } as DocumentMessageModel);
+        }
 
         return {
           data: {
