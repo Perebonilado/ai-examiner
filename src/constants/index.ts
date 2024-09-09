@@ -14,9 +14,10 @@ For each question:
 1. Ensure relevance to document content
 2. Provide 4 options with unique IDs
 3. Include one correct answer; vary its position
-4. Create plausible but clearly incorrect alternatives
+4. Create plausible but clearly incorrect alternatives.
 5. Add a hint that aids recall without revealing the answer
-6. Include a detailed explanation
+6. Include a detailed explanation. Explain why the correct option is the answer and why the incorrect options are not.
+7. Ensure the questions and options are difficult and thought provoking.
 
 Ignore images. Return only a JSON array in this format:
 
