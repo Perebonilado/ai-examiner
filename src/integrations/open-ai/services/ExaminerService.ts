@@ -179,25 +179,36 @@ export class ExaminerService {
       const fileName = isPDF
         ? `${getFileNameWithoutExtension(file.originalname)}.txt`
         : file.originalname;
-  
+
       const tempFilePath = join(tmpdir(), fileName);
       const fileContent = isPDF ? await extractTextFromPDF(file) : file.buffer;
+
+      if (isPDF && !fileContent.length) {
+        throw new HttpException(
+          'Scanned PDFs or PDFs containing only images are not allowed',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       const encoding = isPDF ? 'utf-8' : 'latin1';
-  
+
       await writeFileToStream(tempFilePath, fileContent, encoding);
-  
+
       const fileStream = createReadStream(tempFilePath, { autoClose: true });
-  
+
       const uploadedFile = await this.openAiClient.files.create({
         file: fileStream,
         purpose: 'assistants',
       });
-  
+
       await unlink(tempFilePath);
-  
+
       return uploadedFile;
     } catch (error) {
-      throw new HttpException('Failed to upload file', HttpStatus.BAD_GATEWAY);
+      throw new HttpException(
+        error || 'Failed to upload file',
+        HttpStatus.BAD_GATEWAY,
+      );
     }
   }
 
