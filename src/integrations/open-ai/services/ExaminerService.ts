@@ -1,10 +1,15 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
-import { createReadStream, createWriteStream } from 'fs';
+import { createReadStream } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { unlink } from 'fs/promises';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
+import {
+  extractTextFromPDF,
+  getFileNameWithoutExtension,
+  writeFileToStream,
+} from 'src/utils';
 
 @Injectable()
 export class ExaminerService {
@@ -170,31 +175,29 @@ export class ExaminerService {
 
   public async uploadFile(file: Express.Multer.File) {
     try {
-      const tempFilePath = join(tmpdir(), file.originalname);
-      await new Promise((resolve, reject) => {
-        const writeStream = createWriteStream(tempFilePath, {
-          encoding: 'latin1',
-        });
-        writeStream.write(file.buffer, 'latin1');
-        writeStream.on('error', reject);
-        writeStream.on('finish', resolve);
-        writeStream.end();
-      });
-
-      const fileStream = createReadStream(tempFilePath, {
-        autoClose: true,
-      });
-
+      const isPDF = file.mimetype === 'application/pdf';
+      const fileName = isPDF
+        ? `${getFileNameWithoutExtension(file.originalname)}.txt`
+        : file.originalname;
+  
+      const tempFilePath = join(tmpdir(), fileName);
+      const fileContent = isPDF ? await extractTextFromPDF(file) : file.buffer;
+      const encoding = isPDF ? 'utf-8' : 'latin1';
+  
+      await writeFileToStream(tempFilePath, fileContent, encoding);
+  
+      const fileStream = createReadStream(tempFilePath, { autoClose: true });
+  
       const uploadedFile = await this.openAiClient.files.create({
         file: fileStream,
         purpose: 'assistants',
       });
-
+  
       await unlink(tempFilePath);
-
+  
       return uploadedFile;
     } catch (error) {
-      throw new HttpException('Falied to upload file', HttpStatus.BAD_GATEWAY);
+      throw new HttpException('Failed to upload file', HttpStatus.BAD_GATEWAY);
     }
   }
 
@@ -204,24 +207,24 @@ export class ExaminerService {
   ): Promise<string> {
     const maxRetries = 3; // Maximum number of retries
     let attempts = 0; // Counter for attempts
-  
+
     while (attempts < maxRetries) {
       try {
-        const createdVectorStore = await this.openAiClient.beta.vectorStores.files.createAndPoll(
-          vectorStoreId,
-          {
-            file_id: fileId,
-          },
-        );
-  
+        const createdVectorStore =
+          await this.openAiClient.beta.vectorStores.files.createAndPoll(
+            vectorStoreId,
+            {
+              file_id: fileId,
+            },
+          );
+
         // Check if the status is not 'failed'
         if (createdVectorStore.status !== 'failed') {
           return createdVectorStore.vector_store_id; // Success, return the vector store ID
         }
-  
+
         // Increment the attempt counter if the status is 'failed'
         attempts++;
-  
       } catch (error) {
         // Catch any errors thrown during the process
         attempts++;
@@ -233,7 +236,7 @@ export class ExaminerService {
         }
       }
     }
-  
+
     // If all attempts fail
     throw new HttpException(
       'Failed to attach file to vector store after 3 attempts',
