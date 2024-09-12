@@ -4,6 +4,9 @@ import { saltRounds } from 'src/constants';
 import OpenAI from 'openai';
 import { createHmac } from 'crypto';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
+import { PDFExtract, PDFExtractOptions } from 'pdf.js-extract';
+import { createReadStream, createWriteStream } from 'fs';
+import { unlink } from 'fs/promises';
 
 export const generateUUID = (): string => {
   return uuidv4();
@@ -30,23 +33,22 @@ const extractJSONArray = (str: string): any[] => {
   const lastClose = str.lastIndexOf(']');
 
   if (firstOpen === -1 || lastClose === -1) {
-      return []; // No valid JSON array found
+    return []; // No valid JSON array found
   }
 
   const candidate = str.substring(firstOpen, lastClose + 1);
 
   try {
-      const res = JSON.parse(candidate);
-      if (Array.isArray(res)) {
-          return res; // Return the valid JSON array
-      }
+    const res = JSON.parse(candidate);
+    if (Array.isArray(res)) {
+      return res; // Return the valid JSON array
+    }
   } catch (e) {
     throw new Error('No JSON object or array found in the text');
   }
 
   return []; // Return null if no valid JSON array is found
 };
-
 
 export const extractJSONDataFromMessages = (
   messages: OpenAI.Beta.Threads.Messages.MessagesPage,
@@ -56,9 +58,12 @@ export const extractJSONDataFromMessages = (
   return extractJSONArray(data) as any;
 };
 
-export const convertSmallerDemoninationtoLarger = (amount: number, factor: number) => {
-  return amount/factor
-}
+export const convertSmallerDemoninationtoLarger = (
+  amount: number,
+  factor: number,
+) => {
+  return amount / factor;
+};
 
 export const extractAndParseJSON = (text: string): any => {
   // Regular expression to match JSON arrays or objects
@@ -96,4 +101,39 @@ export const getPaystackHash = (data: string): string => {
     .digest('hex');
 
   return hash;
+};
+
+export const extractTextFromPDF = async (
+  file: Express.Multer.File,
+  options: PDFExtractOptions = {},
+) => {
+  try {
+    const pdfExtract = new PDFExtract();
+    const data = await pdfExtract.extractBuffer(file.buffer, options);
+    return data.pages
+      .flatMap((page) => page.content.map((item) => item.str))
+      .join(' ');
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+export const getFileNameWithoutExtension = (name: string) => {
+  return name.substring(0, name.lastIndexOf('.')) || name;
+};
+
+export const writeFileToStream = async (
+  tempFilePath: string,
+  content: any,
+  encoding: BufferEncoding,
+) => {
+  await new Promise((resolve, reject) => {
+    const writeStream = createWriteStream(tempFilePath, {
+      encoding: encoding,
+    });
+    writeStream.write(content, encoding);
+    writeStream.on('error', reject);
+    writeStream.on('finish', resolve);
+    writeStream.end();
+  });
 };
