@@ -33,7 +33,7 @@ export class FileUploadController {
         status: HttpStatus.CREATED,
       };
     } catch (error) {
-      throw new HttpException('Failed to upload file', HttpStatus.BAD_REQUEST);
+      throw new HttpException(error || 'Failed to upload file', HttpStatus.BAD_REQUEST);
     }
   }
 }
