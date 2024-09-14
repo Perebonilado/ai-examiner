@@ -173,7 +173,13 @@ export class ExaminerService {
     }
   }
 
-  public async uploadFile(file: Express.Multer.File) {
+  public async uploadFile(
+    file: Express.Multer.File,
+    pdfPageRange: {
+      start?: number;
+      end?: number;
+    },
+  ) {
     try {
       const isPDF = file.mimetype === 'application/pdf';
       const fileName = isPDF
@@ -181,11 +187,16 @@ export class ExaminerService {
         : file.originalname;
 
       const tempFilePath = join(tmpdir(), fileName);
-      const fileContent = isPDF ? await extractTextFromPDF(file) : file.buffer;
+      const fileContent = isPDF
+        ? await extractTextFromPDF(file, {
+            firstPage: pdfPageRange?.start,
+            lastPage: pdfPageRange?.end,
+          })
+        : file.buffer;
 
       if (isPDF && !fileContent.length) {
         throw new HttpException(
-          'Scanned PDFs or PDFs containing only images are not allowed',
+          'Scanned PDFs or PDFs containing only images are not allowed / Select a valid page range',
           HttpStatus.BAD_REQUEST,
         );
       }

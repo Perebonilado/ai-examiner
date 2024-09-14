@@ -173,7 +173,7 @@ export class CourseController {
         },
       });
 
-      const uploadedFile = await this.examinerService.uploadFile(file);
+      const uploadedFile = await this.examinerService.uploadFile(file, {});
       const vectorStore = await this.examinerService.createVectorStore(
         file.originalname,
       );

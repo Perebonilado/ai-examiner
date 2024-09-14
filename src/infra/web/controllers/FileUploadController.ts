@@ -7,6 +7,7 @@ import {
   Inject,
   HttpException,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
@@ -21,9 +22,19 @@ export class FileUploadController {
   @UseGuards(AuthGuard)
   @Post('')
   @UseInterceptors(FileInterceptor('document'))
-  public async uploadFile(@UploadedFile() file: Express.Multer.File) {
+  public async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Query('pages') pages: string,
+    @Query('start') start: string,
+    @Query('end') end: string,
+  ) {
     try {
-      const uploadedFile = await this.examinerService.uploadFile(file);
+      const pdfPageRange =
+        pages === 'custom' ? { start: Number(start), end: Number(end) } : {};
+      const uploadedFile = await this.examinerService.uploadFile(
+        file,
+        pdfPageRange,
+      );
 
       return {
         data: {
@@ -33,7 +44,10 @@ export class FileUploadController {
         status: HttpStatus.CREATED,
       };
     } catch (error) {
-      throw new HttpException(error || 'Failed to upload file', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        error || 'Failed to upload file',
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 }
