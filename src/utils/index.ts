@@ -114,7 +114,6 @@ export const extractTextFromPDF = async (
       .flatMap((page) => page.content.map((item) => item.str))
       .join(' ');
   } catch (error) {
-    console.log(error)
     throw new Error(error);
   }
 };
