@@ -49,7 +49,7 @@ export class PermissionController {
             subInfo?.subscriptionCode,
           );
 
-        const inactiveSubscriptionStatuses = ['completed', 'cancelled'];
+        const inactiveSubscriptionStatuses = ['completed', 'cancelled', 'attention'];
         
         if (
           !inactiveSubscriptionStatuses.includes(
