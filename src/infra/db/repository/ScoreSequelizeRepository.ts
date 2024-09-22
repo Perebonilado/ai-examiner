@@ -19,10 +19,18 @@ export class ScoreSequelizeRepository implements ScoreRepository {
 
   public async update(score: ScoreModel): Promise<ScoreModel> {
     try {
-       await this.scoreDbConnector.update(score);
+      await this.scoreDbConnector.update(score);
       return await ScoreModel.findOne({ where: { id: score.id } });
     } catch (error) {
       throw new RepositoryError('Failed to update score').InnerError(error);
+    }
+  }
+
+  public async delete(scoreId: string): Promise<void> {
+    try {
+      return await this.scoreDbConnector.delete(scoreId);
+    } catch (error) {
+      throw new RepositoryError('Failed to delete score').InnerError(error);
     }
   }
 }

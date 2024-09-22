@@ -18,4 +18,12 @@ export class QuestionSequelizeRepository implements QuestionRepository {
       throw new RepositoryError('Failed to save questions').InnerError(error);
     }
   }
+
+  public async delete(questionId: string): Promise<void> {
+    try {
+      return await this.questionDbConnector.delete(questionId)
+    } catch (error) {
+      throw new RepositoryError('Failed to delete question').InnerError(error);
+    }
+  }
 }

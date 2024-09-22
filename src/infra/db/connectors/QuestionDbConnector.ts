@@ -11,4 +11,13 @@ export class QuestionDbConnector {
       throw new DatabaseError('Failed to save questions').InnerError(error);
     }
   }
+
+  public async delete(id: string) {
+    try {
+      const question = await QuestionModel.findOne({ where: { id } });
+      return await question.destroy();
+    } catch (error) {
+      throw new DatabaseError('Failed to delete question').InnerError(error);
+    }
+  }
 }

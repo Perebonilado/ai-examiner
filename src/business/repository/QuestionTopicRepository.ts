@@ -6,4 +6,5 @@ export interface QuestionTopicRepository {
   bulkCreate(
     questionTopics: QuestionTopicModel[],
   ): Promise<QuestionTopicModel[]>;
+  bulkDelete(questionTopicIds: number[]): Promise<any>
 }

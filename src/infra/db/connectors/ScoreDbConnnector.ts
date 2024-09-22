@@ -21,4 +21,13 @@ export class ScoreDbConnector {
       throw new DatabaseError('Failed to update score').InnerError(error);
     }
   }
+
+  public async delete(id: string) {
+    try {
+      const score = await ScoreModel.findOne({ where: { id } });
+      return await score.destroy();
+    } catch (error) {
+      throw new DatabaseError('Failed to delete score').InnerError(error);
+    }
+  }
 }
