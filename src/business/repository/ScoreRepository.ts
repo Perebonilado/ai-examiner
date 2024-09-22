@@ -5,4 +5,5 @@ export const ScoreRepository = Symbol('ScoreRepository');
 export interface ScoreRepository {
   create(score: ScoreModel): Promise<ScoreModel>;
   update(score: ScoreModel): Promise<ScoreModel>;
+  delete(scoreId: string): Promise<void>
 }

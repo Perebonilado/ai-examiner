@@ -26,4 +26,15 @@ export class ScoreQueryService {
       );
     }
   }
+
+  public async findScoreById(id: string) {
+    try {
+      return await ScoreModel.findOne({ where: { id } });
+    } catch (error) {
+      throw new HttpException(
+        `Failed to retrieve score with id ${id}`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
 }

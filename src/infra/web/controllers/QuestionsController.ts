@@ -11,6 +11,7 @@ import {
   Query,
   ParseIntPipe,
   Post,
+  Delete,
 } from '@nestjs/common';
 import * as moment from 'moment';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
@@ -34,6 +35,7 @@ import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/
 import { CreateQuestionTopicHandler } from 'src/business/handlers/QuestionTopic/CreateQuestionTopicHandler';
 import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
 import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
+import { DeleteQuestionHandler } from 'src/business/handlers/Question/DeleteQuestionHandler';
 
 @Controller('questions')
 export class QuestionsController {
@@ -58,6 +60,8 @@ export class QuestionsController {
     private subscriptionQueryService: SubscriptionQueryService,
     @Inject(PaystackSubscriptionService)
     private paystackSubscriptionService: PaystackSubscriptionService,
+    @Inject(DeleteQuestionHandler)
+    private deleteQuestionHandler: DeleteQuestionHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -75,6 +79,26 @@ export class QuestionsController {
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find question by id ' + params.id,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('/:id')
+  public async deleteQuestion(
+    @Param('id') id: string,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      return await this.deleteQuestionHandler.handle({
+        questionId: id,
+        userId: userToken.sub,
+      });
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to delete question by id ' + id,
         HttpStatus.BAD_REQUEST,
       );
     }
