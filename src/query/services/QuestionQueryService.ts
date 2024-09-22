@@ -108,6 +108,14 @@ export class QuestionQueryService {
     }
   }
 
+  public async getQuestionById(id: string) {
+    try {
+      return await QuestionModel.findOne({ where: { id } });
+    } catch (error) {
+      throw new QueryError('Failed to get questions by id').InnerError(error);
+    }
+  }
+
   public async getUserQuestionsCountForCurrentMonth(userId: string) {
     try {
       const startOfMonth = moment().startOf('month').toDate();
@@ -120,7 +128,7 @@ export class QuestionQueryService {
             [Op.between]: [startOfMonth, endOfMonth],
           },
         },
-      })
+      });
     } catch (error) {
       throw new QueryError(
         'Failed to get number of questions generated for the user for current month',
