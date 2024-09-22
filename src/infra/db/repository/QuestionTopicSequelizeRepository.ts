@@ -19,7 +19,19 @@ export class QuestionTopicSequelizeRepository
     try {
       return await this.questionTopicDbConnector.bulkCreate(questionTopics);
     } catch (error) {
-      throw new RepositoryError('Failed to bulk create ').InnerError(error);
+      throw new RepositoryError(
+        'Failed to bulk create question topics',
+      ).InnerError(error);
+    }
+  }
+
+  public async bulkDelete(questionTopicIds: number[]) {
+    try {
+     return await this.questionTopicDbConnector.bulkDelete(questionTopicIds)
+    } catch (error) {
+      throw new RepositoryError(
+        'Failed to bulk delete question topics',
+      ).InnerError(error);
     }
   }
 }

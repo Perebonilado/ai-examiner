@@ -17,4 +17,16 @@ export class QuestionTopicDbConnector {
       ).InnerError(error);
     }
   }
+
+  public async bulkDelete(questionTopicIds: number[]) {
+    try {
+      return await QuestionTopicModel.destroy({
+        where: { id: questionTopicIds },
+      });
+    } catch (error) {
+      throw new DatabaseError(
+        'Failed to bulk delete question topics',
+      ).InnerError(error);
+    }
+  }
 }
