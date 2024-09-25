@@ -18,8 +18,12 @@ import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { CreateSubscriptionModel } from 'src/integrations/paystack/models/CreateSubscriptionModel';
 import { DisableSubscriptionPayloadModel } from 'src/integrations/paystack/models/DisableSubscriptionModel';
 import { EnableSubscriptionPayloadModel } from 'src/integrations/paystack/models/EnableSubscriptionModel';
+import { PlanModel } from 'src/integrations/paystack/models/ListPlansModel';
+import { PaystackPlansService } from 'src/integrations/paystack/services/PaystackPlansService';
 import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
+import { OneTimeSubscriptionQueryService } from 'src/query/services/OneTimeSubscriptionQueryService';
 import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
+import * as moment from 'moment';
 
 @Controller('subscription')
 export class SubscriptionController {
@@ -28,6 +32,10 @@ export class SubscriptionController {
     private paystackSubscriptionService: PaystackSubscriptionService,
     @Inject(SubscriptionQueryService)
     private subscriptionQueryService: SubscriptionQueryService,
+    @Inject(OneTimeSubscriptionQueryService)
+    private oneTimeSubscriptionService: OneTimeSubscriptionQueryService,
+    @Inject(PaystackPlansService)
+    private paystackPlanService: PaystackPlansService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -40,34 +48,63 @@ export class SubscriptionController {
       const userToken = request['user'] as VerifiedTokenModel;
       let subscriptionProcessingInfo: CreateSubscriptionModel;
 
-      const subscriptionDetails =
+      const planDetails = (
+        await this.paystackPlanService.getPlans({ page: 1, perPage: 50 })
+      ).find((pl) => pl.planId === body.planId);
+
+      if (!planDetails) {
+        throw new HttpException('Plan does not exist', HttpStatus.BAD_REQUEST);
+      }
+
+      const recurringSubscriptionDetails =
         await this.subscriptionQueryService.findByUserId(userToken.sub);
 
-      if (!subscriptionDetails) {
+      const oneTimeSubscriptionDetails =
+        await this.oneTimeSubscriptionService.findByUserId(userToken.sub);
+
+      console.log('recurring', recurringSubscriptionDetails)
+      console.log('one time', oneTimeSubscriptionDetails)
+
+      // user has never subscribed to a plan
+      if (!recurringSubscriptionDetails && !oneTimeSubscriptionDetails) {
         subscriptionProcessingInfo =
-          await this.paystackSubscriptionService.createSubscription({
+          await this.getSubscriptionProcessingInfoBasedOnType({
             email: userToken.email,
-            plan: body.planId,
+            isOneTimeSubscription: body.oneTimeSubscription,
+            planDetails: planDetails,
+            planId: body.planId,
           });
       } else {
-        const subscriptionInfo =
-          await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
-            subscriptionDetails.subscriptionCode,
-          );
+        // user either has one time subscription or recurring subscription
 
-        const userHasActiveSubscription =
-          subscriptionInfo.subscrptionInformation.status === 'active';
+        const userHasActiveOneTimeSubscription = moment(
+          oneTimeSubscriptionDetails?.expiresOn,
+        ).isAfter(moment(), 'day');
 
-        if (userHasActiveSubscription) {
+        const userHasActiveRecurringSubscription =
+          (
+            await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+              recurringSubscriptionDetails?.subscriptionCode,
+            )
+          ).subscrptionInformation.status === 'active';
+
+        if (userHasActiveOneTimeSubscription) {
           throw new HttpException(
-            'Please, cancel your active subscription first',
+            `Please cancel your one time subscription before subscribing to a new plan`,
+            HttpStatus.BAD_REQUEST,
+          );
+        } else if (userHasActiveRecurringSubscription) {
+          throw new HttpException(
+            `Please cancel your recurring subscription before subscribing to a new plan`,
             HttpStatus.BAD_REQUEST,
           );
         } else {
           subscriptionProcessingInfo =
-            await this.paystackSubscriptionService.createSubscription({
+            await this.getSubscriptionProcessingInfoBasedOnType({
               email: userToken.email,
-              plan: body.planId,
+              isOneTimeSubscription: body.oneTimeSubscription,
+              planDetails: planDetails,
+              planId: body.planId,
             });
         }
       }
@@ -178,6 +215,34 @@ export class SubscriptionController {
         error?.response ??
           'An Error occured while trying to create a subscription',
         HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  private async getSubscriptionProcessingInfoBasedOnType({
+    email,
+    isOneTimeSubscription,
+    planId,
+    planDetails,
+  }: {
+    email: string;
+    planId: string;
+    isOneTimeSubscription: boolean;
+    planDetails: PlanModel;
+  }) {
+    if (isOneTimeSubscription) {
+      return await this.paystackSubscriptionService.createOneTimeSubscription({
+        amount: `${planDetails.amount.toString()}00`,
+        currency: planDetails.currency,
+        email: email,
+        planCode: planId,
+      });
+    } else {
+      return await this.paystackSubscriptionService.createRecurringSubscription(
+        {
+          email: email,
+          plan: planId,
+        },
       );
     }
   }

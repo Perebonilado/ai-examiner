@@ -35,23 +35,25 @@ export class PaystackWebhook {
       switch (body.event) {
         case 'charge.success':
           {
-            const subscriptionData =
-              body.data as ChargeSuccessEventDto;
+            if (body.data.channel === 'card') {
+              //recurring card subscription
+              const subscriptionData = body.data as ChargeSuccessEventDto;
 
+              const user = await this.userQueryService.findOne(
+                subscriptionData.customer.email,
+              );
 
-            const user = await this.userQueryService.findOne(
-              subscriptionData.customer.email,
-            );
+              await this.createSubscriptionHandler.handle({
+                payload: { subscriptionData, userId: user.id },
+              });
 
-
-            await this.createSubscriptionHandler.handle({
-              payload: { subscriptionData, userId: user.id },
-            });
-
-            this.notificationsGateway.notifyClient(user.email, {
-              status: 'successful',
-              message: 'Payment for subscription successful',
-            });
+              this.notificationsGateway.notifyClient(user.email, {
+                status: 'successful',
+                message: 'Payment for subscription successful',
+              });
+            } else {
+              // one time subscription
+            }
           }
           break;
 

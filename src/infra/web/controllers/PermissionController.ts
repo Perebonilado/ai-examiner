@@ -11,10 +11,12 @@ import { Request } from 'express';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
+import { OneTimeSubscriptionQueryService } from 'src/query/services/OneTimeSubscriptionQueryService';
 import { PermissionQueryService } from 'src/query/services/PermissionQueryService';
 import { PlanPermissionQueryService } from 'src/query/services/PlanPermissionQueryService';
 import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
+import * as moment from 'moment';
 
 @Controller('permission')
 export class PermissionController {
@@ -29,6 +31,8 @@ export class PermissionController {
     private permissionQueryService: PermissionQueryService,
     @Inject(QuestionQueryService)
     private questionQueryService: QuestionQueryService,
+    @Inject(OneTimeSubscriptionQueryService)
+    private oneTimeSubscriptionService: OneTimeSubscriptionQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -37,32 +41,61 @@ export class PermissionController {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
 
-      const subInfo = await this.subscriptionQueryService.findByUserId(
-        userToken.sub,
-      );
+      const recurringSubscriptionDetails =
+        await this.subscriptionQueryService.findByUserId(userToken.sub);
+
+      const oneTimeSubscriptionDetails =
+        await this.oneTimeSubscriptionService.findByUserId(userToken.sub);
 
       const maxNumberOfQuestionGenerationForFreePlanTier = 1;
+      const inactiveSubscriptionStatuses = [
+        'completed',
+        'cancelled',
+        'attention',
+      ];
 
-      if (subInfo?.subscriptionCode) {
-        const subscriptionDetails =
+      // user might have a recurring or one time subscription
+      if (recurringSubscriptionDetails || oneTimeSubscriptionDetails) {
+        //active one time sub
+        const userHasActiveOneTimeSubscription = moment(
+          oneTimeSubscriptionDetails?.expiresOn,
+        ).isAfter(moment(), 'day');
+
+        const userRecurringSubscriptionStatus = (
           await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
-            subInfo?.subscriptionCode,
+            recurringSubscriptionDetails?.subscriptionCode,
+          )
+        ).subscrptionInformation.status;
+
+        // active recurring sub
+        const userHasActiveRecurringSubscription =
+          !inactiveSubscriptionStatuses.includes(
+            userRecurringSubscriptionStatus,
           );
 
-        const inactiveSubscriptionStatuses = ['completed', 'cancelled', 'attention'];
-        
         if (
-          !inactiveSubscriptionStatuses.includes(
-            subscriptionDetails.subscrptionInformation.status,
-          )
+          userHasActiveOneTimeSubscription ||
+          userHasActiveRecurringSubscription
         ) {
+          let planCodeToUse: string;
+
+          if (userHasActiveOneTimeSubscription) {
+            planCodeToUse = oneTimeSubscriptionDetails.planCode;
+          } else {
+            const subscriptionDetails = await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(recurringSubscriptionDetails.subscriptionCode)
+            
+            planCodeToUse = subscriptionDetails.planInformation.planCode;
+          }
+
           const planPermission =
             await this.planPermissionQueryService.findPlanPermissionByPlanId(
-              subscriptionDetails.planInformation.planCode,
+              planCodeToUse,
             );
 
           const permission =
-            await this.permissionQueryService.findPermissionById(planPermission.permissionId);
+            await this.permissionQueryService.findPermissionById(
+              planPermission.permissionId,
+            );
 
           const modifiedPermissions = permission.permissions
             ? (permission.permissions as any)

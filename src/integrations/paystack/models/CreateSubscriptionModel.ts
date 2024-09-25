@@ -1,3 +1,4 @@
+
 export interface CreateSubscriptionPayloadModel {
   email: string;
   plan: string;
@@ -8,4 +9,12 @@ export interface CreateSubscriptionModel {
   redirectUrl: string;
   accessCode: string;
   reference: string;
+}
+
+
+export interface CreateOneTimeSubscriptionPayloadModel {
+  email: string;
+  amount: string;
+  planCode: string;
+  currency: string
 }
