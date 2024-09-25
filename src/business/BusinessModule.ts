@@ -18,6 +18,7 @@ import { CreateDocumentMessageHandler } from './handlers/DocumentMessage/CreateD
 import { DeleteScoreHandler } from './handlers/Score/DeleteScoreHandler';
 import { DeleteQuestionTopicHandler } from './handlers/QuestionTopic/DeleteQuestionTopicHandler';
 import { DeleteQuestionHandler } from './handlers/Question/DeleteQuestionHandler';
+import { CreateOneTimeSubscriptionHandler } from './handlers/OneTimeSubscription/CreateOneTimeSubscriptionHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -37,7 +38,8 @@ import { DeleteQuestionHandler } from './handlers/Question/DeleteQuestionHandler
     CreateDocumentMessageHandler,
     DeleteScoreHandler,
     DeleteQuestionTopicHandler,
-    DeleteQuestionHandler
+    DeleteQuestionHandler,
+    CreateOneTimeSubscriptionHandler
   ],
   exports: [
     CreateUserHandler,
@@ -55,7 +57,8 @@ import { DeleteQuestionHandler } from './handlers/Question/DeleteQuestionHandler
     CreateDocumentMessageHandler,
     DeleteScoreHandler,
     DeleteQuestionTopicHandler,
-    DeleteQuestionHandler
+    DeleteQuestionHandler,
+    CreateOneTimeSubscriptionHandler
   ],
 })
 export class BusinessModule {}
