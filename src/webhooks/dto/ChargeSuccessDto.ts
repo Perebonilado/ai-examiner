@@ -1,4 +1,4 @@
-export interface ChargeSuccessEventDto {
+export interface ChargeSuccessEventDto<T> {
   id: number;
   domain: string;
   status: string;
@@ -11,7 +11,7 @@ export interface ChargeSuccessEventDto {
   channel: string;
   currency: string;
   ip_address: string;
-  metadata: string;
+  metadata: T;
   fees_breakdown: null | object;
   log: null | object;
   fees: number;

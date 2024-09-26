@@ -13,6 +13,8 @@ import { CreateSubscriptionHandler } from 'src/business/handlers/Subscription/Cr
 import { UserQueryService } from 'src/query/services/UserQueryService';
 import { NotificationsGateway } from 'src/notification/services/NotificationsGateway';
 import { ChargeSuccessEventDto } from '../dto/ChargeSuccessDto';
+import { CreateOneTimeSubscriptionHandler } from 'src/business/handlers/OneTimeSubscription/CreateOneTimeSubscriptionHandler';
+import * as moment from 'moment';
 
 @Controller('webhook/paystack')
 export class PaystackWebhook {
@@ -21,6 +23,8 @@ export class PaystackWebhook {
     private createSubscriptionHandler: CreateSubscriptionHandler,
     @Inject(UserQueryService) private userQueryService: UserQueryService,
     private notificationsGateway: NotificationsGateway,
+    @Inject(CreateOneTimeSubscriptionHandler)
+    private createOneTimeSubscriptionHandler: CreateOneTimeSubscriptionHandler,
   ) {}
 
   @Post('')
@@ -37,7 +41,7 @@ export class PaystackWebhook {
           {
             if (body.data.channel === 'card') {
               //recurring card subscription
-              const subscriptionData = body.data as ChargeSuccessEventDto;
+              const subscriptionData = body.data as ChargeSuccessEventDto<any>;
 
               const user = await this.userQueryService.findOne(
                 subscriptionData.customer.email,
@@ -53,6 +57,23 @@ export class PaystackWebhook {
               });
             } else {
               // one time subscription
+              const subscriptionInformation =
+                body.data as ChargeSuccessEventDto<{ plan_code: string }>;
+
+              const user = await this.userQueryService.findOne(
+                subscriptionInformation.customer.email,
+              );
+
+              const oneMonthExpiration = moment(new Date())
+                .utc()
+                .add(1, 'month')
+                .toDate();
+                
+              await this.createOneTimeSubscriptionHandler.handle({
+                expiresOn: oneMonthExpiration,
+                planCode: subscriptionInformation.metadata.plan_code,
+                userId: user.id,
+              });
             }
           }
           break;
