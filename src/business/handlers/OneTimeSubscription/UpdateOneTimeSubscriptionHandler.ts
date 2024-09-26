@@ -27,6 +27,7 @@ export class UpdateOneTimeSubscriptionHandler extends AbstractRequestHandlerTemp
         planCode: request.planCode,
         userId: request.userId,
         expiresOn: request.expiresOn,
+        id: request.id
       } as OneTimeSubscriptionModel);
 
       return {

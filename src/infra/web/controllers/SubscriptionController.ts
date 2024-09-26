@@ -24,6 +24,7 @@ import { PaystackSubscriptionService } from 'src/integrations/paystack/services/
 import { OneTimeSubscriptionQueryService } from 'src/query/services/OneTimeSubscriptionQueryService';
 import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
 import * as moment from 'moment';
+import { UpdateOneTimeSubscriptionHandler } from 'src/business/handlers/OneTimeSubscription/UpdateOneTimeSubscriptionHandler';
 
 @Controller('subscription')
 export class SubscriptionController {
@@ -36,6 +37,10 @@ export class SubscriptionController {
     private oneTimeSubscriptionService: OneTimeSubscriptionQueryService,
     @Inject(PaystackPlansService)
     private paystackPlanService: PaystackPlansService,
+    @Inject(UpdateOneTimeSubscriptionHandler)
+    private updateOneTimeSubscriptionHandler: UpdateOneTimeSubscriptionHandler,
+    @Inject(OneTimeSubscriptionQueryService)
+    private oneTimeSubscriptionQueryService: OneTimeSubscriptionQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -62,8 +67,8 @@ export class SubscriptionController {
       const oneTimeSubscriptionDetails =
         await this.oneTimeSubscriptionService.findByUserId(userToken.sub);
 
-      console.log('recurring', recurringSubscriptionDetails)
-      console.log('one time', oneTimeSubscriptionDetails)
+      console.log('recurring', recurringSubscriptionDetails);
+      console.log('one time', oneTimeSubscriptionDetails);
 
       // user has never subscribed to a plan
       if (!recurringSubscriptionDetails && !oneTimeSubscriptionDetails) {
@@ -126,11 +131,30 @@ export class SubscriptionController {
   @Post('/cancel')
   public async cancelSubscription(
     @Body() payload: DisableSubscriptionPayloadModel,
+    @Req() request: Request,
   ) {
     try {
-      return await this.paystackSubscriptionService.disableSubscription(
-        payload,
-      );
+      const userToken = request['user'] as VerifiedTokenModel;
+
+      if (payload.emailToken && payload.subscriptionCode) {
+        // subscription is recurring
+        return await this.paystackSubscriptionService.disableSubscription(
+          payload,
+        );
+      } else {
+        // subscription is one time
+        const yesterday = moment(new Date()).utc().subtract(1, 'day').toDate();
+        const existinSubscription =
+          await this.oneTimeSubscriptionQueryService.findByUserId(
+            userToken.sub,
+          );
+        await this.updateOneTimeSubscriptionHandler.handle({
+          expiresOn: yesterday,
+          planCode: existinSubscription.planCode,
+          userId: existinSubscription.userId,
+          id: existinSubscription.id
+        });
+      }
     } catch (error) {
       throw new HttpException(
         error?.response ??
