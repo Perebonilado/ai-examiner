@@ -143,16 +143,27 @@ export class SubscriptionController {
         );
       } else {
         // subscription is one time
+
         const yesterday = moment(new Date()).utc().subtract(1, 'day').toDate();
         const existinSubscription =
           await this.oneTimeSubscriptionQueryService.findByUserId(
             userToken.sub,
           );
+        const isSubscriptionInactive = moment(
+          existinSubscription.expiresOn,
+        ).isBefore(moment(), 'day');
+        if (isSubscriptionInactive) {
+          throw new HttpException(
+            'You do not have an active one time subscription',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
         await this.updateOneTimeSubscriptionHandler.handle({
           expiresOn: yesterday,
           planCode: existinSubscription.planCode,
           userId: existinSubscription.userId,
-          id: existinSubscription.id
+          id: existinSubscription.id,
         });
       }
     } catch (error) {
