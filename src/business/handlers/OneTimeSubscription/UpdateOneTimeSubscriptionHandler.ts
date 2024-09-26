@@ -6,6 +6,8 @@ import { CommandResponse } from '../response/CommandResponse';
 import { HandlerError } from 'src/error-handlers/business/HandlerError';
 import { OneTimeSubscriptionRepository } from 'src/business/repository/OneTimeSubscriptionRepository';
 import { OneTimeSubscriptionModel } from 'src/infra/db/models/OneTimeSubscriptionModel';
+import { OneTimeSubscriptionQueryService } from 'src/query/services/OneTimeSubscriptionQueryService';
+import * as moment from 'moment';
 
 @Injectable()
 export class UpdateOneTimeSubscriptionHandler extends AbstractRequestHandlerTemplate<
@@ -15,6 +17,8 @@ export class UpdateOneTimeSubscriptionHandler extends AbstractRequestHandlerTemp
   constructor(
     @Inject(OneTimeSubscriptionRepository)
     private oneTimeSubscriptionRepository: OneTimeSubscriptionRepository,
+    @Inject(OneTimeSubscriptionQueryService)
+    private oneTimeSubscriptionQueryService: OneTimeSubscriptionQueryService,
   ) {
     super();
   }
@@ -23,12 +27,32 @@ export class UpdateOneTimeSubscriptionHandler extends AbstractRequestHandlerTemp
     request: UpdateOneTimeSubscriptionRequest,
   ): Promise<CommandResponse<UpdateOneTimeSubscriptionResponse>> {
     try {
-      await this.oneTimeSubscriptionRepository.update({
-        planCode: request.planCode,
-        userId: request.userId,
-        expiresOn: request.expiresOn,
-        id: request.id
-      } as OneTimeSubscriptionModel);
+      if (request.incrementSubscriptionCount) {
+
+        const currentSubscriptionCount = (
+          await this.oneTimeSubscriptionQueryService.findByUserId(
+            request.userId,
+          )
+        ).subscriptionCount;
+        const newSubscriptionCount = currentSubscriptionCount + 1;
+
+        await this.oneTimeSubscriptionRepository.update({
+          planCode: request.planCode,
+          userId: request.userId,
+          expiresOn: request.expiresOn,
+          id: request.id,
+          subscriptionCount: newSubscriptionCount,
+          modifiedOn: moment(new Date()).utc().toDate()
+        } as OneTimeSubscriptionModel);
+      } else {
+        await this.oneTimeSubscriptionRepository.update({
+          planCode: request.planCode,
+          userId: request.userId,
+          expiresOn: request.expiresOn,
+          id: request.id,
+          modifiedOn: moment(new Date()).utc().toDate()
+        } as OneTimeSubscriptionModel);
+      }
 
       return {
         data: { planId: request.planCode },

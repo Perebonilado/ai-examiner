@@ -50,6 +50,7 @@ export class CreateOneTimeSubscriptionHandler extends AbstractRequestHandlerTemp
         return await this.updateOneTimeSubscriptionHandler.handle({
           ...request,
           id: existingSubscription.id,
+          incrementSubscriptionCount: true
         });
       }
     } catch (error) {

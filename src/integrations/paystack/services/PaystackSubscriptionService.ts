@@ -98,6 +98,7 @@ export class PaystackSubscriptionService {
           metadata: {
             plan_code: planCode,
           },
+          callback_url: `${EnvironmentVariables.config.frontendBaseUrl}/new-document`
         },
         {
           headers: {

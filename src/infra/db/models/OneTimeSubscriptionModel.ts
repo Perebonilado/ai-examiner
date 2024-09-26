@@ -42,14 +42,29 @@ export class OneTimeSubscriptionModel extends Model<OneTimeSubscriptionModel> {
 
   @Column({
     type: DataType.DATE,
+    field: 'modified_on',
+    allowNull: true,
+  })
+  modifiedOn: Date;
+
+  @Column({
+    type: DataType.DATE,
     field: 'expires_on',
     allowNull: true,
   })
   expiresOn: Date;
 
+  @Column({
+    type: DataType.BIGINT,
+    field: 'subscription_count',
+    allowNull: true,
+  })
+  subscriptionCount: number;
+
   @BeforeCreate
   static addUUID(instance: OneTimeSubscriptionModel) {
     instance.id = generateUUID();
     instance.createdOn = moment(new Date()).utc().toDate();
+    instance.subscriptionCount = 1;
   }
 }

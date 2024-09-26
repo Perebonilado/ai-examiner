@@ -67,9 +67,6 @@ export class SubscriptionController {
       const oneTimeSubscriptionDetails =
         await this.oneTimeSubscriptionService.findByUserId(userToken.sub);
 
-      console.log('recurring', recurringSubscriptionDetails);
-      console.log('one time', oneTimeSubscriptionDetails);
-
       // user has never subscribed to a plan
       if (!recurringSubscriptionDetails && !oneTimeSubscriptionDetails) {
         subscriptionProcessingInfo =
@@ -82,16 +79,20 @@ export class SubscriptionController {
       } else {
         // user either has one time subscription or recurring subscription
 
-        const userHasActiveOneTimeSubscription = moment(
-          oneTimeSubscriptionDetails?.expiresOn,
-        ).isAfter(moment(), 'day');
+        const userHasActiveOneTimeSubscription = !oneTimeSubscriptionDetails
+          ? false
+          : moment(oneTimeSubscriptionDetails?.expiresOn).isAfter(
+              moment(),
+              'day',
+            );
 
-        const userHasActiveRecurringSubscription =
-          (
-            await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
-              recurringSubscriptionDetails?.subscriptionCode,
-            )
-          ).subscrptionInformation.status === 'active';
+        const userHasActiveRecurringSubscription = !recurringSubscriptionDetails
+          ? false
+          : (
+              await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+                recurringSubscriptionDetails?.subscriptionCode,
+              )
+            ).subscrptionInformation.status === 'active';
 
         if (userHasActiveOneTimeSubscription) {
           throw new HttpException(
@@ -119,6 +120,7 @@ export class SubscriptionController {
         status: HttpStatus.OK,
       };
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         error?.response ??
           'An Error occured while trying to create a subscription',
@@ -149,9 +151,18 @@ export class SubscriptionController {
           await this.oneTimeSubscriptionQueryService.findByUserId(
             userToken.sub,
           );
+
+        if (!existinSubscription) {
+          throw new HttpException(
+            'You do not have an active one time subscription',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
         const isSubscriptionInactive = moment(
           existinSubscription.expiresOn,
         ).isBefore(moment(), 'day');
+
         if (isSubscriptionInactive) {
           throw new HttpException(
             'You do not have an active one time subscription',
@@ -165,6 +176,10 @@ export class SubscriptionController {
           userId: existinSubscription.userId,
           id: existinSubscription.id,
         });
+
+        return {
+          status: true,
+        };
       }
     } catch (error) {
       throw new HttpException(
