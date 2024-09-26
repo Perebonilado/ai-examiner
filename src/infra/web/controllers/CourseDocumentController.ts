@@ -20,7 +20,7 @@ import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
-import { generateQuestionsPrompt } from 'src/constants';
+import { generateQuestionsPrompt, inactiveSubscriptionStatuses } from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { extractJSONDataFromMessages } from 'src/utils';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
@@ -108,8 +108,6 @@ export class CourseDocumentController {
           await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
             subscriptionInfo?.subscriptionCode,
           );
-
-        const inactiveSubscriptionStatuses = ['completed', 'cancelled'];
 
         if (
           !inactiveSubscriptionStatuses.includes(

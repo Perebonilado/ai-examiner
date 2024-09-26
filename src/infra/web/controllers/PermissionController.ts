@@ -17,6 +17,7 @@ import { PlanPermissionQueryService } from 'src/query/services/PlanPermissionQue
 import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
 import * as moment from 'moment';
+import { inactiveSubscriptionStatuses } from 'src/constants';
 
 @Controller('permission')
 export class PermissionController {
@@ -48,11 +49,7 @@ export class PermissionController {
         await this.oneTimeSubscriptionService.findByUserId(userToken.sub);
 
       const maxNumberOfQuestionGenerationForFreePlanTier = 1;
-      const inactiveSubscriptionStatuses = [
-        'completed',
-        'cancelled',
-        'attention',
-      ];
+   
 
       // user might have a recurring or one time subscription
       if (recurringSubscriptionDetails || oneTimeSubscriptionDetails) {

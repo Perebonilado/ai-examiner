@@ -120,7 +120,6 @@ export class SubscriptionController {
         status: HttpStatus.OK,
       };
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         error?.response ??
           'An Error occured while trying to create a subscription',
@@ -211,39 +210,76 @@ export class SubscriptionController {
   public async getSubscriptionDetails(@Req() request: Request) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
-      const subscription = await this.subscriptionQueryService.findByUserId(
+      const subscriptionMode = await this.getActiveSubscriptionMode(
         userToken.sub,
       );
-      if (subscription) {
-        const details =
-          await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
-            subscription.subscriptionCode,
-          );
 
-        return details;
+      if (subscriptionMode.mode === 'one_time') {
+        const planDetails = (
+          await this.paystackPlanService.getPlans({ page: 1, perPage: 50 })
+        ).find((p) => p.planId === subscriptionMode.planCode);
+
+        return {
+          cardInformation: {
+            accountName: null,
+            bank: null,
+            brand: null,
+            expirationMonth: null,
+            expirationYear: null,
+            last4: null,
+          },
+          planInformation: {
+            amount: planDetails.amount,
+            currency: planDetails.currency,
+            name: planDetails.planName,
+            planCode: planDetails.planId,
+          },
+          subscrptionInformation: {
+            code: null,
+            token: null,
+            status: 'active',
+          },
+          mode: subscriptionMode.mode,
+        };
+      } else {
+        const recurringSubscriptionDetails =
+          await this.subscriptionQueryService.findByUserId(userToken.sub);
+
+        if (recurringSubscriptionDetails) {
+          const subscriptionInformation =
+            await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+              recurringSubscriptionDetails.subscriptionCode,
+            );
+
+          return {
+            ...subscriptionInformation,
+            mode: subscriptionMode.mode,
+          };
+        } else {
+          return {
+            cardInformation: {
+              accountName: null,
+              bank: null,
+              brand: null,
+              expirationMonth: null,
+              expirationYear: null,
+              last4: null,
+            },
+            planInformation: {
+              amount: null,
+              currency: null,
+              name: null,
+              planCode: null,
+            },
+            subscrptionInformation: {
+              code: null,
+              token: null,
+              status: null,
+            },
+            mode: null,
+          };
+        }
       }
-
-      return {
-        cardInformation: {
-          accountName: null,
-          bank: null,
-          brand: null,
-          expirationMonth: null,
-          expirationYear: null,
-          last4: null,
-        },
-        planInformation: {
-          amount: null,
-          currency: null,
-          name: null,
-          planCode: null,
-        },
-        subscrptionInformation: {
-          code: null,
-          token: null,
-          status: null,
-        },
-      };
     } catch (error) {
       throw new HttpException(
         error?.response ??
@@ -264,6 +300,32 @@ export class SubscriptionController {
       throw new HttpException(
         error?.response ??
           'An Error occured while trying to create a subscription',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  private async getActiveSubscriptionMode(userId: string) {
+    try {
+      const oneTimeSubscriptionDetails =
+        await this.oneTimeSubscriptionService.findByUserId(userId);
+
+      if (
+        oneTimeSubscriptionDetails &&
+        moment(oneTimeSubscriptionDetails?.expiresOn).isAfter(moment(), 'day')
+      ) {
+        return {
+          mode: 'one_time',
+          planCode: oneTimeSubscriptionDetails.planCode,
+        };
+      } else {
+        return {
+          mode: 'recurring',
+        };
+      }
+    } catch (error) {
+      throw new HttpException(
+        'Failed to get active subscription mode',
         HttpStatus.BAD_REQUEST,
       );
     }
