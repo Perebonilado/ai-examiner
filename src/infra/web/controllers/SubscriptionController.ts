@@ -309,7 +309,7 @@ export class SubscriptionController {
     try {
       const oneTimeSubscriptionDetails =
         await this.oneTimeSubscriptionService.findByUserId(userId);
-
+      
       if (
         oneTimeSubscriptionDetails &&
         moment(oneTimeSubscriptionDetails?.expiresOn).isAfter(moment(), 'day')
