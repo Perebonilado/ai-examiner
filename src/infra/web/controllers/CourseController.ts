@@ -29,6 +29,7 @@ import {
   defaultPageNumber,
   defaultPageSize,
   generateQuestionsPrompt,
+  inactiveSubscriptionStatuses,
 } from 'src/constants';
 import { extractJSONDataFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
@@ -149,8 +150,6 @@ export class CourseController {
           await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
             subscriptionInfo?.subscriptionCode,
           );
-
-        const inactiveSubscriptionStatuses = ['completed', 'cancelled'];
 
         if (
           !inactiveSubscriptionStatuses.includes(
