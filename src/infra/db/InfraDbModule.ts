@@ -10,6 +10,7 @@ import { QuestionTopicDbConnector } from './connectors/QuestionTopicDbConnector'
 import { QueryModule } from 'src/query/QueryModule';
 import { SubscriptionDbConnector } from './connectors/SubscriptionDbConnector';
 import { DocumentMessageDbConnector } from './connectors/DocumentMessageDbConnector';
+import { OneTimeSubscriptionDbConnector } from './connectors/OneTimeSubscriptionDbConnector';
 
 @Module({
   imports: [QueryModule],
@@ -23,7 +24,8 @@ import { DocumentMessageDbConnector } from './connectors/DocumentMessageDbConnec
     DocumentTopicDbConnector,
     QuestionTopicDbConnector,
     SubscriptionDbConnector,
-    DocumentMessageDbConnector
+    DocumentMessageDbConnector,
+    OneTimeSubscriptionDbConnector
   ],
   exports: [
     ...databaseProviders,
@@ -35,7 +37,8 @@ import { DocumentMessageDbConnector } from './connectors/DocumentMessageDbConnec
     DocumentTopicDbConnector,
     QuestionTopicDbConnector,
     SubscriptionDbConnector,
-    DocumentMessageDbConnector
+    DocumentMessageDbConnector,
+    OneTimeSubscriptionDbConnector
   ],
 })
 export class InfraDbModule {}

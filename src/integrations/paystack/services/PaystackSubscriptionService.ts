@@ -1,6 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import {
+  CreateOneTimeSubscriptionPayloadModel,
   CreateSubscriptionModel,
   CreateSubscriptionPayloadModel,
 } from '../models/CreateSubscriptionModel';
@@ -32,7 +33,7 @@ export class PaystackSubscriptionService {
 
   private baseUrl = 'https://api.paystack.co';
 
-  public async createSubscription(
+  public async createRecurringSubscription(
     payload: CreateSubscriptionPayloadModel,
   ): Promise<CreateSubscriptionModel> {
     /*
@@ -73,6 +74,47 @@ export class PaystackSubscriptionService {
     } catch (error) {
       throw new HttpException(
         'An error occured while trying to create your subscription',
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+  }
+
+  public async createOneTimeSubscription(
+    payload: CreateOneTimeSubscriptionPayloadModel,
+  ): Promise<CreateSubscriptionModel> {
+    try {
+      const { planCode, amount, currency, email } = payload;
+
+      const { data } = await this.httpService.axiosRef.post<
+        any,
+        AxiosResponse<CreateSubscriptionDto>
+      >(
+        `${this.baseUrl}/transaction/initialize`,
+        {
+          amount,
+          email,
+          currency,
+          channels: ['bank_transfer', 'bank', 'ussd'],
+          metadata: {
+            plan_code: planCode,
+          },
+          callback_url: `${EnvironmentVariables.config.frontendBaseUrl}/new-document`
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${EnvironmentVariables.config.paystackSecretKey}`,
+          },
+        },
+      );
+
+      return {
+        accessCode: data.data.access_code,
+        redirectUrl: data.data.authorization_url,
+        reference: data.data.reference,
+      };
+    } catch (error) {
+      throw new HttpException(
+        'An error occured while trying to create your one time subscription',
         HttpStatus.BAD_GATEWAY,
       );
     }
@@ -184,7 +226,10 @@ export class PaystackSubscriptionService {
           last4: subscription.authorization.last4,
         },
         planInformation: {
-          amount: convertSmallerDemoninationtoLarger(subscription.plan.amount, 100),
+          amount: convertSmallerDemoninationtoLarger(
+            subscription.plan.amount,
+            100,
+          ),
           currency: subscription.plan.currency,
           name: subscription.plan.name,
           planCode: subscription.plan.plan_code,

@@ -11,6 +11,7 @@ import { SubscriptionQueryService } from './services/SubscriptionQueryService';
 import { PlanPermissionQueryService } from './services/PlanPermissionQueryService';
 import { PermissionQueryService } from './services/PermissionQueryService';
 import { DocumentMessageQueryService } from './services/DocumentMessageQueryService';
+import { OneTimeSubscriptionQueryService } from './services/OneTimeSubscriptionQueryService';
 
 @Module({
   providers: [
@@ -25,7 +26,8 @@ import { DocumentMessageQueryService } from './services/DocumentMessageQueryServ
     SubscriptionQueryService,
     PlanPermissionQueryService,
     PermissionQueryService,
-    DocumentMessageQueryService
+    DocumentMessageQueryService,
+    OneTimeSubscriptionQueryService
   ],
   exports: [
     UserQueryService,
@@ -39,7 +41,8 @@ import { DocumentMessageQueryService } from './services/DocumentMessageQueryServ
     SubscriptionQueryService,
     PlanPermissionQueryService,
     PermissionQueryService,
-    DocumentMessageQueryService
+    DocumentMessageQueryService,
+    OneTimeSubscriptionQueryService
   ],
 })
 export class QueryModule {}

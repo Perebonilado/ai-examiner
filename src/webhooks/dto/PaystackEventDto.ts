@@ -1,6 +1,6 @@
 export interface PaystackEventDto {
   event: PaystackEvent;
-  data: unknown;
+  data: any
 }
 
 export type PaystackEvent = 'subscription.disable' | 'charge.success';

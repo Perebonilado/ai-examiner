@@ -2,6 +2,14 @@ import { MessageReponseType } from 'src/infra/web/models/MessageResponseTypeMode
 
 export const saltRounds = 10;
 
+export const maxNumberOfQuestionGenerationForFreePlanTier = 1;
+
+export const inactiveSubscriptionStatuses = [
+  'completed',
+  'cancelled',
+  'attention',
+];
+
 export const generateQuestionsPrompt = (
   questionCount: number = 5,
   focusAreas?: string[],
