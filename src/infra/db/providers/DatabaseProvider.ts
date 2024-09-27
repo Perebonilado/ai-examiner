@@ -12,6 +12,7 @@ import { SubscriptionModel } from '../models/SubscriptionModel';
 import { PermissionModel } from '../models/PermissionsModel';
 import { PlanPermissionModel } from '../models/PlanPermissionModel';
 import { DocumentMessageModel } from '../models/DocumentMessageModel';
+import { OneTimeSubscriptionModel } from '../models/OneTimeSubscriptionModel';
 
 export let sequelize: Sequelize;
 
@@ -42,12 +43,13 @@ export const databaseProviders = [
         SubscriptionModel,
         PermissionModel,
         PlanPermissionModel,
-        DocumentMessageModel
+        DocumentMessageModel,
+        OneTimeSubscriptionModel,
       ]);
 
       try {
         await sequelize.sync();
-        console.log('Database synced successfully')
+        console.log('Database synced successfully');
       } catch (error) {
         console.log(error);
       }

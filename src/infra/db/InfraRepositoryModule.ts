@@ -19,6 +19,8 @@ import { SubscriptionSequelizeRepository } from './repository/SubscriptionSequel
 import { QueryModule } from 'src/query/QueryModule';
 import { DocumentMessageRepository } from 'src/business/repository/DocumentMessageRepository';
 import { DocumentMessageSequelizeRepository } from './repository/DocumentMessageSequelizeRepository';
+import { OneTimeSubscriptionRepository } from 'src/business/repository/OneTimeSubscriptionRepository';
+import { OneTimeSubscriptionSequelizeRepository } from './repository/OneTimeSubscriptionSequelizeRepository';
 
 @Module({
   imports: [InfraDbModule, QueryModule],
@@ -58,6 +60,10 @@ import { DocumentMessageSequelizeRepository } from './repository/DocumentMessage
     {
       provide: DocumentMessageRepository,
       useClass: DocumentMessageSequelizeRepository
+    },
+    {
+      provide: OneTimeSubscriptionRepository,
+      useClass: OneTimeSubscriptionSequelizeRepository
     }
   ],
   exports: [
@@ -69,7 +75,8 @@ import { DocumentMessageSequelizeRepository } from './repository/DocumentMessage
     DocumentTopicRepository,
     QuestionTopicRepository,
     SubscriptionRepository,
-    DocumentMessageRepository
+    DocumentMessageRepository,
+    OneTimeSubscriptionRepository
   ],
 })
 export class InfraRepositoryModule {}

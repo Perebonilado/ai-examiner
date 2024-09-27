@@ -21,7 +21,7 @@ import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { GetQuestionByIdDto } from 'src/dto/GetQuestionByIdDto';
 import { extractJSONDataFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
-import { generateQuestionsPrompt } from 'src/constants';
+import { generateQuestionsPrompt, inactiveSubscriptionStatuses } from 'src/constants';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
@@ -128,7 +128,6 @@ export class QuestionsController {
             subscriptionInfo?.subscriptionCode,
           );
 
-        const inactiveSubscriptionStatuses = ['completed', 'cancelled'];
 
         if (
           !inactiveSubscriptionStatuses.includes(

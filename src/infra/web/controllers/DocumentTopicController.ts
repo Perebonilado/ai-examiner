@@ -18,7 +18,7 @@ import { Request, Response } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { DocumentTopicQueryService } from 'src/query/services/DocumentTopicQueryService';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
-import { generateTopicPrompt } from 'src/constants';
+import { generateTopicPrompt, inactiveSubscriptionStatuses } from 'src/constants';
 import { extractJSONDataFromMessages } from 'src/utils';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
@@ -106,8 +106,6 @@ export class DocumentTopicController {
           await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
             subscriptionInfo?.subscriptionCode,
           );
-
-        const inactiveSubscriptionStatuses = ['completed', 'cancelled'];
 
         if (
           !inactiveSubscriptionStatuses.includes(

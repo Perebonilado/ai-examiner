@@ -14,6 +14,7 @@ import { CourseDocumentModel } from './CourseDocumentModel';
 import { QuestionModel } from './QuestionModel';
 import { SubscriptionModel } from './SubscriptionModel';
 import { DocumentMessageModel } from './DocumentMessageModel';
+import { OneTimeSubscriptionModel } from './OneTimeSubscriptionModel';
 
 @Table({ tableName: 'user' })
 export class UserModel extends Model<UserModel> {
@@ -83,6 +84,9 @@ export class UserModel extends Model<UserModel> {
 
   @HasMany(() => DocumentMessageModel, 'user_id')
   documentMessage: DocumentMessageModel;
+
+  @HasOne(() => OneTimeSubscriptionModel, 'user_id')
+  oneTimeSubscription: OneTimeSubscriptionModel;
 
   @BeforeCreate
   static addUUID(instance: UserModel) {
