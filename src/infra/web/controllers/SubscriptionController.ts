@@ -268,7 +268,7 @@ export class SubscriptionController {
             planInformation: {
               amount: null,
               currency: null,
-              name: null,
+              name: "Free",
               planCode: null,
             },
             subscrptionInformation: {
