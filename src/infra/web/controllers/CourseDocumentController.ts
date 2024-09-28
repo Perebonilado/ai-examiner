@@ -90,6 +90,7 @@ export class CourseDocumentController {
   public async createCourseDocumentAndGenerateQuestions(
     @Query('questionCount') questionCount: number,
     @Query('questionType') questionType: number,
+    @Query('includeUseCases') includeUseCases: string,
     @Body()
     body: Omit<CreateCourseDocumentDto, 'userId' | 'threadId' | 'courseId'>,
     @Req() request: Request,
@@ -197,6 +198,7 @@ export class CourseDocumentController {
         generateQuestionsPrompt(
           questionCount || 5,
           body.selectedQuestionTopics || undefined,
+          includeUseCases === 'true' ? true : false
         ),
       );
 
