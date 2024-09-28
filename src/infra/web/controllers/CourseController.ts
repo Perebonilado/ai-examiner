@@ -135,6 +135,7 @@ export class CourseController {
     @Body() body: CreateCourseDocumentQuestionDto,
     @Query('questionCount') questionCount: number,
     @Query('questionType') questionType: number,
+    @Query('includeUseCases') includeUseCases: string,
     @Req() request: Request,
   ) {
     try {
@@ -200,7 +201,7 @@ export class CourseController {
 
       await this.examinerService.createThreadMessage(
         updatedThread.id,
-        generateQuestionsPrompt(questionCount || 5),
+        generateQuestionsPrompt(questionCount || 5, [], includeUseCases === 'true' ? true : false),
       );
 
       const run = await this.examinerService.createRun(
