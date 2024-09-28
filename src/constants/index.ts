@@ -13,22 +13,41 @@ export const inactiveSubscriptionStatuses = [
 export const generateQuestionsPrompt = (
   questionCount: number = 5,
   focusAreas?: string[],
+  includeCaseStudies = false,
 ) => {
-  return `Analyze the document thoroughly. Generate ${questionCount} unique multiple-choice questions based on key concepts.
-
+  const basePrompt = `Analyze the document thoroughly. Generate ${questionCount} unique multiple-choice questions based on key concepts.
 ${focusAreas?.length ? `Focus on these concepts: ${focusAreas.join(', ')}. Create specific, concept-focused questions that test core understanding. ${focusAreas.length > 1 ? 'Distribute questions evenly across concepts and shuffle their order.' : ''}` : ''}
-
 For each question:
 1. Ensure relevance to document content
 2. Provide 4 options with unique IDs
 3. Include one correct answer; vary its position
-4. Create plausible but clearly incorrect alternatives.
+4. Create plausible but clearly incorrect alternatives
 5. Add a hint that aids recall without revealing the answer
-6. Include a detailed explanation. Explain why the correct option is the answer and why the incorrect options are not.
-7. Ensure the questions and options are difficult and thought provoking.
+6. Include a detailed explanation. Explain why the correct option is the answer and why the incorrect options are not
+7. Ensure the questions and options are difficult and thought provoking`;
 
+  const caseStudyPrompt = `8. IMPORTANT: Create questions based on realistic clinical scenarios that apply concepts from the document.
+   - Begin each question with a brief patient case or clinical situation
+   - Ensure the scenario is directly relevant to the document's content
+   - Include key details such as patient demographics, presenting symptoms, or test results as appropriate
+   - Frame the question to test application of knowledge, clinical reasoning, or decision-making
+   - Scenarios should be concise but provide enough context for the question
+   - Vary the types of scenarios (e.g., diagnosis, treatment planning, interpretation of results)
+   - Ensure that answering the question requires understanding and applying concepts from the document
+   - Avoid overly complex or rare clinical situations unless specifically relevant to the document's focus
+THIS INSTRUCTION IS CRITICAL FOR ALL QUESITONS - STRICTLY ADHERE TO CREATING SCENARIO-BASED QUESTIONS THAT APPLY DOCUMENT CONCEPTS.`;
+
+  const directQuestionPrompt = `8. IMPORTANT: Generate ONLY direct, concept-based questions. DO NOT use any scenarios, case studies, or hypothetical situations.
+   - Questions should test specific knowledge, definitions, principles, or facts directly from the document
+   - Focus on key terms, processes, classifications, or theoretical concepts
+   - Use formats like "What is...", "Define...", "Identify...", "Which of the following..."
+   - Avoid any patient scenarios or clinical vignettes
+   - Questions should be straightforward and assess factual recall or conceptual understanding
+THIS INSTRUCTION IS CRITICAL - STRICTLY ADHERE TO CREATING ONLY DIRECT QUESTIONS WITHOUT ANY SCENARIOS.`;
+
+  const finalPrompt = `${basePrompt}
+${includeCaseStudies ? caseStudyPrompt : directQuestionPrompt}
 Ignore images. Return only a JSON array in this format:
-
 [
   {
     "id": "string",
@@ -41,9 +60,11 @@ Ignore images. Return only a JSON array in this format:
     "hint": "string"
   }
 ]
-
 If unable to generate questions, return "unable to generate questions".`;
+
+  return finalPrompt;
 };
+
 export const generateTopicPrompt = `
 Please review the document, and understand thoroughly what the document is about deeply and in detail. Then, determine if it is divided into detailed distinct topics, chapters or content covering various specific concepts in the document. Check if the broad concepts or chapters or topics are further broken down into specific concepts or topics. If it is, extract and return all the specific topics. If not, analyze the document, identify different specific concepts or topics, and return them. Ensure that they are detailed, touching on specific concepts and not a broad overview.
 

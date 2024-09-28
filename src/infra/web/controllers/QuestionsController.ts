@@ -112,6 +112,7 @@ export class QuestionsController {
     @Req() request: Request,
     @Query('questionCount') questionCount: number,
     @Query('questionType') questionType: number,
+    @Query('includeUseCases') includeUseCases: string,
     @Body() body: GenerateCourseDocumentQuestionDto,
   ) {
     try {
@@ -174,12 +175,13 @@ export class QuestionsController {
             updatedVectorStoreId,
           );
         }
-
+        
         await this.examinerService.createThreadMessage(
           existingThread.id,
           generateQuestionsPrompt(
             questionCount || 5,
             body.selectedQuestionTopics,
+            includeUseCases === 'true' ? true : false
           ),
         );
 
