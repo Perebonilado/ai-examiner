@@ -15,7 +15,7 @@ export const generateQuestionsPrompt = (
   focusAreas?: string[],
   includeCaseStudies = false,
 ) => {
-  const basePrompt = `Analyze the document thoroughly. Generate ${questionCount} unique multiple-choice questions based on key concepts.
+  const basePrompt = `Analyze the document thoroughly. Generate ${questionCount} unique multiple-choice questions based on key concepts. Before generating each question Double-check each question and its options against the document to ensure absolute accuracy while maintaining high difficulty
 ${focusAreas?.length ? `Focus on these concepts: ${focusAreas.join(', ')}. Create specific, concept-focused questions that test core understanding. ${focusAreas.length > 1 ? 'Distribute questions evenly across concepts and shuffle their order.' : ''}` : ''}
 For each question:
 1. Ensure relevance to document content
@@ -40,7 +40,7 @@ THIS INSTRUCTION IS CRITICAL FOR ALL QUESITONS - STRICTLY ADHERE TO CREATING SCE
   const directQuestionPrompt = `8. IMPORTANT: Generate ONLY direct, concept-based questions. DO NOT use any scenarios, case studies, or hypothetical situations.
    - Questions should test specific knowledge, definitions, principles, or facts directly from the document
    - Focus on key terms, processes, classifications, or theoretical concepts
-   - Use formats like "What is...", "Define...", "Identify...", "Which of the following..."
+   - Use formats like "Which of the following best describes...?", "How does X differ from Y?",  "What is...",  "Identify...", "Which of the following..."
    - Avoid any patient scenarios or clinical vignettes
    - Questions should be straightforward and assess factual recall or conceptual understanding
 THIS INSTRUCTION IS CRITICAL - STRICTLY ADHERE TO CREATING ONLY DIRECT QUESTIONS WITHOUT ANY SCENARIOS.`;
