@@ -15,6 +15,7 @@ export class QuestionProgressQueryService {
     try {
       const progress = await QuestionProgressModel.findOne({
         where: { questionId },
+        attributes: {exclude: ['userId', 'user_id']},
         raw: true,
       });
 
