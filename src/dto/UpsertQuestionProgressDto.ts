@@ -1,4 +1,4 @@
 export interface UpsertQuestionProgressDTO {
-  id?: string;
-  data?: string;
+  selectedQuestionId: string;
+  selectedOptionId: string;
 }

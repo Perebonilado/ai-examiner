@@ -80,7 +80,7 @@ export class UserModel extends Model<UserModel> {
   @HasMany(() => QuestionModel, 'user_id')
   question: QuestionModel;
 
-  @HasMany(()=>QuestionProgressModel)
+  @HasMany(()=>QuestionProgressModel, 'user_id')
   questionProgress: QuestionProgressModel
 
   @HasOne(() => SubscriptionModel, 'user_id')

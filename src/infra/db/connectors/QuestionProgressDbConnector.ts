@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DatabaseError } from 'src/error-handlers/infra/DatabaseError';
 import { QuestionProgressModel } from '../models/QuestionProgressModel';
 import * as moment from 'moment';
-import { QuestionProgressDataModel } from 'src/infra/web/models/QuestionProgressDataModel';
+import { UpsertQuestionProgressDTO } from 'src/dto/UpsertQuestionProgressDto';
 
 @Injectable()
 export class QuestionProgressDbConnector {
@@ -17,10 +17,10 @@ export class QuestionProgressDbConnector {
         const savedProgress = existingQuestionProgress.data
           ? (JSON.parse(
               existingQuestionProgress.data,
-            ) as QuestionProgressDataModel[])
+            ) as UpsertQuestionProgressDTO[])
           : null;
         const progressToSave = JSON.parse(progress.data) as [
-          QuestionProgressDataModel,
+          UpsertQuestionProgressDTO,
         ];
 
         if (!savedProgress) {
@@ -37,15 +37,15 @@ export class QuestionProgressDbConnector {
           );
         } else {
           const savedQuestionNeedsUpdate = savedProgress.some((p) => {
-            return progressToSave[0].selectionOptionId === p.selectionOptionId;
+            return progressToSave[0].selectedQuestionId === p.selectedQuestionId;
           });
 
           if (savedQuestionNeedsUpdate) {
             const updatedProgress = savedProgress.map((p) => {
-              if (p.selectionOptionId === progressToSave[0].selectionOptionId) {
+              if (p.selectedQuestionId === progressToSave[0].selectedQuestionId) {
                 return {
                   ...p,
-                  selectionOptionId: progressToSave[0].selectionOptionId,
+                  selectedOptionId: progressToSave[0].selectedOptionId,
                 };
               } else {
                 return p;

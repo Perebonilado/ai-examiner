@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import QueryError from 'src/error-handlers/query/QueryError';
 import { QuestionProgressModel } from 'src/infra/db/models/QuestionProgressModel';
 import { ScoreQueryService } from './ScoreQueryService';
-import { QuestionProgressDataModel } from 'src/infra/web/models/QuestionProgressDataModel';
+import { UpsertQuestionProgressDTO } from 'src/dto/UpsertQuestionProgressDto';
 
 @Injectable()
 export class QuestionProgressQueryService {
@@ -17,17 +17,23 @@ export class QuestionProgressQueryService {
         where: { questionId },
         raw: true,
       });
-      const score =
-        await this.scoreQueryService.findScoreByQuestionId(questionId);
 
-      return {
-        ...progress,
-        data: progress.data
-          ? (JSON.parse(progress.data) as QuestionProgressDataModel[])
-          : null,
-        score: score.score,
-      };
+      if (progress) {
+        const score =
+          await this.scoreQueryService.findScoreByQuestionId(questionId);
+
+        return {
+          ...progress,
+          data: progress.data
+            ? (JSON.parse(progress.data) as UpsertQuestionProgressDTO[])
+            : null,
+          score: score ? score.score : null,
+        };
+      }
+
+      return null;
     } catch (error) {
+      console.log(error)
       throw new QueryError('Failed to find progress by question id').InnerError(
         error,
       );
