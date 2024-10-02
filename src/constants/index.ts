@@ -2,7 +2,7 @@ import { MessageReponseType } from 'src/infra/web/models/MessageResponseTypeMode
 
 export const saltRounds = 10;
 
-export const maxNumberOfQuestionGenerationForFreePlanTier = 1;
+export const maxNumberOfQuestionGenerationForFreePlanTier = 2;
 
 export const inactiveSubscriptionStatuses = [
   'completed',
