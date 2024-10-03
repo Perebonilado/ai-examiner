@@ -9,6 +9,7 @@ export class QuestionProgressDbConnector {
   public async upsert(progress: QuestionProgressModel) {
     try {
       // add or replace to question progress data
+      
       if (progress.id && progress.data) {
         const existingQuestionProgress = await QuestionProgressModel.findOne({
           where: { id: progress.id },
@@ -27,12 +28,13 @@ export class QuestionProgressDbConnector {
           return await QuestionProgressModel.update(
             {
               ...savedProgress,
+              status: progress.status,
               data: JSON.stringify(progressToSave),
               modifiedOn: moment(new Date()).utc().toDate(),
             },
             {
               where: { id: progress.id },
-              fields: ['data', 'modifiedOn'],
+              fields: ['data', 'modifiedOn', 'status'],
             },
           );
         } else {
@@ -56,11 +58,12 @@ export class QuestionProgressDbConnector {
               {
                 ...savedProgress,
                 data: JSON.stringify(updatedProgress),
+                status: progress.status,
                 modifiedOn: moment(new Date()).utc().toDate(),
               },
               {
                 where: { id: progress.id },
-                fields: ['data', 'modifiedOn'],
+                fields: ['data', 'modifiedOn', 'status'],
               },
             );
           } else {
@@ -70,11 +73,12 @@ export class QuestionProgressDbConnector {
               {
                 ...savedProgress,
                 data: JSON.stringify(updatedProgress),
+                status: progress.status,
                 modifiedOn: moment(new Date()).utc().toDate(),
               },
               {
                 where: { id: progress.id },
-                fields: ['data', 'modifiedOn'],
+                fields: ['data', 'modifiedOn', 'status'],
               },
             );
           }
@@ -83,16 +87,18 @@ export class QuestionProgressDbConnector {
         // create the progress as it is new
         return await QuestionProgressModel.create(progress);
       } else if (progress.id && !progress.data) {
-        // clear existing progress data
+        // clear existing progress data or change status
+
         return await QuestionProgressModel.update(
           {
             ...progress,
-            data: null,
+            data: progress.data ?? null,
+            status: progress.status,
             modifiedOn: moment(new Date()).utc().toDate(),
           },
           {
             where: { id: progress.id },
-            fields: ['data', 'modifiedOn'],
+            fields: ['data', 'modifiedOn', 'status'],
           },
         );
       }

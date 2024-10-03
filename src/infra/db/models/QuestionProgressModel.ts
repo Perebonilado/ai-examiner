@@ -5,11 +5,13 @@ import {
   DataType,
   BeforeCreate,
   ForeignKey,
+  AllowNull,
 } from 'sequelize-typescript';
 import { generateUUID } from 'src/utils';
 import * as moment from 'moment';
 import { UserModel } from './UserModel';
 import { QuestionModel } from './QuestionModel';
+import { QuestionProgressStatusType } from 'src/infra/web/models/QuestionProgressStatusType';
 
 @Table({ tableName: 'question_progress' })
 export class QuestionProgressModel extends Model<QuestionProgressModel> {
@@ -25,6 +27,13 @@ export class QuestionProgressModel extends Model<QuestionProgressModel> {
     field: 'data',
   })
   data: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    field: 'status',
+  })
+  status: QuestionProgressStatusType;
 
   @ForeignKey(() => QuestionModel)
   @Column({
@@ -57,8 +66,9 @@ export class QuestionProgressModel extends Model<QuestionProgressModel> {
   modifiedOn: Date;
 
   @BeforeCreate
-  static addUUID(instance: QuestionModel) {
+  static addUUID(instance: QuestionProgressModel) {
     instance.id = generateUUID();
+    instance.status = 'in_progress';
     instance.createdOn = moment(new Date()).utc().toDate();
   }
 }

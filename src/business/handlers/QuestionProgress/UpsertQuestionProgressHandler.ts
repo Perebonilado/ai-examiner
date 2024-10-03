@@ -26,19 +26,26 @@ export class UpserQuestionProgressHandler extends AbstractRequestHandlerTemplate
     request: UpsertQuestionProgressRequest,
   ): Promise<CommandResponse<UpsertQuestionProgressResponse>> {
     try {
-      const { data, questionId, userId } = request;
+      const { data, questionId, userId, status, clearExistingProgress } = request;
 
       const existingProgress =
         await this.questionProgressQueryService.findProgressByQuestionId(
           questionId,
         );
 
+      let dataToSave: string | null = data ? JSON.stringify(data) : JSON.stringify(existingProgress.data)
+
+      if(clearExistingProgress) {
+        dataToSave = null
+      }
+
       if (existingProgress) {
         await this.questionProgressRepository.upsert({
           id: existingProgress.id,
-          data: data ? JSON.stringify(data) : null,
+          data: dataToSave,
           questionId: questionId,
           userId: userId,
+          status: status
         } as QuestionProgressModel);
       } else {
         await this.questionProgressRepository.upsert({
