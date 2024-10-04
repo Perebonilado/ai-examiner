@@ -21,6 +21,8 @@ import { DocumentMessageRepository } from 'src/business/repository/DocumentMessa
 import { DocumentMessageSequelizeRepository } from './repository/DocumentMessageSequelizeRepository';
 import { OneTimeSubscriptionRepository } from 'src/business/repository/OneTimeSubscriptionRepository';
 import { OneTimeSubscriptionSequelizeRepository } from './repository/OneTimeSubscriptionSequelizeRepository';
+import { QuestionProgressRepository } from 'src/business/repository/QuestionProgressRepository';
+import { QuestionProgressSequelizeRepository } from './repository/QuestionProgressSequelizeRepository';
 
 @Module({
   imports: [InfraDbModule, QueryModule],
@@ -64,6 +66,10 @@ import { OneTimeSubscriptionSequelizeRepository } from './repository/OneTimeSubs
     {
       provide: OneTimeSubscriptionRepository,
       useClass: OneTimeSubscriptionSequelizeRepository
+    },
+    {
+      provide: QuestionProgressRepository,
+      useClass: QuestionProgressSequelizeRepository
     }
   ],
   exports: [
@@ -76,7 +82,8 @@ import { OneTimeSubscriptionSequelizeRepository } from './repository/OneTimeSubs
     QuestionTopicRepository,
     SubscriptionRepository,
     DocumentMessageRepository,
-    OneTimeSubscriptionRepository
+    OneTimeSubscriptionRepository,
+    QuestionProgressRepository
   ],
 })
 export class InfraRepositoryModule {}

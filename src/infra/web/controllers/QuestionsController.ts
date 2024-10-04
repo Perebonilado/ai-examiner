@@ -21,7 +21,10 @@ import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { GetQuestionByIdDto } from 'src/dto/GetQuestionByIdDto';
 import { extractJSONDataFromMessages } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
-import { generateQuestionsPrompt, inactiveSubscriptionStatuses } from 'src/constants';
+import {
+  generateQuestionsPrompt,
+  inactiveSubscriptionStatuses,
+} from 'src/constants';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
@@ -36,6 +39,7 @@ import { CreateQuestionTopicHandler } from 'src/business/handlers/QuestionTopic/
 import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
 import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
 import { DeleteQuestionHandler } from 'src/business/handlers/Question/DeleteQuestionHandler';
+import { QuestionProgressQueryService } from 'src/query/services/QuestionProgressQueryService';
 
 @Controller('questions')
 export class QuestionsController {
@@ -62,6 +66,8 @@ export class QuestionsController {
     private paystackSubscriptionService: PaystackSubscriptionService,
     @Inject(DeleteQuestionHandler)
     private deleteQuestionHandler: DeleteQuestionHandler,
+    @Inject(QuestionProgressQueryService)
+    private questionProgressQueryService: QuestionProgressQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -129,7 +135,6 @@ export class QuestionsController {
             subscriptionInfo?.subscriptionCode,
           );
 
-
         if (
           !inactiveSubscriptionStatuses.includes(
             subscriptionDetails.subscrptionInformation.status,
@@ -175,13 +180,13 @@ export class QuestionsController {
             updatedVectorStoreId,
           );
         }
-        
+
         await this.examinerService.createThreadMessage(
           existingThread.id,
           generateQuestionsPrompt(
             questionCount || 5,
             body.selectedQuestionTopics,
-            includeUseCases === 'true' ? true : false
+            includeUseCases === 'true' ? true : false,
           ),
         );
 
@@ -312,15 +317,30 @@ export class QuestionsController {
           userToken.sub,
         );
 
-      const mappedQuestions = questions.questions.map((q) => ({
-        courseDocumentId: q.courseDocumentId,
-        createdOn: q.createdOn,
-        id: q.id,
-        count: JSON.parse(q.data).length,
-        score: q.score,
-        topics: q.topics,
-        type: q.type,
-      }));
+      const mappedQuestions = await Promise.all(questions.questions.map(async (q) => {
+        const questionCount = JSON.parse(q.data).length
+        const progress = await this.questionProgressQueryService.findProgressByQuestionId(q.id)
+        let progressPercentage: number | null = null
+        let totalAnswered: number = 0
+        
+        if(progress?.data && progress.data.length){
+          progressPercentage = (progress.data.length/questionCount) * 100
+          totalAnswered = progress.data.length
+        }
+
+        return {
+          courseDocumentId: q.courseDocumentId,
+          createdOn: q.createdOn,
+          id: q.id,
+          progressPercentage,
+          count: questionCount,
+          totalAnswered: `${totalAnswered}/${questionCount}`,
+          status: progress?.status ?? null,
+          score: q.score,
+          topics: q.topics,
+          type: q.type,
+        };
+      }))
 
       return {
         data: {

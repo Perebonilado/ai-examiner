@@ -11,6 +11,7 @@ import { QueryModule } from 'src/query/QueryModule';
 import { SubscriptionDbConnector } from './connectors/SubscriptionDbConnector';
 import { DocumentMessageDbConnector } from './connectors/DocumentMessageDbConnector';
 import { OneTimeSubscriptionDbConnector } from './connectors/OneTimeSubscriptionDbConnector';
+import { QuestionProgressDbConnector } from './connectors/QuestionProgressDbConnector';
 
 @Module({
   imports: [QueryModule],
@@ -25,7 +26,8 @@ import { OneTimeSubscriptionDbConnector } from './connectors/OneTimeSubscription
     QuestionTopicDbConnector,
     SubscriptionDbConnector,
     DocumentMessageDbConnector,
-    OneTimeSubscriptionDbConnector
+    OneTimeSubscriptionDbConnector,
+    QuestionProgressDbConnector
   ],
   exports: [
     ...databaseProviders,
@@ -38,7 +40,8 @@ import { OneTimeSubscriptionDbConnector } from './connectors/OneTimeSubscription
     QuestionTopicDbConnector,
     SubscriptionDbConnector,
     DocumentMessageDbConnector,
-    OneTimeSubscriptionDbConnector
+    OneTimeSubscriptionDbConnector,
+    QuestionProgressDbConnector
   ],
 })
 export class InfraDbModule {}

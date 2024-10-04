@@ -15,6 +15,7 @@ import { QuestionModel } from './QuestionModel';
 import { SubscriptionModel } from './SubscriptionModel';
 import { DocumentMessageModel } from './DocumentMessageModel';
 import { OneTimeSubscriptionModel } from './OneTimeSubscriptionModel';
+import { QuestionProgressModel } from './QuestionProgressModel';
 
 @Table({ tableName: 'user' })
 export class UserModel extends Model<UserModel> {
@@ -78,6 +79,9 @@ export class UserModel extends Model<UserModel> {
 
   @HasMany(() => QuestionModel, 'user_id')
   question: QuestionModel;
+
+  @HasMany(()=>QuestionProgressModel, 'user_id')
+  questionProgress: QuestionProgressModel
 
   @HasOne(() => SubscriptionModel, 'user_id')
   subscription: SubscriptionModel;
