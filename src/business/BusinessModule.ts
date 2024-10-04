@@ -20,6 +20,7 @@ import { DeleteQuestionTopicHandler } from './handlers/QuestionTopic/DeleteQuest
 import { DeleteQuestionHandler } from './handlers/Question/DeleteQuestionHandler';
 import { CreateOneTimeSubscriptionHandler } from './handlers/OneTimeSubscription/CreateOneTimeSubscriptionHandler';
 import { UpdateOneTimeSubscriptionHandler } from './handlers/OneTimeSubscription/UpdateOneTimeSubscriptionHandler';
+import { UpserQuestionProgressHandler } from './handlers/QuestionProgress/UpsertQuestionProgressHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -41,7 +42,8 @@ import { UpdateOneTimeSubscriptionHandler } from './handlers/OneTimeSubscription
     DeleteQuestionTopicHandler,
     DeleteQuestionHandler,
     CreateOneTimeSubscriptionHandler,
-    UpdateOneTimeSubscriptionHandler
+    UpdateOneTimeSubscriptionHandler,
+    UpserQuestionProgressHandler
   ],
   exports: [
     CreateUserHandler,
@@ -61,7 +63,8 @@ import { UpdateOneTimeSubscriptionHandler } from './handlers/OneTimeSubscription
     DeleteQuestionTopicHandler,
     DeleteQuestionHandler,
     CreateOneTimeSubscriptionHandler,
-    UpdateOneTimeSubscriptionHandler
+    UpdateOneTimeSubscriptionHandler,
+    UpserQuestionProgressHandler
   ],
 })
 export class BusinessModule {}
