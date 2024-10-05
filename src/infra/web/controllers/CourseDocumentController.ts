@@ -11,6 +11,7 @@ import {
   Query,
   ParseIntPipe,
   Res,
+  Put,
 } from '@nestjs/common';
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
@@ -20,7 +21,10 @@ import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
-import { generateQuestionsPrompt, inactiveSubscriptionStatuses } from 'src/constants';
+import {
+  generateQuestionsPrompt,
+  inactiveSubscriptionStatuses,
+} from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { extractJSONDataFromMessages } from 'src/utils';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
@@ -29,6 +33,8 @@ import { DocumentTopicModel } from 'src/infra/db/models/DocumentTopicModel';
 import { LookUpQueryService } from 'src/query/services/LookUpQueryService';
 import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
 import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
+import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/UpdateCourseDocumentHandler';
+import { UpdateCourseDocumentDto } from 'src/dto/UpdateCourseDocumentDto';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -49,6 +55,8 @@ export class CourseDocumentController {
     private subscriptionQueryService: SubscriptionQueryService,
     @Inject(PaystackSubscriptionService)
     private paystackSubscriptionService: PaystackSubscriptionService,
+    @Inject(UpdateCourseDocumentHandler)
+    private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -80,6 +88,27 @@ export class CourseDocumentController {
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find Documents',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Put('')
+  public async updateCourseDocument(
+    @Body() body: UpdateCourseDocumentDto,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      return await this.updateCourseDocumentHandler.handle({
+        data: body,
+        userId: userToken.sub,
+      });
+    } catch (error) {
+      console.log(error)
+      throw new HttpException(
+        error?.response ?? 'Failed to update Document',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -198,7 +227,7 @@ export class CourseDocumentController {
         generateQuestionsPrompt(
           questionCount || 5,
           body.selectedQuestionTopics || undefined,
-          includeUseCases === 'true' ? true : false
+          includeUseCases === 'true' ? true : false,
         ),
       );
 
