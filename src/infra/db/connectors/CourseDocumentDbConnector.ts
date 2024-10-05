@@ -10,7 +10,22 @@ export class CourseDocumentDbConnector {
     try {
       return await CourseDocumentModel.create(courseDocument);
     } catch (error) {
-      throw new DatabaseError('Failed to save Document').InnerError(
+      throw new DatabaseError('Failed to save Document').InnerError(error);
+    }
+  }
+
+  public async update(courseDocument: CourseDocumentModel) {
+    try {
+      await CourseDocumentModel.update(courseDocument, {
+        where: { id: courseDocument.id },
+        fields: ['title', 'isDeleted'],
+      });
+
+      return await CourseDocumentModel.findOne({
+        where: { id: courseDocument.id },
+      });
+    } catch (error) {
+      throw new DatabaseError('Failed to update course document').InnerError(
         error,
       );
     }

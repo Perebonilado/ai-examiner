@@ -36,6 +36,7 @@ export class CourseDocumentQueryService {
             courseIdQuery,
             { userId },
             { title: { [Op.like]: `%${title}%` } },
+            {isDeleted: false}
           ],
         },
         order: [['created_on', 'DESC']],
