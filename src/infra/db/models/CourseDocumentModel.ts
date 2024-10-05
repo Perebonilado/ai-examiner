@@ -35,6 +35,14 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
   })
   courseId: string;
 
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: true,
+    field: 'is_deleted',
+    defaultValue: false,
+  })
+  isDeleted: boolean
+
   @ForeignKey(() => UserModel)
   @Column({
     type: DataType.STRING,
