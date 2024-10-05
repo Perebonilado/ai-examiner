@@ -19,7 +19,17 @@ export class CourseDocumentSequelizeRepository
     try {
       return await this.courseDocumentDbConnector.create(courseDocument);
     } catch (error) {
-      throw new RepositoryError('Failed to save Document').InnerError(
+      throw new RepositoryError('Failed to save Document').InnerError(error);
+    }
+  }
+
+  public async update(
+    courseDocument: CourseDocumentModel,
+  ): Promise<CourseDocumentModel> {
+    try {
+      return await this.courseDocumentDbConnector.update(courseDocument);
+    } catch (error) {
+      throw new RepositoryError('Failed to update course document').InnerError(
         error,
       );
     }
