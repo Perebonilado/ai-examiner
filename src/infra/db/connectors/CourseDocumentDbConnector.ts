@@ -18,7 +18,14 @@ export class CourseDocumentDbConnector {
     try {
       await CourseDocumentModel.update(courseDocument, {
         where: { id: courseDocument.id },
-        fields: ['title', 'isDeleted'],
+        fields: [
+          'title',
+          'isDeleted',
+          'mcqDirectThreadId',
+          'mcqUseCaseThreadId',
+          'flashCardThreadId',
+          'documentChatThreadId',
+        ],
       });
 
       return await CourseDocumentModel.findOne({

@@ -127,128 +127,128 @@ export class CourseController {
     }
   }
 
-  @UseGuards(AuthGuard)
-  @Post('/generate-doc-question')
-  @UseInterceptors(FileInterceptor('document'))
-  public async createCourseDocAndQuestion(
-    @UploadedFile() file: Express.Multer.File,
-    @Body() body: CreateCourseDocumentQuestionDto,
-    @Query('questionCount') questionCount: number,
-    @Query('questionType') questionType: number,
-    @Query('includeUseCases') includeUseCases: string,
-    @Req() request: Request,
-  ) {
-    try {
-      const userToken = request['user'] as VerifiedTokenModel;
-      const subscriptionInfo = await this.subscriptionQueryService.findByUserId(
-        userToken.sub,
-      );
+  // @UseGuards(AuthGuard)
+  // @Post('/generate-doc-question')
+  // @UseInterceptors(FileInterceptor('document'))
+  // public async createCourseDocAndQuestion(
+  //   @UploadedFile() file: Express.Multer.File,
+  //   @Body() body: CreateCourseDocumentQuestionDto,
+  //   @Query('questionCount') questionCount: number,
+  //   @Query('questionType') questionType: number,
+  //   @Query('includeUseCases') includeUseCases: string,
+  //   @Req() request: Request,
+  // ) {
+  //   try {
+  //     const userToken = request['user'] as VerifiedTokenModel;
+  //     const subscriptionInfo = await this.subscriptionQueryService.findByUserId(
+  //       userToken.sub,
+  //     );
 
-      let isUserOnFreePlan = true;
+  //     let isUserOnFreePlan = true;
 
-      if (subscriptionInfo?.subscriptionCode) {
-        const subscriptionDetails =
-          await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
-            subscriptionInfo?.subscriptionCode,
-          );
+  //     if (subscriptionInfo?.subscriptionCode) {
+  //       const subscriptionDetails =
+  //         await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+  //           subscriptionInfo?.subscriptionCode,
+  //         );
 
-        if (
-          !inactiveSubscriptionStatuses.includes(
-            subscriptionDetails.subscrptionInformation.status,
-          )
-        ) {
-          isUserOnFreePlan = false;
-        }
-      }
+  //       if (
+  //         !inactiveSubscriptionStatuses.includes(
+  //           subscriptionDetails.subscrptionInformation.status,
+  //         )
+  //       ) {
+  //         isUserOnFreePlan = false;
+  //       }
+  //     }
 
-      const assistantId = isUserOnFreePlan
-        ? EnvironmentVariables.config.assistantIdFreePlan
-        : EnvironmentVariables.config.assistantIdPaidPlan;
+  //     const assistantId = isUserOnFreePlan
+  //       ? EnvironmentVariables.config.assistantIdFreePlan
+  //       : EnvironmentVariables.config.assistantIdPaidPlan;
 
-      const createdCourse = await this.createCourseHandler.handle({
-        payload: {
-          description: body.courseDescription,
-          title: body.courseTitle,
-          userId: userToken.sub,
-        },
-      });
+  //     const createdCourse = await this.createCourseHandler.handle({
+  //       payload: {
+  //         description: body.courseDescription,
+  //         title: body.courseTitle,
+  //         userId: userToken.sub,
+  //       },
+  //     });
 
-      const uploadedFile = await this.examinerService.uploadFile(file, {});
-      const vectorStore = await this.examinerService.createVectorStore(
-        file.originalname,
-      );
-      const updatedVectorStoreId =
-        await this.examinerService.attachFileToVectorStore(
-          uploadedFile.id,
-          vectorStore.id,
-        );
-      const thread = await this.examinerService.createThread();
-      const updatedThread =
-        await this.examinerService.attachVectorStoreToThread(
-          thread.id,
-          updatedVectorStoreId,
-        );
+  //     const uploadedFile = await this.examinerService.uploadFile(file, {});
+  //     const vectorStore = await this.examinerService.createVectorStore(
+  //       file.originalname,
+  //     );
+  //     const updatedVectorStoreId =
+  //       await this.examinerService.attachFileToVectorStore(
+  //         uploadedFile.id,
+  //         vectorStore.id,
+  //       );
+  //     const thread = await this.examinerService.createThread();
+  //     const updatedThread =
+  //       await this.examinerService.attachVectorStoreToThread(
+  //         thread.id,
+  //         updatedVectorStoreId,
+  //       );
 
-      const createdDocument = await this.createCourseDocumentHandler.handle({
-        payload: {
-          courseId: createdCourse.data.id,
-          title: body.documentTitle,
-          userId: userToken.sub,
-          fileId: uploadedFile.id,
-          threadId: updatedThread.id,
-        },
-      });
+  //     const createdDocument = await this.createCourseDocumentHandler.handle({
+  //       payload: {
+  //         courseId: createdCourse.data.id,
+  //         title: body.documentTitle,
+  //         userId: userToken.sub,
+  //         fileId: uploadedFile.id,
+  //         threadId: updatedThread.id,
+  //       },
+  //     });
 
-      await this.examinerService.createThreadMessage(
-        updatedThread.id,
-        generateQuestionsPrompt(questionCount || 5, [], includeUseCases === 'true' ? true : false),
-      );
+  //     await this.examinerService.createThreadMessage(
+  //       updatedThread.id,
+  //       generateQuestionsPrompt(questionCount || 5, [], includeUseCases === 'true' ? true : false),
+  //     );
 
-      const run = await this.examinerService.createRun(
-        assistantId,
-        updatedThread.id,
-      );
+  //     const run = await this.examinerService.createRun(
+  //       assistantId,
+  //       updatedThread.id,
+  //     );
 
-      const messages = await this.examinerService.retrieveThreadMessages(
-        updatedThread.id,
-        run.id,
-      );
+  //     const messages = await this.examinerService.retrieveThreadMessages(
+  //       updatedThread.id,
+  //       run.id,
+  //     );
 
-      let mostRecentlyGeneratedQuestions =
-        extractJSONDataFromMessages(messages);
+  //     let mostRecentlyGeneratedQuestions =
+  //       extractJSONDataFromMessages(messages);
 
-      if (
-        mostRecentlyGeneratedQuestions instanceof Array &&
-        mostRecentlyGeneratedQuestions.length
-      ) {
-        mostRecentlyGeneratedQuestions = [...mostRecentlyGeneratedQuestions];
-      } else {
-        throw new HttpException(
-          `An error occurred while generating questions: more questions require more content to be provided in the document.`,
-          HttpStatus.BAD_REQUEST,
-        );
-      }
+  //     if (
+  //       mostRecentlyGeneratedQuestions instanceof Array &&
+  //       mostRecentlyGeneratedQuestions.length
+  //     ) {
+  //       mostRecentlyGeneratedQuestions = [...mostRecentlyGeneratedQuestions];
+  //     } else {
+  //       throw new HttpException(
+  //         `An error occurred while generating questions: more questions require more content to be provided in the document.`,
+  //         HttpStatus.BAD_REQUEST,
+  //       );
+  //     }
 
-      await this.createQuestionHandler.handle({
-        payload: {
-          courseDocumentId: createdDocument.data.id,
-          data: mostRecentlyGeneratedQuestions,
-          userId: userToken.sub,
-          questionTypeId: questionType,
-        },
-      });
+  //     await this.createQuestionHandler.handle({
+  //       payload: {
+  //         courseDocumentId: createdDocument.data.id,
+  //         data: mostRecentlyGeneratedQuestions,
+  //         userId: userToken.sub,
+  //         questionTypeId: questionType,
+  //       },
+  //     });
 
-      return {
-        data: null,
-        status: HttpStatus.CREATED,
-        message: 'Course created, document uploaded and questions generated',
-      };
-    } catch (error) {
-      throw new HttpException(
-        error?.response ??
-          'Failed to create course, document and generate questions',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
+  //     return {
+  //       data: null,
+  //       status: HttpStatus.CREATED,
+  //       message: 'Course created, document uploaded and questions generated',
+  //     };
+  //   } catch (error) {
+  //     throw new HttpException(
+  //       error?.response ??
+  //         'Failed to create course, document and generate questions',
+  //       HttpStatus.BAD_REQUEST,
+  //     );
+  //   }
+  // }
 }

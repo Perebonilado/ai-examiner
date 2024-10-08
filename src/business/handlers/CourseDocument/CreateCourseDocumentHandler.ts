@@ -28,15 +28,17 @@ export class CreateCourseDocumentHandler extends AbstractRequestHandlerTemplate<
         title: payload.title,
         courseId: payload.courseId,
         openAiFileId: payload.fileId,
-        openAiThreadId: payload.threadId,
         userId: payload.userId,
+        mcqDirectThreadId: payload.mcqDirectThreadId,
+        mcqUseCaseThreadId: payload.mcqUseCaseThreadId,
+        flashCardThreadId: payload.flashCardThreadId,
+        documentChatThreadId: payload.documentChatThreadId
       } as CourseDocumentModel);
 
       return {
         message: 'Document successfully created',
         status: HttpStatus.CREATED,
         data: {
-          threadId: createdCourseDocument.openAiThreadId,
           fileId: createdCourseDocument.openAiFileId,
           id: createdCourseDocument.id,
         },
