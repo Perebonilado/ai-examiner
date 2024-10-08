@@ -35,6 +35,7 @@ import { SubscriptionQueryService } from 'src/query/services/SubscriptionQuerySe
 import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
 import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/UpdateCourseDocumentHandler';
 import { UpdateCourseDocumentDto } from 'src/dto/UpdateCourseDocumentDto';
+import { ThreadTypeModel } from '../models/ThreadTypeModel';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -57,6 +58,8 @@ export class CourseDocumentController {
     private paystackSubscriptionService: PaystackSubscriptionService,
     @Inject(UpdateCourseDocumentHandler)
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
+    @Inject(LookUpQueryService)
+    private lookupQueryService: LookUpQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -106,7 +109,7 @@ export class CourseDocumentController {
         userId: userToken.sub,
       });
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to update Document',
         HttpStatus.BAD_REQUEST,
@@ -170,13 +173,32 @@ export class CourseDocumentController {
           updatedVectorStoreId,
         );
 
+      const questionTypeName = await this.lookUpQueryService.findLookUpById(
+        Number(questionType),
+      );
+
+      const threadIdToAttach: Record<ThreadTypeModel, string> = {
+        mcqDirectThreadId: "",
+        mcqUseCaseThreadId: "",
+        flashCardThreadId: "",
+        documentChatThreadId: ""
+      };
+
+      if (questionTypeName.title.toLowerCase() === 'multiple choice') {
+        includeUseCases === 'true'
+          ? (threadIdToAttach.mcqUseCaseThreadId = updatedThread.id)
+          : (threadIdToAttach.mcqDirectThreadId = updatedThread.id);
+      } else {
+        threadIdToAttach.flashCardThreadId = updatedThread.id
+      }
+
       const createdDocument = await this.createCourseDocumentHander.handle({
         payload: {
           courseId: '',
           title: body.title,
           userId: userToken.sub,
           fileId: body.fileId,
-          threadId: updatedThread.id,
+          ...threadIdToAttach
         },
       });
 
@@ -200,7 +222,7 @@ export class CourseDocumentController {
       }
 
       const existingThread = await this.examinerService.findThread(
-        createdDocument.data.threadId,
+        updatedThread.id,
       );
 
       // check if vector store has expired, if so:
