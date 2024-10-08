@@ -11,6 +11,7 @@ import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { DocumentMessageModel } from 'src/infra/db/models/DocumentMessageModel';
 import { generateMessagePrompt } from 'src/constants';
+import { UpdateCourseDocumentHandler } from '../CourseDocument/UpdateCourseDocumentHandler';
 
 @Injectable()
 export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate<
@@ -25,6 +26,8 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
     @Inject(ExaminerService) private examinerService: ExaminerService,
     @Inject(CourseDocumentQueryService)
     private courseDocumentQueryService: CourseDocumentQueryService,
+    @Inject(UpdateCourseDocumentHandler)
+    private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
   ) {
     super();
   }
@@ -47,13 +50,16 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           userId,
         );
 
-      //check if there is an existing message (indicating a thread exists)
+      //check if there is an existing thread
+
+      const existingThreadId = courseDocument?.documentChatThreadId;
+
       const existingMessage =
         await this.documentMessageQueryService.findDocumentMessagesByCourseDocumentId(
           { courseDocumentId, limit: 1 },
         );
 
-      if (!existingMessage.data[0]) {
+      if (!existingThreadId.length) {
         // create thread/vector store
         const vectorStore = await this.examinerService.createVectorStore(
           `user_messages_vector_store_${courseDocument.title}`,
@@ -72,6 +78,16 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
             thread.id,
             updatedVectorStoreId,
           );
+
+        // update course document with thread id
+
+        await this.updateCourseDocumentHandler.handle({
+          userId: request.payload.userId,
+          data: {
+            id: courseDocument.id,
+            documentChatThreadId: updatedThread.id,
+          },
+        });
 
         await this.examinerService.createThreadMessage(
           updatedThread.id,
@@ -118,8 +134,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           status: HttpStatus.CREATED,
         };
       } else {
-        const threadId = existingMessage.data[0].threadId;
-        const existingThread = await this.examinerService.findThread(threadId);
+        const existingThread = await this.examinerService.findThread(existingThreadId);
         const vectorStore = await this.examinerService.retrieveVectorStore(
           existingThread.tool_resources.file_search.vector_store_ids[0],
         );
