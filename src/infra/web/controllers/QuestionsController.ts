@@ -181,7 +181,7 @@ export class QuestionsController {
         let threadId = document[threadIdKey];
 
         // create thread if it does not exist and attach vector
-        if (!threadId.length) {
+        if (!threadId?.length) {
           const vectorStore = await this.examinerService.createVectorStore(
             document.title,
           );
