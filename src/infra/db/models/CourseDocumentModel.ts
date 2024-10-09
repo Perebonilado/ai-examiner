@@ -53,10 +53,31 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
 
   @Column({
     type: DataType.STRING,
-    field: 'open_ai_thread_id',
-    allowNull: false,
+    field: 'mcq_direct_thread_id',
+    allowNull: true,
   })
-  openAiThreadId: string;
+  mcqDirectThreadId: string;
+  
+  @Column({
+    type: DataType.STRING,
+    field: 'mcq_use_case_thread_id',
+    allowNull: true,
+  })
+  mcqUseCaseThreadId: string;
+
+  @Column({
+    type: DataType.STRING,
+    field: 'flash_card_thread_id',
+    allowNull: true,
+  })
+  flashCardThreadId: string;
+
+  @Column({
+    type: DataType.STRING,
+    field: 'document_chat_thread_id',
+    allowNull: true,
+  })
+  documentChatThreadId: string;
 
   @Column({
     type: DataType.STRING,

@@ -40,6 +40,9 @@ import { SubscriptionQueryService } from 'src/query/services/SubscriptionQuerySe
 import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
 import { DeleteQuestionHandler } from 'src/business/handlers/Question/DeleteQuestionHandler';
 import { QuestionProgressQueryService } from 'src/query/services/QuestionProgressQueryService';
+import { ThreadTypeModel } from '../models/ThreadTypeModel';
+import { LookUpQueryService } from 'src/query/services/LookUpQueryService';
+import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/UpdateCourseDocumentHandler';
 
 @Controller('questions')
 export class QuestionsController {
@@ -68,6 +71,10 @@ export class QuestionsController {
     private deleteQuestionHandler: DeleteQuestionHandler,
     @Inject(QuestionProgressQueryService)
     private questionProgressQueryService: QuestionProgressQueryService,
+    @Inject(LookUpQueryService)
+    private lookUpQueryService: LookUpQueryService,
+    @Inject(UpdateCourseDocumentHandler)
+    private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -155,8 +162,59 @@ export class QuestionsController {
         );
 
       if (document) {
+        let threadIdKey: ThreadTypeModel;
+
+        const questionTypeName = await this.lookUpQueryService.findLookUpById(
+          Number(questionType),
+        );
+
+        if (questionTypeName.title.toLowerCase() === 'multiple choice') {
+          includeUseCases === 'true'
+            ? (threadIdKey = 'mcqUseCaseThreadId')
+            : (threadIdKey = 'mcqDirectThreadId');
+        } else {
+          threadIdKey = 'flashCardThreadId';
+        }
+
+        // check if thread exists
+
+        let threadId = document[threadIdKey];
+
+        // create thread if it does not exist and attach vector
+        if (!threadId?.length) {
+          const vectorStore = await this.examinerService.createVectorStore(
+            document.title,
+          );
+
+          const updatedVectorStoreId =
+            await this.examinerService.attachFileToVectorStore(
+              document.openAiFileId,
+              vectorStore.id,
+            );
+
+          const thread = await this.examinerService.createThread();
+
+          const updatedThread =
+            await this.examinerService.attachVectorStoreToThread(
+              thread.id,
+              updatedVectorStoreId,
+            );
+
+          threadId = updatedThread.id;
+
+          // update course document
+
+          await this.updateCourseDocumentHandler.handle({
+            userId: userToken.sub,
+            data: {
+              id: document.id,
+              [threadIdKey]: updatedThread.id
+            },
+          });
+        }
+
         const existingThread = await this.examinerService.findThread(
-          document.openAiThreadId,
+          threadId,
         );
 
         // check if vector store has expired, if so:
@@ -317,30 +375,35 @@ export class QuestionsController {
           userToken.sub,
         );
 
-      const mappedQuestions = await Promise.all(questions.questions.map(async (q) => {
-        const questionCount = JSON.parse(q.data).length
-        const progress = await this.questionProgressQueryService.findProgressByQuestionId(q.id)
-        let progressPercentage: number | null = null
-        let totalAnswered: number = 0
-        
-        if(progress?.data && progress.data.length){
-          progressPercentage = (progress.data.length/questionCount) * 100
-          totalAnswered = progress.data.length
-        }
+      const mappedQuestions = await Promise.all(
+        questions.questions.map(async (q) => {
+          const questionCount = JSON.parse(q.data).length;
+          const progress =
+            await this.questionProgressQueryService.findProgressByQuestionId(
+              q.id,
+            );
+          let progressPercentage: number | null = null;
+          let totalAnswered: number = 0;
 
-        return {
-          courseDocumentId: q.courseDocumentId,
-          createdOn: q.createdOn,
-          id: q.id,
-          progressPercentage,
-          count: questionCount,
-          totalAnswered: `${totalAnswered}/${questionCount}`,
-          status: progress?.status ?? null,
-          score: q.score,
-          topics: q.topics,
-          type: q.type,
-        };
-      }))
+          if (progress?.data && progress.data.length) {
+            progressPercentage = (progress.data.length / questionCount) * 100;
+            totalAnswered = progress.data.length;
+          }
+
+          return {
+            courseDocumentId: q.courseDocumentId,
+            createdOn: q.createdOn,
+            id: q.id,
+            progressPercentage,
+            count: questionCount,
+            totalAnswered: `${totalAnswered}/${questionCount}`,
+            status: progress?.status ?? null,
+            score: q.score,
+            topics: q.topics,
+            type: q.type,
+          };
+        }),
+      );
 
       return {
         data: {

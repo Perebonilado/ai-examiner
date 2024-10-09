@@ -43,6 +43,10 @@ export class UpdateCourseDocumentHandler extends AbstractRequestHandlerTemplate<
         id: request.data.id,
         title: request.data?.title || existingDoc.title,
         isDeleted: request.data?.isDeleted || existingDoc.isDeleted,
+        mcqDirectThreadId: request.data?.mcqDirectThreadId || existingDoc.mcqDirectThreadId,
+        mcqUseCaseThreadId: request.data?.mcqUseCaseThreadId || existingDoc.mcqUseCaseThreadId,
+        documentChatThreadId: request.data?.documentChatThreadId || existingDoc.documentChatThreadId,
+        flashCardThreadId: request.data?.flashCardThreadId || existingDoc.flashCardThreadId 
       } as CourseDocumentModel);
 
       return {
