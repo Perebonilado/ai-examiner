@@ -239,12 +239,15 @@ export class QuestionsController {
           );
         }
 
+        const isFlashCardQuestions = questionTypeName.title.toLowerCase() === 'flash cards'
+
         await this.examinerService.createThreadMessage(
           existingThread.id,
           generateQuestionsPrompt(
             questionCount || 5,
             body.selectedQuestionTopics,
             includeUseCases === 'true' ? true : false,
+            isFlashCardQuestions
           ),
         );
 
