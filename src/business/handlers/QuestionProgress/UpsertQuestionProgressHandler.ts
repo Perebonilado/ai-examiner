@@ -33,7 +33,7 @@ export class UpserQuestionProgressHandler extends AbstractRequestHandlerTemplate
           questionId,
         );
 
-      let dataToSave: string | null = data ? JSON.stringify(data) : JSON.stringify(existingProgress.data)
+      let dataToSave: string | null = data ? JSON.stringify(data) : existingProgress?.data ? JSON.stringify(existingProgress.data) : null
 
       if(clearExistingProgress) {
         dataToSave = null
