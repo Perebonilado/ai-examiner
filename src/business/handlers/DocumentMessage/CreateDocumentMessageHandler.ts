@@ -54,12 +54,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
 
       const existingThreadId = courseDocument?.documentChatThreadId;
 
-      const existingMessage =
-        await this.documentMessageQueryService.findDocumentMessagesByCourseDocumentId(
-          { courseDocumentId, limit: 1 },
-        );
-
-      if (!existingThreadId.length) {
+      if (!existingThreadId?.length) {
         // create thread/vector store
         const vectorStore = await this.examinerService.createVectorStore(
           `user_messages_vector_store_${courseDocument.title}`,
