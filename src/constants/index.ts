@@ -52,7 +52,6 @@ const flashCardPrompt = `9. IMPORTANT: For flashcard questions, focus on the fol
 - Use varied and specific question formats, such as:
   • "The [term/concept] responsible for [function/process] is..."
   • "[Term/concept] is defined as..."
-  • "In [year], [event] occurred. This event is known as..."
   • "[Person] is best known for..."
   • "The [anatomical structure] is located in..."
   • "The function of [organ/structure] is..."
