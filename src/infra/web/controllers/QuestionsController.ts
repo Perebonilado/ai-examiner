@@ -43,6 +43,8 @@ import { QuestionProgressQueryService } from 'src/query/services/QuestionProgres
 import { ThreadTypeModel } from '../models/ThreadTypeModel';
 import { LookUpQueryService } from 'src/query/services/LookUpQueryService';
 import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/UpdateCourseDocumentHandler';
+import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
+import { SaveSharedQuestionDto } from 'src/dto/SaveSharedQuestionDto';
 
 @Controller('questions')
 export class QuestionsController {
@@ -75,6 +77,8 @@ export class QuestionsController {
     private lookUpQueryService: LookUpQueryService,
     @Inject(UpdateCourseDocumentHandler)
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
+    @Inject(CreateCourseDocumentHandler)
+    private createCourseDocumentHandler: CreateCourseDocumentHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -92,6 +96,58 @@ export class QuestionsController {
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find question by id ' + params.id,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Get('/shared/:id')
+  public async getSharedQuestionById(@Param('id') id: string) {
+    try {
+      return await this.questionQueryService.findSharedQuestionById(id);
+    } catch (error) {
+      throw new HttpException(
+        'Something went wrong while fetching questions',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/shared/save')
+  public async saveSharedQuestion(
+    @Body() body: SaveSharedQuestionDto,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      const question =
+        await this.questionQueryService.findSharedQuestionById(body.questionId);
+
+      const newCourseDocument = await this.createCourseDocumentHandler.handle({
+        payload: {
+          fileId: question.fileId,
+          title: question.documentTitle,
+          userId: userToken.sub,
+          courseId: null,
+          documentChatThreadId: null,
+          flashCardThreadId: null,
+          mcqDirectThreadId: null,
+          mcqUseCaseThreadId: null,
+        },
+      });
+
+      return await this.createQuestionHandler.handle({
+        payload: {
+          courseDocumentId: newCourseDocument.data.id,
+          data: question.questions,
+          questionTypeId: question.typeId,
+          userId: userToken.sub,
+        },
+      });
+    } catch (error) {
+      throw new HttpException(
+        'Failed to save shared question',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -208,14 +264,12 @@ export class QuestionsController {
             userId: userToken.sub,
             data: {
               id: document.id,
-              [threadIdKey]: updatedThread.id
+              [threadIdKey]: updatedThread.id,
             },
           });
         }
 
-        const existingThread = await this.examinerService.findThread(
-          threadId,
-        );
+        const existingThread = await this.examinerService.findThread(threadId);
 
         // check if vector store has expired, if so:
         // create new store, attach file and attach to thread
@@ -239,7 +293,8 @@ export class QuestionsController {
           );
         }
 
-        const isFlashCardQuestions = questionTypeName.title.toLowerCase() === 'flash cards'
+        const isFlashCardQuestions =
+          questionTypeName.title.toLowerCase() === 'flash cards';
 
         await this.examinerService.createThreadMessage(
           existingThread.id,
@@ -247,7 +302,7 @@ export class QuestionsController {
             questionCount || 5,
             body.selectedQuestionTopics,
             includeUseCases === 'true' ? true : false,
-            isFlashCardQuestions
+            isFlashCardQuestions,
           ),
         );
 
