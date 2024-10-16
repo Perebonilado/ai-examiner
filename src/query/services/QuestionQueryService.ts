@@ -8,6 +8,7 @@ import { QuestionTopicQueryService } from './QuestionTopicQueryService';
 import { LookUpQueryService } from './LookUpQueryService';
 import * as moment from 'moment';
 import { Op } from 'sequelize';
+import { UserModel } from 'src/infra/db/models/UserModel';
 
 @Injectable()
 export class QuestionQueryService {
@@ -72,6 +73,37 @@ export class QuestionQueryService {
       };
     } catch (error) {
       throw new QueryError('Failed to find questions').InnerError(error);
+    }
+  }
+
+  public async findSharedQuestionById(id: string) {
+    try {
+      const question = await QuestionModel.findOne({ where: { id } });
+      const courseDocument = await CourseDocumentModel.findOne({
+        where: { id: question.courseDocumentId },
+      });
+      const type = await this.lookUpQueryService.findLookUpById(
+        question.questionTypeId,
+      );
+      const sharedBy = await UserModel.findOne({
+        where: { id: question.userId },
+      });
+
+      return {
+        id: question.id,
+        documentTitle: courseDocument.title,
+        questions: JSON.parse(question.data),
+        createdOn: question.createdOn,
+        fileId: courseDocument.openAiFileId,
+        type: type ? type.title : null,
+        typeId: type ? type.id : null,
+        sharedBy: {
+          firstname: sharedBy.firstName,
+          lastName: sharedBy.lastName,
+        },
+      };
+    } catch (error) {
+      throw new QueryError('Failed to find shared questions').InnerError(error);
     }
   }
 
