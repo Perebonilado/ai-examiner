@@ -23,11 +23,20 @@ export class CourseDocumentQueryService {
     try {
       const { limit, offset } = getPagination(page, pageSize);
 
-      const totalCount = await CourseDocumentModel.count({
-        where: { userId, courseId },
-      });
       const courseIdQuery = courseId ? { courseId } : {};
       const idQuery = id ? { id } : {};
+      
+      const totalCount = await CourseDocumentModel.count({
+        where: {
+          [Op.and]: [
+            idQuery,
+            courseIdQuery,
+            { userId },
+            { title: { [Op.like]: `%${title}%` } },
+            { isDeleted: false },
+          ],
+        },
+      });
 
       const docs = await CourseDocumentModel.findAll({
         where: {
@@ -36,7 +45,7 @@ export class CourseDocumentQueryService {
             courseIdQuery,
             { userId },
             { title: { [Op.like]: `%${title}%` } },
-            {isDeleted: false}
+            { isDeleted: false },
           ],
         },
         order: [['created_on', 'DESC']],
@@ -59,10 +68,10 @@ export class CourseDocumentQueryService {
             );
             const averageScore = totalScores / scoreValues.length;
 
-            return { ...d.get({plain: true}), averageScore}
+            return { ...d.get({ plain: true }), averageScore };
           }
 
-          return { averageScore: null, ...d.get({plain: true}) };
+          return { averageScore: null, ...d.get({ plain: true }) };
         }),
       );
 
@@ -75,9 +84,7 @@ export class CourseDocumentQueryService {
         },
       };
     } catch (error) {
-      throw new QueryError('Failed to find all documents').InnerError(
-        error,
-      );
+      throw new QueryError('Failed to find all documents').InnerError(error);
     }
   }
 
@@ -85,9 +92,7 @@ export class CourseDocumentQueryService {
     try {
       return await CourseDocumentModel.findOne({ where: { id, userId } });
     } catch (error) {
-      throw new QueryError('Failed to find documents by id').InnerError(
-        error,
-      );
+      throw new QueryError('Failed to find documents by id').InnerError(error);
     }
   }
 }
