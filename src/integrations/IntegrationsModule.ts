@@ -5,6 +5,7 @@ import { FlutterwaveModule } from './flutterwave/FlutterwaveModule';
 import { MailerModule } from './mailer/MailerModule';
 import { PaystackModule } from './paystack/PaystackModule';
 import { IpStackModule } from './ip-stack/IpStackModule';
+import { FloDeskMailerModule } from './flo-desk-mailer/FloDeskMailerModule';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { IpStackModule } from './ip-stack/IpStackModule';
     FlutterwaveModule,
     MailerModule,
     PaystackModule,
-    IpStackModule
+    IpStackModule,
+    FloDeskMailerModule
   ],
   exports: [
     OpenAiModule,
@@ -21,7 +23,8 @@ import { IpStackModule } from './ip-stack/IpStackModule';
     FlutterwaveModule,
     MailerModule,
     PaystackModule,
-    IpStackModule
+    IpStackModule,
+    FloDeskMailerModule
   ],
 })
 export class IntegrationsModule {}
