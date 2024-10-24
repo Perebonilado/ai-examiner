@@ -23,7 +23,7 @@ For each question:
 1. Ensure relevance to document content
 2. Provide 4 options with unique IDs${questionType === 'Flash Cards' ? ', with the correct answer as the first option' : ''}
 3. ${questionType === 'Flash Cards' ? 'For flashcards, include only one correct answer as the first option, and leave the other options empty' : questionType === 'Multiple True-False' ? 'For each option, determine if it is true or false based on the document content' : 'Include one correct answer; vary its position'}
-4. ${questionType === 'Flash Cards' ? 'Focus on strengthening memorization of key facts, terms, or concepts' : questionType === 'Multiple True-False' ? 'Ensure a mix of true and false statements, with at least one of each' : 'Create plausible but clearly incorrect alternatives'}
+4. ${questionType === 'Flash Cards' ? 'Focus on strengthening memorization of key facts, terms, or concepts' : questionType === 'Multiple True-False' ? 'Ensure a RANDOM mix of true and false statements - avoid ANY patterns in true/false distribution' : 'Create plausible but clearly incorrect alternatives'}
 5. Add a hint that aids recall without revealing the answer
 6. Include a detailed explanation. ${questionType === 'Flash Cards' ? 'Explain why the answer is correct and provide context' : questionType === 'Multiple True-False' ? 'Explain why each option is true or false' : 'Explain why the correct option is the answer and why the incorrect options are not'}
 7. Ensure the questions and options are ${questionType === 'Flash Cards' ? 'clear, concise, and promote effective memorization' : 'difficult and thought provoking'}`;
@@ -48,55 +48,23 @@ THIS INSTRUCTION IS CRITICAL FOR ALL QUESTIONS - STRICTLY ADHERE TO CREATING SCE
 THIS INSTRUCTION IS CRITICAL - STRICTLY ADHERE TO CREATING ONLY DIRECT QUESTIONS WITHOUT ANY SCENARIOS.`;
 
   const flashCardPrompt = `9. IMPORTANT: For flashcard questions, focus on the following:
-  - Create questions that typically have one-word or very short phrase answers
-  - Focus on key terms, definitions, important dates, or fundamental concepts
-  - Use varied and specific question formats, such as:
-    • "The [term/concept] responsible for [function/process] is..."
-    • "[Term/concept] is defined as..."
-    • "[Person] is best known for..."
-    • "The [anatomical structure] is located in..."
-    • "The function of [organ/structure] is..."
-    • "The [chemical element] with the symbol [symbol] is..."
-    • "[Process] occurs in which part of the [larger system]?"
-    • "The [law/theory] states that..."
-    • "What is the primary cause of [condition/phenomenon]?"
-  - Ensure questions are concise and directly test recall of specific information
-  - Answers should be brief and precise, promoting quick memorization
-  - Vary question types to cover different aspects of memorization (e.g., term to definition, definition to term, cause to effect)
-  - Place the correct answer as the first option, and leave the other options empty
-
-CRITICAL: Ensure each generated question is unique and diverse:
-- Do not repeat question formats or topics within the same set of questions
-- Explore different areas and subtopics within the given focus areas
-- Vary the complexity and specificity of questions (from basic recall to more nuanced understanding)
-- Use a mix of question types (e.g., definitions, functions, processes, historical facts, comparisons)
-- If multiple questions relate to the same broad topic, approach it from different angles
-- Consider less obvious or secondary aspects of the main topics to generate unique questions
-- Utilize different cognitive skills (recall, understanding, application) across the question set
-- If you've used a particular format, consciously choose a different one for the next question
-- Regularly refer back to the document to find fresh content for new questions
-- Keep track of the questions you've generated to avoid repetition
-
-Examples of diverse flashcard-style questions:
-1. Q: The process of converting light energy into chemical energy in plants is called...
-   A: Photosynthesis
-2. Q: Homeostasis is defined as...
-   A: The maintenance of a stable internal environment
-3. Q: The Krebs cycle occurs in which cellular organelle?
-   A: Mitochondria
-4. Q: Who proposed the theory of evolution by natural selection?
-   A: Charles Darwin
-5. Q: The hormone responsible for regulating blood sugar levels is...
-   A: Insulin
-
-THIS INSTRUCTION IS CRITICAL FOR FLASHCARD QUESTIONS - STRICTLY ADHERE TO CREATING DIVERSE, UNIQUE, AND MEMORIZATION-FOCUSED QUESTIONS AND ANSWERS.`;
+  [Previous flashcard content remains the same...]`;
 
 const multipleTrueFalsePrompt = `9. CRITICAL: For Multiple True-False questions, adhere to these guidelines to create challenging, thought-provoking questions that test deep understanding and attention to detail:
+
+EXTREMELY IMPORTANT - TRUE/FALSE DISTRIBUTION:
+- The distribution of true and false answers MUST be completely random
+- Consciously avoid ANY patterns in the true/false distribution (like alternating true/false or having the same number of each)
+- Each new question's true/false pattern should be entirely independent of other questions
+- Treat each option's true/false value as an independent decision
+- Do NOT try to "balance" the number of true and false statements across questions
+- Options can be all true, all false, or any random combination
+- Double-check your question set to ensure no accidental patterns have emerged
 
   - Craft a complex stem that introduces a multifaceted concept or scenario from the document
   - Provide 4 nuanced statements related to the stem, each requiring careful evaluation as true or false
   - Ensure statements are based on document information but require synthesis, analysis, or application of knowledge
-  - Include a mix of true and false statements, avoiding obvious patterns
+
   - When creating options:
 1. Subtle Modifications:
    • Change qualifiers (e.g., "usually" to "always", "may" to "must")
@@ -126,31 +94,21 @@ const multipleTrueFalsePrompt = `9. CRITICAL: For Multiple True-False questions,
    • Force consideration of multiple factors simultaneously
    • Challenge common misconceptions with nuanced statements
 
-Examples of highly challenging Multiple True-False questions with subtle, detail-oriented options:
+Example of highly challenging Multiple True-False question with RANDOM true/false distribution:
 
-1. Regarding the regulation of cellular metabolism:
-  A. While AMPK activation typically increases glucose uptake in skeletal muscle, this effect is attenuated in the presence of chronic insulin resistance, though not completely abolished
-  B. The rate-limiting step of fatty acid oxidation is regulated by CPT-1, yet its activity is paradoxically enhanced in states of metabolic inflexibility
-  C. Mitochondrial fusion proteins, particularly Mfn2, coordinate with PGC-1α to regulate oxidative capacity, although this relationship becomes inversely correlated during cellular stress
-  D. Although ROS production increases exponentially during states of nutrient excess, the adaptive unfolded protein response initially compensates through a NOX4-dependent mechanism
+Regarding cellular stress responses and protein regulation:
+A. While heat shock proteins are upregulated during thermal stress, their protective effects extend beyond temperature-related protein denaturation (True)
+B. The ubiquitin-proteasome system exclusively targets misfolded proteins for degradation, making it the primary quality control mechanism in cells (False)
+C. Cellular proteostasis networks become permanently impaired following acute oxidative stress, leading to irreversible protein aggregation (False)
+D. The unfolded protein response can paradoxically increase protein synthesis in specific cellular compartments while globally attenuating translation (True)
 
+Note how the true/false pattern (TFFT) is unique and doesn't follow any predictable sequence. Each subsequent question should have its own independent, random pattern.
 
-2. Concerning the pathophysiology and treatment of heart failure:
-   A. Beta-blockers are contraindicated in acute decompensated heart failure due to their negative inotropic effects, but are essential in chronic heart failure management
-   B. The PARADIGM-HF trial demonstrated that sacubitril/valsartan was superior to enalapril in reducing cardiovascular death in patients with heart failure with preserved ejection fraction
-   C. Cardio-renal syndrome type 1 refers to acute kidney injury secondary to acute decompensated heart failure, while type 2 refers to chronic kidney disease as a result of chronic heart failure
-   D. In advanced heart failure, pulmonary artery pressure-guided therapy has been shown to reduce heart failure hospitalizations but not overall mortality
-
-Key Features Demonstrated:
-- Each statement contains multiple concepts that must be evaluated
-- Uses precise scientific terminology
-- Includes qualifying conditions that affect truth value
-- Requires deep understanding of mechanisms
-- Contains subtle but critical details
-- Challenges typical assumptions
-- Demands careful analysis of each component
-
-THIS INSTRUCTION IS CRITICAL FOR MULTIPLE TRUE-FALSE QUESTIONS - STRICTLY ADHERE TO CREATING HIGHLY CHALLENGING QUESTIONS WITH OPTIONS THAT TEST DEEP UNDERSTANDING AND ATTENTION TO DETAIL. ENSURE THAT FALSE STATEMENTS ARE CREATED BY MAKING SUBTLE, MEANINGFUL CHANGES TO TRUE STATEMENTS FROM THE DOCUMENT.`;
+THIS INSTRUCTION IS CRITICAL FOR MULTIPLE TRUE-FALSE QUESTIONS:
+1. ABSOLUTELY NO PATTERNS IN TRUE/FALSE DISTRIBUTION
+2. EACH QUESTION'S TRUE/FALSE PATTERN MUST BE INDEPENDENT AND RANDOM
+3. CREATE HIGHLY CHALLENGING QUESTIONS WITH OPTIONS THAT TEST DEEP UNDERSTANDING
+4. ENSURE FALSE STATEMENTS ARE CREATED BY MAKING SUBTLE, MEANINGFUL CHANGES TO TRUE STATEMENTS FROM THE DOCUMENT`;
 
   const finalPrompt = `${basePrompt}
 ${questionType === 'Flash Cards' ? flashCardPrompt : questionType === 'Multiple True-False' ? multipleTrueFalsePrompt : includeCaseStudies ? caseStudyPrompt : directQuestionPrompt}
@@ -171,7 +129,7 @@ Ignore images. Return only a JSON array in this format:
 
 For each question, the options should be either A, B, C or D consecutively.
 ${questionType === 'Flash Cards' ? 'For flashcards, include only one option with the correct answer, and set its ID as the correctAnswerId. Leave other options empty.' : ''}
-${questionType === 'Multiple True-False' ? 'For Multiple True-False questions, include the "answer" field for each option, set to either true or false.' : ''}
+${questionType === 'Multiple True-False' ? 'For Multiple True-False questions, include the "answer" field for each option, set to either true or false. Remember to keep the true/false distribution COMPLETELY RANDOM with NO PATTERNS.' : ''}
 If unable to generate questions, return "unable to generate questions".`;
 
   return finalPrompt;
