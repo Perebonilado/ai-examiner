@@ -74,6 +74,13 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
 
   @Column({
     type: DataType.STRING,
+    field: 'multiple_true_false_thread_id',
+    allowNull: true,
+  })
+  multipleTrueFalseThreadId: string;
+
+  @Column({
+    type: DataType.STRING,
     field: 'document_chat_thread_id',
     allowNull: true,
   })
