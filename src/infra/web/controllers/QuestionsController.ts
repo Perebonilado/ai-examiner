@@ -45,6 +45,7 @@ import { LookUpQueryService } from 'src/query/services/LookUpQueryService';
 import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/UpdateCourseDocumentHandler';
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
 import { SaveSharedQuestionDto } from 'src/dto/SaveSharedQuestionDto';
+import { QuestionType } from '../models/QuestionTypeModel';
 
 @Controller('questions')
 export class QuestionsController {
@@ -121,8 +122,9 @@ export class QuestionsController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
-      const question =
-        await this.questionQueryService.findSharedQuestionById(body.questionId);
+      const question = await this.questionQueryService.findSharedQuestionById(
+        body.questionId,
+      );
 
       const newCourseDocument = await this.createCourseDocumentHandler.handle({
         payload: {
@@ -228,6 +230,10 @@ export class QuestionsController {
           includeUseCases === 'true'
             ? (threadIdKey = 'mcqUseCaseThreadId')
             : (threadIdKey = 'mcqDirectThreadId');
+        } else if (
+          questionTypeName.title.toLowerCase() === 'multiple true-false'
+        ) {
+          threadIdKey = 'multipleTrueFalseThreadId';
         } else {
           threadIdKey = 'flashCardThreadId';
         }
@@ -293,16 +299,13 @@ export class QuestionsController {
           );
         }
 
-        const isFlashCardQuestions =
-          questionTypeName.title.toLowerCase() === 'flash cards';
-
         await this.examinerService.createThreadMessage(
           existingThread.id,
           generateQuestionsPrompt(
             questionCount || 5,
             body.selectedQuestionTopics,
             includeUseCases === 'true' ? true : false,
-            isFlashCardQuestions,
+            questionTypeName.title as QuestionType,
           ),
         );
 
@@ -445,7 +448,7 @@ export class QuestionsController {
 
           if (progress?.data && progress.data.length) {
             progressPercentage = (progress.data.length / questionCount) * 100;
-            totalAnswered = progress.data.length;
+            totalAnswered = Array.from(new Set(progress.data.map((d)=>d.selectedQuestionId))).length;
           }
 
           return {

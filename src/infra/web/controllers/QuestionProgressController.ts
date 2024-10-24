@@ -48,7 +48,6 @@ export class QuestionProgressController {
         clearExistingProgress: clearExistingProgress === 'true' ? true : false,
       });
     } catch (error) {
-      console.log(error)
       throw new HttpException(
         'An error occured while upserting progress',
         HttpStatus.BAD_REQUEST,

@@ -9,7 +9,7 @@ export class QuestionProgressDbConnector {
   public async upsert(progress: QuestionProgressModel) {
     try {
       // add or replace to question progress data
-      
+
       if (progress.id && progress.data) {
         const existingQuestionProgress = await QuestionProgressModel.findOne({
           where: { id: progress.id },
@@ -38,13 +38,21 @@ export class QuestionProgressDbConnector {
             },
           );
         } else {
+          const isMultipleTrueFalse =
+            progressToSave[0]?.selectedAnswer === true ||
+            progressToSave[0]?.selectedAnswer === false;
+
           const savedQuestionNeedsUpdate = savedProgress.some((p) => {
-            return progressToSave[0].selectedQuestionId === p.selectedQuestionId;
+            return (
+              progressToSave[0].selectedQuestionId === p.selectedQuestionId
+            );
           });
 
-          if (savedQuestionNeedsUpdate) {
+          if (savedQuestionNeedsUpdate && !isMultipleTrueFalse) {
             const updatedProgress = savedProgress.map((p) => {
-              if (p.selectedQuestionId === progressToSave[0].selectedQuestionId) {
+              if (
+                p.selectedQuestionId === progressToSave[0].selectedQuestionId
+              ) {
                 return {
                   ...p,
                   selectedOptionId: progressToSave[0].selectedOptionId,
@@ -53,6 +61,49 @@ export class QuestionProgressDbConnector {
                 return p;
               }
             });
+
+            return await QuestionProgressModel.update(
+              {
+                ...savedProgress,
+                data: JSON.stringify(updatedProgress),
+                status: progress.status,
+                modifiedOn: moment(new Date()).utc().toDate(),
+              },
+              {
+                where: { id: progress.id },
+                fields: ['data', 'modifiedOn', 'status'],
+              },
+            );
+          } else if (savedQuestionNeedsUpdate && isMultipleTrueFalse) {
+            let updatedProgress: UpsertQuestionProgressDTO[];
+            const multipleTrueFalseNeedsUpdate = savedProgress.some((p) => {
+              const questionIdMatch =
+                p.selectedQuestionId === progressToSave[0].selectedQuestionId;
+              const optionIdMatch =
+                p.selectedOptionId === progressToSave[0].selectedOptionId;
+
+              if (questionIdMatch && optionIdMatch) return true;
+              return false;
+            });
+
+            if (multipleTrueFalseNeedsUpdate) {
+              updatedProgress = savedProgress.map((p) => {
+                if (
+                  p.selectedQuestionId ===
+                    progressToSave[0].selectedQuestionId &&
+                  p.selectedOptionId === progressToSave[0].selectedOptionId
+                ) {
+                  return {
+                    ...p,
+                    selectedAnswer: progressToSave[0].selectedAnswer,
+                  };
+                } else {
+                  return p;
+                }
+              });
+            } else {
+              updatedProgress = [...savedProgress, progressToSave[0]]
+            }
 
             return await QuestionProgressModel.update(
               {
