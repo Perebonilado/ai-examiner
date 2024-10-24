@@ -3,4 +3,5 @@ import { QuestionProgressStatusType } from "src/infra/web/models/QuestionProgres
 export interface UpsertQuestionProgressDTO {
   selectedQuestionId: string;
   selectedOptionId: string;
+  selectedAnswer?: boolean
 }
