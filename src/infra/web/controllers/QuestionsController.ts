@@ -448,7 +448,7 @@ export class QuestionsController {
 
           if (progress?.data && progress.data.length) {
             progressPercentage = (progress.data.length / questionCount) * 100;
-            totalAnswered = progress.data.length;
+            totalAnswered = Array.from(new Set(progress.data.map((d)=>d.selectedQuestionId))).length;
           }
 
           return {
