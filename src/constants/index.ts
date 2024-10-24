@@ -48,9 +48,36 @@ THIS INSTRUCTION IS CRITICAL FOR ALL QUESTIONS - STRICTLY ADHERE TO CREATING SCE
 THIS INSTRUCTION IS CRITICAL - STRICTLY ADHERE TO CREATING ONLY DIRECT QUESTIONS WITHOUT ANY SCENARIOS.`;
 
   const flashCardPrompt = `9. IMPORTANT: For flashcard questions, focus on the following:
-  [Previous flashcard content remains the same...]`;
+  - Create questions that typically have one-word or very short phrase answers
+  - Focus on key terms, definitions, important dates, or fundamental concepts
+  - Use varied and specific question formats, such as:
+    • "The [term/concept] responsible for [function/process] is..."
+    • "[Term/concept] is defined as..."
+    • "[Person] is best known for..."
+    • "The [anatomical structure] is located in..."
+    • "The function of [organ/structure] is..."
+    • "The [chemical element] with the symbol [symbol] is..."
+    • "[Process] occurs in which part of the [larger system]?"
+    • "The [law/theory] states that..."
+    • "What is the primary cause of [condition/phenomenon]?"
+  - Ensure questions are concise and directly test recall of specific information
+  - Answers should be brief and precise, promoting quick memorization
+  - Vary question types to cover different aspects of memorization (e.g., term to definition, definition to term, cause to effect)
+  - Place the correct answer as the first option, and leave other options empty
 
-const multipleTrueFalsePrompt = `9. CRITICAL: For Multiple True-False questions, adhere to these guidelines to create challenging, thought-provoking questions that test deep understanding and attention to detail:
+CRITICAL: Ensure each generated question is unique and diverse:
+- Do not repeat question formats or topics within the same set of questions
+- Explore different areas and subtopics within the given focus areas
+- Vary the complexity and specificity of questions (from basic recall to more nuanced understanding)
+- Use a mix of question types (e.g., definitions, functions, processes, historical facts, comparisons)
+- If multiple questions relate to the same broad topic, approach it from different angles
+- Consider less obvious or secondary aspects of the main topics to generate unique questions
+- Utilize different cognitive skills (recall, understanding, application) across the question set
+- If you've used a particular format, consciously choose a different one for the next question
+- Regularly refer back to the document to find fresh content for new questions
+- Keep track of the questions you've generated to avoid repetition`;
+
+  const multipleTrueFalsePrompt = `9. CRITICAL: For Multiple True-False questions, adhere to these guidelines to create challenging, thought-provoking questions that test deep understanding and attention to detail:
 
 EXTREMELY IMPORTANT - TRUE/FALSE DISTRIBUTION:
 - The distribution of true and false answers MUST be completely random
@@ -61,11 +88,7 @@ EXTREMELY IMPORTANT - TRUE/FALSE DISTRIBUTION:
 - Options can be all true, all false, or any random combination
 - Double-check your question set to ensure no accidental patterns have emerged
 
-  - Craft a complex stem that introduces a multifaceted concept or scenario from the document
-  - Provide 4 nuanced statements related to the stem, each requiring careful evaluation as true or false
-  - Ensure statements are based on document information but require synthesis, analysis, or application of knowledge
-
-  - When creating options:
+STATEMENT CREATION GUIDELINES:
 1. Subtle Modifications:
    • Change qualifiers (e.g., "usually" to "always", "may" to "must")
    • Adjust temporal relationships ("before" to "after", "acute" to "chronic")
@@ -94,21 +117,27 @@ EXTREMELY IMPORTANT - TRUE/FALSE DISTRIBUTION:
    • Force consideration of multiple factors simultaneously
    • Challenge common misconceptions with nuanced statements
 
-Example of highly challenging Multiple True-False question with RANDOM true/false distribution:
+Example of correct formatting and randomization:
 
-Regarding cellular stress responses and protein regulation:
-A. While heat shock proteins are upregulated during thermal stress, their protective effects extend beyond temperature-related protein denaturation (True)
-B. The ubiquitin-proteasome system exclusively targets misfolded proteins for degradation, making it the primary quality control mechanism in cells (False)
-C. Cellular proteostasis networks become permanently impaired following acute oxidative stress, leading to irreversible protein aggregation (False)
-D. The unfolded protein response can paradoxically increase protein synthesis in specific cellular compartments while globally attenuating translation (True)
+Question: "Regarding cellular stress responses and protein regulation:"
+Options:
+value: "While heat shock proteins are upregulated during thermal stress, their protective effects extend beyond temperature-related protein denaturation" (id: "A", answer: true)
+value: "The ubiquitin-proteasome system exclusively targets misfolded proteins for degradation, making it the primary quality control mechanism in cells" (id: "B", answer: false)
+value: "Cellular proteostasis networks become permanently impaired following acute oxidative stress, leading to irreversible protein aggregation" (id: "C", answer: false)
+value: "The unfolded protein response can paradoxically increase protein synthesis in specific cellular compartments while globally attenuating translation" (id: "D", answer: true)
 
-Note how the true/false pattern (TFFT) is unique and doesn't follow any predictable sequence. Each subsequent question should have its own independent, random pattern.
+Note how:
+1. Option values contain ONLY the statement text, without any option ID prefixes
+2. The IDs (A, B, C, D) are separate from the statements
+3. The true/false pattern (TFFT) is unique and doesn't follow any predictable sequence
+4. Each subsequent question must have its own independent, random pattern
 
 THIS INSTRUCTION IS CRITICAL FOR MULTIPLE TRUE-FALSE QUESTIONS:
 1. ABSOLUTELY NO PATTERNS IN TRUE/FALSE DISTRIBUTION
 2. EACH QUESTION'S TRUE/FALSE PATTERN MUST BE INDEPENDENT AND RANDOM
 3. CREATE HIGHLY CHALLENGING QUESTIONS WITH OPTIONS THAT TEST DEEP UNDERSTANDING
-4. ENSURE FALSE STATEMENTS ARE CREATED BY MAKING SUBTLE, MEANINGFUL CHANGES TO TRUE STATEMENTS FROM THE DOCUMENT`;
+4. ENSURE FALSE STATEMENTS ARE CREATED BY MAKING SUBTLE, MEANINGFUL CHANGES TO TRUE STATEMENTS FROM THE DOCUMENT
+5. DO NOT INCLUDE OPTION IDs (A, B, C, D) IN THE OPTION VALUES - KEEP THEM SEPARATE IN THE ID FIELD`;
 
   const finalPrompt = `${basePrompt}
 ${questionType === 'Flash Cards' ? flashCardPrompt : questionType === 'Multiple True-False' ? multipleTrueFalsePrompt : includeCaseStudies ? caseStudyPrompt : directQuestionPrompt}
@@ -127,9 +156,12 @@ Ignore images. Return only a JSON array in this format:
   }
 ]
 
-For each question, the options should be either A, B, C or D consecutively.
-${questionType === 'Flash Cards' ? 'For flashcards, include only one option with the correct answer, and set its ID as the correctAnswerId. Leave other options empty.' : ''}
-${questionType === 'Multiple True-False' ? 'For Multiple True-False questions, include the "answer" field for each option, set to either true or false. Remember to keep the true/false distribution COMPLETELY RANDOM with NO PATTERNS.' : ''}
+IMPORTANT FORMAT RULES:
+1. For each question, the options' IDs should be A, B, C, or D consecutively
+2. The option "value" field should contain ONLY the statement text, without any option ID prefixes
+3. ${questionType === 'Flash Cards' ? 'For flashcards, include only one option with the correct answer, and set its ID as the correctAnswerId. Leave other options empty.' : ''}
+4. ${questionType === 'Multiple True-False' ? 'For Multiple True-False questions:\n   - Include the "answer" field for each option, set to either true or false\n   - Keep the true/false distribution COMPLETELY RANDOM with NO PATTERNS\n   - DO NOT include option IDs (A, B, C, D) in the option values' : ''}
+
 If unable to generate questions, return "unable to generate questions".`;
 
   return finalPrompt;
@@ -143,7 +175,6 @@ Output the result in the following JSON format:
 ["title1", "title2", ... ]
 
 Provide only the JSON array, nothing else. Be detailed and fast`;
-
 
 export const generateMessagePrompt = (
   message: string,
