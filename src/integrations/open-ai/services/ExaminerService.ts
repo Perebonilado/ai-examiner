@@ -6,6 +6,8 @@ import { tmpdir } from 'os';
 import { unlink } from 'fs/promises';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import {
+  convertOldPptToText,
+  extractTextFromBuffer,
   extractTextFromPDF,
   getFileNameWithoutExtension,
   writeFileToStream,
@@ -182,17 +184,38 @@ export class ExaminerService {
   ) {
     try {
       const isPDF = file.mimetype === 'application/pdf';
-      const fileName = isPDF
+      const mimeTypesToConvertToText = [
+        'application/pdf',
+        'application/vnd.ms-powerpoint', //older ppt format
+      ];
+      const fileName = mimeTypesToConvertToText.includes(file.mimetype)
         ? `${getFileNameWithoutExtension(file.originalname)}.txt`
         : file.originalname;
 
       const tempFilePath = join(tmpdir(), fileName);
-      const fileContent = isPDF
-        ? await extractTextFromPDF(file, {
+      let fileContent: string | Buffer;
+
+      console.log(file.mimetype);
+
+      if (mimeTypesToConvertToText.includes(file.mimetype)) {
+        if (!isPDF) {
+          if (file.mimetype === 'application/vnd.ms-powerpoint') {
+            fileContent = await convertOldPptToText(file.buffer);
+          } else {
+            fileContent = await extractTextFromBuffer({
+              mimeType: file.mimetype,
+              buffer: file.buffer,
+            });
+          }
+        } else {
+          fileContent = await extractTextFromPDF(file, {
             firstPage: pdfPageRange?.start,
             lastPage: pdfPageRange?.end,
-          })
-        : file.buffer;
+          });
+        }
+      } else {
+        fileContent = file.buffer;
+      }
 
       if (isPDF && !fileContent.length) {
         throw new HttpException(

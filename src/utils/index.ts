@@ -5,8 +5,15 @@ import OpenAI from 'openai';
 import { createHmac } from 'crypto';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { PDFExtract, PDFExtractOptions } from 'pdf.js-extract';
-import { createReadStream, createWriteStream } from 'fs';
-import { unlink } from 'fs/promises';
+import { createWriteStream } from 'fs';
+import * as textract from 'textract';
+import { promisify } from 'util';
+import * as libre from 'libreoffice-convert';
+import * as fs from 'fs';
+import * as pdfParse from 'pdf-parse';
+import { rm } from 'fs/promises';
+
+const libreConvert = promisify(libre.convert);
 
 export const generateUUID = (): string => {
   return uuidv4();
@@ -118,6 +125,23 @@ export const extractTextFromPDF = async (
   }
 };
 
+export const extractTextFromBuffer = async ({
+  mimeType,
+  buffer,
+}: {
+  mimeType: string;
+  buffer: Buffer;
+}) => {
+  try {
+    const extractText = promisify(textract.fromBufferWithMime);
+    const text = await extractText(mimeType, buffer);
+    return text as string;
+  } catch (error) {
+    console.log(error)
+    throw new Error(error);
+  }
+};
+
 export const getFileNameWithoutExtension = (name: string) => {
   return name.substring(0, name.lastIndexOf('.')) || name;
 };
@@ -137,3 +161,29 @@ export const writeFileToStream = async (
     writeStream.end();
   });
 };
+
+
+export const convertOldPptToText = async (file: Buffer) => {
+  const tempDir = 'temp';
+  try {
+
+    // Create the temp directory if it doesn't exist
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir);
+    }
+
+    // Convert the PPT buffer to PDF
+    const outputBuffer = await libreConvert(file, '.pdf', undefined);
+
+    // Extract text from the PDF buffer
+    const pdfData = await pdfParse(outputBuffer);
+    const text = pdfData.text;
+    // await unlink(tempDir);
+    return text;
+  } catch (error) {
+    throw new Error(`Failed to convert PPT to text: ${error.message}`);
+  } finally {
+    // Clean up the temporary directory and its contents
+    await rm(tempDir, { recursive: true, force: true });
+  }
+}
