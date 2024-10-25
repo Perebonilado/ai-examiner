@@ -16,7 +16,6 @@ export class DocumentMessageSequelizeRepository
     try {
       return await this.documentMessageDbConnector.create(documentMessage);
     } catch (error) {
-      console.log(error)
       throw new RepositoryError('Failed to save message').InnerError(error);
     }
   }
