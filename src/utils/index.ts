@@ -137,7 +137,6 @@ export const extractTextFromBuffer = async ({
     const text = await extractText(mimeType, buffer);
     return text as string;
   } catch (error) {
-    console.log(error)
     throw new Error(error);
   }
 };

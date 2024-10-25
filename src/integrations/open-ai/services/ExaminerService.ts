@@ -195,8 +195,6 @@ export class ExaminerService {
       const tempFilePath = join(tmpdir(), fileName);
       let fileContent: string | Buffer;
 
-      console.log(file.mimetype);
-
       if (mimeTypesToConvertToText.includes(file.mimetype)) {
         if (!isPDF) {
           if (file.mimetype === 'application/vnd.ms-powerpoint') {

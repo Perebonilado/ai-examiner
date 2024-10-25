@@ -34,7 +34,6 @@ export class QuestionProgressQueryService {
 
       return null;
     } catch (error) {
-      console.log(error)
       throw new QueryError('Failed to find progress by question id').InnerError(
         error,
       );

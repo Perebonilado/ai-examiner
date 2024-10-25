@@ -110,7 +110,6 @@ export class CourseDocumentController {
         userId: userToken.sub,
       });
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to update Document',
         HttpStatus.BAD_REQUEST,
@@ -326,7 +325,6 @@ export class CourseDocumentController {
         },
       };
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,
