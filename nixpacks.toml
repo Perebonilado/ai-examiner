@@ -1,4 +1,4 @@
 # nixpacks.toml
 
 [phases.setup]
-nixPkgs = ['...', 'libreoffice-qt']
+nixPkgs = ['...', 'libreoffice-still']
