@@ -7,13 +7,3 @@ nixPkgs = [
     'libreoffice',        
     'libreoffice-still'   
 ]
-
-[phases.build]
-cmds = [
-    '...',
-    'echo "Checking LibreOffice installation..."',
-    'find / -name soffice 2>/dev/null || echo "soffice not found"',
-    'find / -name libreoffice 2>/dev/null || echo "libreoffice not found"',
-    'whereis libreoffice',
-    'whereis soffice'
-]
