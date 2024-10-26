@@ -1,4 +1,20 @@
 # nixpacks.toml
 
 [phases.setup]
-nixPkgs = ['...', 'libreoffice', 'libreoffice-still']
+nixPkgs = ['...','libreoffice']
+
+[phases.build]
+cmds = [
+    '...',
+    # Create necessary directories
+    'mkdir -p /usr/lib/libreoffice',
+    # Ensure proper symlinks
+    'ln -sf $(which soffice) /usr/local/bin/soffice',
+    'ln -sf $(which libreoffice) /usr/local/bin/libreoffice'
+]
+
+[start]
+# Ensure the path includes LibreOffice binaries
+environment = { 
+    "PATH" = "/usr/local/bin:/usr/lib/libreoffice:/nix/var/nix/profiles/default/bin:$PATH"
+}
