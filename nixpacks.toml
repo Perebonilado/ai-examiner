@@ -1,7 +1,4 @@
 # nixpacks.toml
 
 [phases.setup]
-nixPkgs = ['...', 'libreoffice']
-
-[phases.build]
-cmds = ['...', 'ln -s $(which soffice) /usr/local/bin/soffice']
+nixPkgs = ['...', 'libreoffice', 'libreoffice-still']
