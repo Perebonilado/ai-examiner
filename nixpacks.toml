@@ -4,3 +4,6 @@ nixPkgs = [
     '...', 
     'libreoffice-bin'
 ]
+
+[variables]
+NIXPKGS_ALLOW_UNSUPPORTED_SYSTEM = "1"
