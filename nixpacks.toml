@@ -1,20 +1,32 @@
-# nixpacks.toml
-
 [phases.setup]
-nixPkgs = ['...','libreoffice']
+nixPkgs = [
+    '...', 
+    'libreoffice',
+    'libreoffice-still'  # Adding the stable version as backup
+]
 
 [phases.build]
 cmds = [
     '...',
-    # Create necessary directories
-    'mkdir -p /usr/lib/libreoffice',
-    # Ensure proper symlinks
-    'ln -sf $(which soffice) /usr/local/bin/soffice',
-    'ln -sf $(which libreoffice) /usr/local/bin/libreoffice'
+    # Debug information to see what's happening
+    'echo "Verifying LibreOffice installation..."',
+    'nix-env -q libreoffice || echo "LibreOffice not found in nix"',
+    'which libreoffice || echo "libreoffice binary not found"',
+    'which soffice || echo "soffice binary not found"',
+    # Create directories with error checking
+    'mkdir -p /usr/lib/libreoffice || echo "Failed to create libreoffice directory"',
+    'mkdir -p /usr/local/bin || echo "Failed to create local bin directory"',
+    # Create symlinks with error checking
+    'if which soffice > /dev/null; then ln -sf $(which soffice) /usr/local/bin/soffice; fi',
+    'if which libreoffice > /dev/null; then ln -sf $(which libreoffice) /usr/local/bin/libreoffice; fi',
+    # Verify final setup
+    'ls -la /usr/local/bin/soffice || echo "soffice symlink missing"',
+    'ls -la /usr/local/bin/libreoffice || echo "libreoffice symlink missing"'
 ]
 
 [start]
-# Ensure the path includes LibreOffice binaries
 environment = { 
-    "PATH" = "/usr/local/bin:/usr/lib/libreoffice:/nix/var/nix/profiles/default/bin:$PATH"
+    "PATH" = "/usr/local/bin:/usr/lib/libreoffice:/nix/var/nix/profiles/default/bin:${PATH:-}",
+    # Adding LD_LIBRARY_PATH in case of library dependencies
+    "LD_LIBRARY_PATH" = "/nix/var/nix/profiles/default/lib:${LD_LIBRARY_PATH:-}"
 }
