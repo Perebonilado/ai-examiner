@@ -3,4 +3,5 @@
 nixPkgs = [
     '...', 
     'libreoffice-qt6-fresh',
+    'libreoffice-bin'
 ]
