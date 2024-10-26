@@ -2,6 +2,5 @@
 [phases.setup]
 nixPkgs = [
     '...', 
-    'libreoffice-qt6-fresh',
-    'libreoffice-bin'
+    'libreoffice-qt6-unwrapped'
 ]
