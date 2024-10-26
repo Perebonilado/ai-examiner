@@ -4,4 +4,9 @@
 nixPkgs = ['...', 'libreoffice']
 
 [phases.build]
-cmds = ['...', 'ln -s $(which soffice) /usr/local/bin/soffice']
+cmds = [
+    '...',
+    'which soffice || echo "soffice not found"',
+    'ls -la $(which soffice)',
+    'ldd $(which soffice)'
+]
