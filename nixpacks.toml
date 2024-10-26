@@ -1,12 +1,19 @@
 # nixpacks.toml
 
 [phases.setup]
-nixPkgs = ['...', 'libreoffice']
+nixPkgs = [
+    '...',
+    'libreoffice-qt',     
+    'libreoffice',        
+    'libreoffice-still'   
+]
 
 [phases.build]
 cmds = [
     '...',
-    'which soffice || echo "soffice not found"',
-    'ls -la $(which soffice)',
-    'ldd $(which soffice)'
+    'echo "Checking LibreOffice installation..."',
+    'find / -name soffice 2>/dev/null || echo "soffice not found"',
+    'find / -name libreoffice 2>/dev/null || echo "libreoffice not found"',
+    'whereis libreoffice',
+    'whereis soffice'
 ]
