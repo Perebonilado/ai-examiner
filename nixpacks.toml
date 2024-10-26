@@ -1,12 +1,4 @@
-[variables]
-NIXPKGS_ALLOW_UNSUPPORTED_SYSTEM = '1'
+# nixpacks.toml
 
 [phases.setup]
-nixPkgs = [
-    '...',
-    'libreoffice-bin'
-]
-nixPkgsConfig = { 
-    allowUnsupportedSystem = true,
-    allowUnfree = true
-}
+nixPkgs = ['...', 'libreoffice']
