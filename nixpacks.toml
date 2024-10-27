@@ -1,6 +1,0 @@
-
-[phases.setup]
-nixPkgs = [
-    '...', 
-    'libreoffice-qt6-unwrapped'
-]
