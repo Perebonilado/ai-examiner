@@ -36,6 +36,7 @@ import { PaystackSubscriptionService } from 'src/integrations/paystack/services/
 import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/UpdateCourseDocumentHandler';
 import { UpdateCourseDocumentDto } from 'src/dto/UpdateCourseDocumentDto';
 import { ThreadTypeModel } from '../models/ThreadTypeModel';
+import { QuestionType } from '../models/QuestionTypeModel';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -109,7 +110,6 @@ export class CourseDocumentController {
         userId: userToken.sub,
       });
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to update Document',
         HttpStatus.BAD_REQUEST,
@@ -178,18 +178,23 @@ export class CourseDocumentController {
       );
 
       const threadIdToAttach: Record<ThreadTypeModel, string> = {
-        mcqDirectThreadId: "",
-        mcqUseCaseThreadId: "",
-        flashCardThreadId: "",
-        documentChatThreadId: ""
+        mcqDirectThreadId: '',
+        mcqUseCaseThreadId: '',
+        flashCardThreadId: '',
+        documentChatThreadId: '',
+        multipleTrueFalseThreadId: '',
       };
 
       if (questionTypeName.title.toLowerCase() === 'multiple choice') {
         includeUseCases === 'true'
           ? (threadIdToAttach.mcqUseCaseThreadId = updatedThread.id)
           : (threadIdToAttach.mcqDirectThreadId = updatedThread.id);
+      } else if (
+        questionTypeName.title.toLowerCase() === 'multiple true-false'
+      ) {
+        threadIdToAttach.multipleTrueFalseThreadId = updatedThread.id;
       } else {
-        threadIdToAttach.flashCardThreadId = updatedThread.id
+        threadIdToAttach.flashCardThreadId = updatedThread.id;
       }
 
       const createdDocument = await this.createCourseDocumentHander.handle({
@@ -198,7 +203,7 @@ export class CourseDocumentController {
           title: body.title,
           userId: userToken.sub,
           fileId: body.fileId,
-          ...threadIdToAttach
+          ...threadIdToAttach,
         },
       });
 
@@ -244,15 +249,13 @@ export class CourseDocumentController {
         );
       }
 
-      const isFlashCardQuestions = questionTypeName.title.toLowerCase() === 'flash cards'
-
       await this.examinerService.createThreadMessage(
         existingThread.id,
         generateQuestionsPrompt(
           questionCount || 5,
           body.selectedQuestionTopics || undefined,
           includeUseCases === 'true' ? true : false,
-          isFlashCardQuestions
+          questionTypeName.title as QuestionType,
         ),
       );
 
@@ -322,7 +325,6 @@ export class CourseDocumentController {
         },
       };
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,

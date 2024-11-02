@@ -123,7 +123,6 @@ export class PermissionController {
         return await this.getFreePlanPermissions(userToken.sub);
       }
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to get user permissions',
         HttpStatus.BAD_REQUEST,

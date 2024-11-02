@@ -1,12 +1,15 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
-import { createReadStream } from 'fs';
-import { join } from 'path';
+import { createReadStream, existsSync } from 'fs';
+import { extname, join } from 'path';
 import { tmpdir } from 'os';
 import { unlink } from 'fs/promises';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import {
+  convertOldPptToText,
+  extractTextFromBuffer,
   extractTextFromPDF,
+  generateUUID,
   getFileNameWithoutExtension,
   writeFileToStream,
 } from 'src/utils';
@@ -181,18 +184,39 @@ export class ExaminerService {
     },
   ) {
     try {
+      let tempFilePath: string | null
       const isPDF = file.mimetype === 'application/pdf';
-      const fileName = isPDF
-        ? `${getFileNameWithoutExtension(file.originalname)}.txt`
-        : file.originalname;
+      const mimeTypesToConvertToText = [
+        'application/pdf',
+        'application/vnd.ms-powerpoint', //older ppt format
+      ];
+      const fileExtension = mimeTypesToConvertToText.includes(file.mimetype)
+        ? '.txt'
+        : extname(file.originalname);
+      const tempFileName = `${generateUUID()}${fileExtension}`;
+      tempFilePath = join(tmpdir(), tempFileName);
 
-      const tempFilePath = join(tmpdir(), fileName);
-      const fileContent = isPDF
-        ? await extractTextFromPDF(file, {
+      let fileContent: string | Buffer;
+
+      if (mimeTypesToConvertToText.includes(file.mimetype)) {
+        if (!isPDF) {
+          if (file.mimetype === 'application/vnd.ms-powerpoint') {
+            fileContent = await convertOldPptToText(file.buffer);
+          } else {
+            fileContent = await extractTextFromBuffer({
+              mimeType: file.mimetype,
+              buffer: file.buffer,
+            });
+          }
+        } else {
+          fileContent = await extractTextFromPDF(file, {
             firstPage: pdfPageRange?.start,
             lastPage: pdfPageRange?.end,
-          })
-        : file.buffer;
+          });
+        }
+      } else {
+        fileContent = file.buffer;
+      }
 
       if (isPDF && !fileContent.length) {
         throw new HttpException(
@@ -212,10 +236,21 @@ export class ExaminerService {
         purpose: 'assistants',
       });
 
-      await unlink(tempFilePath);
+      // Add a small delay before attempting to delete the file
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      if (tempFilePath && existsSync(tempFilePath)) {
+        try {
+          await unlink(tempFilePath);
+        } catch (unlinkError) {
+          console.warn(`Failed to delete temporary file: ${tempFilePath}`, unlinkError);
+          // Continue execution even if file deletion fails
+        }
+      }
 
       return uploadedFile;
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         error || 'Failed to upload file',
         HttpStatus.BAD_GATEWAY,

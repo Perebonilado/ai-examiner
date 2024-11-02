@@ -84,7 +84,7 @@ export class AuthController {
           secret: EnvironmentVariables.config.jwtSecret,
           expiresIn: '10m',
         });
-        const resetPasswordLink = `${EnvironmentVariables.config.frontendBaseUrl}/auth/reset-password?token=${token}`;
+        const resetPasswordLink = `${EnvironmentVariables.config.frontendBaseUrl}auth/reset-password?token=${token}`;
 
         const email = `
           Hi ${user.firstName},
