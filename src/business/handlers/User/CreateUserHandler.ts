@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { hashPassword } from 'src/utils';
 import { ManageMailChimpAudience } from 'src/integrations/mail-chimp/services/ManageMailChimpAudience';
+import { FloDeskMailerService } from 'src/integrations/flo-desk-mailer/services/FloDeskMailerService';
 
 @Injectable()
 export class CreateUserHandler extends AbstractRequestHandlerTemplate<
@@ -23,6 +24,8 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
     private jwtService: JwtService,
     @Inject(ManageMailChimpAudience)
     private manageMailChimpAudience: ManageMailChimpAudience,
+    @Inject(FloDeskMailerService)
+    private floDeskMailerService: FloDeskMailerService,
   ) {
     super();
   }
@@ -47,7 +50,7 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
           payload as UserModel,
         );
 
-        await this.manageMailChimpAudience.addMemberToList({
+        await this.floDeskMailerService.createSubscriber({
           email: savedUser.email,
           firstName: savedUser.firstName,
           lastName: savedUser.lastName,
