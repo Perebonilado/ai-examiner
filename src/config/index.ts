@@ -36,7 +36,7 @@ export default (): Config => ({
   database: process.env.Database,
   databaseHost: process.env.Database_Host,
   jwtSecret: process.env.JWT_SECRET,
-  floDeskBaseUrl: process.env.FLO_DESK_API_URL,
+  floDeskBaseUrl: process.env.FLO_DESK_BASE_URL,
   floDeskApiKey: process.env.FLO_DESK_API_KEY,
   assistantIdFreePlan: process.env.OPEN_AI_ASSITANT_ID_FREE_PLAN,
   assistantIdPaidPlan: process.env.OPEN_AI_ASSITANT_ID_PAID_PLAN,

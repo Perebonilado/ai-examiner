@@ -33,6 +33,7 @@ export class FloDeskMailerService {
         },
       );
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         'Failed to create subscriber on FloDesk',
         HttpStatus.INTERNAL_SERVER_ERROR,
