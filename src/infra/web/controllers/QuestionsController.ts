@@ -19,10 +19,11 @@ import { Request } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { GetQuestionByIdDto } from 'src/dto/GetQuestionByIdDto';
-import { extractJSONDataFromMessages } from 'src/utils';
+import { extractJSONDataFromMessages, generateUUID } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import {
   generateQuestionsPrompt,
+  generateSourceInfoPrompt,
   inactiveSubscriptionStatuses,
 } from 'src/constants';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
@@ -46,6 +47,7 @@ import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocumen
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
 import { SaveSharedQuestionDto } from 'src/dto/SaveSharedQuestionDto';
 import { QuestionType } from '../models/QuestionTypeModel';
+import { QuestionSourceRequesDto } from 'src/dto/QuestionSourceRequestDto';
 
 @Controller('questions')
 export class QuestionsController {
@@ -170,6 +172,69 @@ export class QuestionsController {
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to delete question by id ' + id,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/source/:id')
+  public async getQuestionSource(
+    @Body() body: QuestionSourceRequesDto,
+    @Param('id') id: string,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      const document =
+        await this.courseDocumentQueryService.findCourseDocumentById(
+          id,
+          userToken.sub,
+        );
+
+      const temporaryVectorStoreName = `${generateUUID()}_${new Date().getTime()}`;
+
+      const temporaryVectorStore = await this.examinerService.createVectorStore(
+        temporaryVectorStoreName,
+      );
+
+      const updatedVectorStoreId =
+        await this.examinerService.attachFileToVectorStore(
+          document.openAiFileId,
+          temporaryVectorStore.id,
+        );
+
+      const thread = await this.examinerService.createThread();
+
+      const updatedThread =
+        await this.examinerService.attachVectorStoreToThread(
+          thread.id,
+          updatedVectorStoreId,
+        );
+
+      await this.examinerService.createThreadMessage(
+        updatedThread.id,
+        generateSourceInfoPrompt(body.question),
+      );
+
+      const run = await this.examinerService.createRun(
+        EnvironmentVariables.config.assistantIdPaidPlan,
+        updatedThread.id,
+      );
+
+      const messages = await this.examinerService.retrieveThreadMessages(
+        updatedThread.id,
+        run.id,
+      );
+
+      const sourceData = (messages.data[0].content[0] as any).text.value
+
+      return {
+        data: sourceData,
+      }
+    } catch (error) {
+      throw new HttpException(
+        'Failed to get question source',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -404,7 +469,6 @@ export class QuestionsController {
         );
       }
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to generate questions for document',
         HttpStatus.BAD_REQUEST,
@@ -448,7 +512,9 @@ export class QuestionsController {
 
           if (progress?.data && progress.data.length) {
             progressPercentage = (progress.data.length / questionCount) * 100;
-            totalAnswered = Array.from(new Set(progress.data.map((d)=>d.selectedQuestionId))).length;
+            totalAnswered = Array.from(
+              new Set(progress.data.map((d) => d.selectedQuestionId)),
+            ).length;
           }
 
           return {
