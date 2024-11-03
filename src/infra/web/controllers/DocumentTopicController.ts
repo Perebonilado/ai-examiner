@@ -19,7 +19,7 @@ import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { DocumentTopicQueryService } from 'src/query/services/DocumentTopicQueryService';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { generateTopicPrompt, inactiveSubscriptionStatuses } from 'src/constants';
-import { extractJSONDataFromMessages } from 'src/utils';
+import { extractJSONDataFromMessages, generateUUID } from 'src/utils';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
@@ -120,7 +120,7 @@ export class DocumentTopicController {
         ? EnvironmentVariables.config.assistantIdFreePlan
         : EnvironmentVariables.config.assistantIdPaidPlan;
 
-      const temporaryVectorStoreName = `${userToken.sub}_${new Date().getTime()}`;
+      const temporaryVectorStoreName = `${generateUUID()}_${new Date().getTime()}`;
 
       const temporaryVectorStore = await this.examinerService.createVectorStore(
         temporaryVectorStoreName,
