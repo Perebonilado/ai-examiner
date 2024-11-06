@@ -403,29 +403,13 @@ export class QuestionsController {
           }
 
           retryCount++;
+        }
 
-          // If we got no questions in this attempt, throw an error
-          if (
-            !newQuestions ||
-            !(newQuestions instanceof Array) ||
-            !newQuestions.length
-          ) {
-            throw new HttpException(
-              `An error occurred while generating questions: more questions require more content to be provided in the document.`,
-              HttpStatus.BAD_REQUEST,
-            );
-          }
-
-          // If we've reached max retries but haven't got enough questions, throw an error
-          if (
-            retryCount === MAX_RETRIES &&
-            generatedQuestions.length < desiredQuestionCount
-          ) {
-            throw new HttpException(
-              `Unable to generate the requested number of questions (${desiredQuestionCount}) after ${MAX_RETRIES} attempts. Generated ${generatedQuestions.length} questions.`,
-              HttpStatus.BAD_REQUEST,
-            );
-          }
+        if (!generatedQuestions.length) {
+          throw new HttpException(
+            `Insufficient content in document to generate questions`,
+            HttpStatus.BAD_REQUEST,
+          );
         }
 
         const createdQuestions = await this.createQuestionHandler.handle({
