@@ -249,45 +249,63 @@ export class CourseDocumentController {
         );
       }
 
-      await this.examinerService.createThreadMessage(
-        existingThread.id,
-        generateQuestionsPrompt(
-          questionCount || 5,
-          body.selectedQuestionTopics || undefined,
-          includeUseCases === 'true' ? true : false,
-          questionTypeName.title as QuestionType,
-        ),
-      );
+      const desiredQuestionCount = questionCount || 5;
+      let generatedQuestions = [];
+      const MAX_RETRIES = 5; // Prevent infinite loops
+      let retryCount = 0;
 
-      const run = await this.examinerService.createRun(
-        assistantId,
-        existingThread.id,
-      );
-
-      const messages = await this.examinerService.retrieveThreadMessages(
-        existingThread.id,
-        run.id,
-      );
-
-      let mostRecentlyGeneratedQuestions =
-        extractJSONDataFromMessages(messages);
-
-      if (
-        mostRecentlyGeneratedQuestions instanceof Array &&
-        mostRecentlyGeneratedQuestions.length
-      ) {
-        mostRecentlyGeneratedQuestions = [...mostRecentlyGeneratedQuestions];
-      } else {
-        throw new HttpException(
-          `An error occurred while generating questions: more questions require more content to be provided in the document.`,
-          HttpStatus.BAD_REQUEST,
+      while (generatedQuestions.length < desiredQuestionCount && retryCount < MAX_RETRIES) {
+        const remainingCount = desiredQuestionCount - generatedQuestions.length;
+        
+        await this.examinerService.createThreadMessage(
+          existingThread.id,
+          generateQuestionsPrompt(
+            remainingCount,
+            body.selectedQuestionTopics || undefined,
+            includeUseCases === 'true' ? true : false,
+            questionTypeName.title as QuestionType,
+          ),
         );
+  
+        const run = await this.examinerService.createRun(
+          assistantId,
+          existingThread.id,
+        );
+  
+        const messages = await this.examinerService.retrieveThreadMessages(
+          existingThread.id,
+          run.id,
+        );
+  
+        const newQuestions = extractJSONDataFromMessages(messages);
+  
+        if (newQuestions instanceof Array && newQuestions.length) {
+          generatedQuestions = [...generatedQuestions, ...newQuestions];
+        }
+  
+        retryCount++;
+  
+        // If we got no questions in this attempt, throw an error
+        if (!newQuestions || !(newQuestions instanceof Array) || !newQuestions.length) {
+          throw new HttpException(
+            `An error occurred while generating questions: more questions require more content to be provided in the document.`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+  
+        // If we've reached max retries but haven't got enough questions, throw an error
+        if (retryCount === MAX_RETRIES && generatedQuestions.length < desiredQuestionCount) {
+          throw new HttpException(
+            `Unable to generate the requested number of questions (${desiredQuestionCount}) after ${MAX_RETRIES} attempts. Generated ${generatedQuestions.length} questions.`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
       }
 
       const createdQuestion = await this.createQuestionHandler.handle({
         payload: {
           courseDocumentId: createdDocument.data.id,
-          data: mostRecentlyGeneratedQuestions,
+          data: generatedQuestions,
           userId: userToken.sub,
           questionTypeId: questionType,
         },
