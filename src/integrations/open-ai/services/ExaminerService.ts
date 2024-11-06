@@ -311,6 +311,14 @@ export class ExaminerService {
     }
   }
 
+  public async retrieveRun(threadId: string, runId: string){
+    try {
+      return await this.openAiClient.beta.threads.runs.retrieve(threadId, runId)
+    } catch (error) {
+      throw new HttpException("Failed to retrieve run", HttpStatus.BAD_GATEWAY)
+    }
+  }
+
   public async findThread(
     threadId: string,
   ): Promise<OpenAI.Beta.Threads.Thread> {
