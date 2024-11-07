@@ -29,29 +29,61 @@ export class PlanController {
     try {
       const ipAddress = request.ip;
 
-      const currencyCodesWithSpeicifcPlans = ['NGN'];
-      const defaultCurrencyCode = 'NGN';
+      const nairaCurrencyCode = 'NGN';
+      const usdCurrencyCode = 'USD'
+      let isUsersCountryNigeria = true;
+      let isUsersContinentAfrica = true;
 
       const ipDetails =
         await this.ipStackIpDetailsService.getIpDetails(ipAddress);
+
+      if (ipDetails && ipDetails.countryName?.toLowerCase() !== 'nigeria') {
+        isUsersCountryNigeria = false;
+      }
+
+      if (ipDetails && ipDetails.continentName?.toLowerCase() !== 'africa') {
+        isUsersContinentAfrica = false;
+      }
 
       const allPlans = await this.paystackPlansService.getPlans({
         page: page || 1,
         perPage: count || 50,
       });
 
-      const mappedPlans = allPlans.map((p)=>{
-        return {...p, description: JSON.parse(p.description)}
-      })
+      const mappedPlans = allPlans.map((p) => {
+        return { ...p, description: JSON.parse(p.description) };
+      });
 
-      if (
-        currencyCodesWithSpeicifcPlans.indexOf(ipDetails.currencyCode) !== -1
-      ) {
-        return mappedPlans.filter(
-          (plan) => plan.currency === ipDetails.currencyCode,
-        );
+      if (isUsersContinentAfrica) {
+        if (isUsersCountryNigeria) {
+          return mappedPlans.filter(
+            (plan) => plan.currency === nairaCurrencyCode,
+          );
+        } else {
+          return mappedPlans.filter((plan) => {
+            const africanRegionalPlans = (
+              plan.description as {
+                title: string;
+                isAvailable: boolean;
+                continent?: string;
+              }[]
+            ).find((d) => d?.continent === 'Africa') && plan.currency === usdCurrencyCode;
+
+            return africanRegionalPlans ? true : false;
+          });
+        }
       } else {
-        return mappedPlans.filter((plan) => plan.currency === defaultCurrencyCode);
+        return mappedPlans.filter((plan) => {
+          const northAmericanRegionalPlans = (
+            plan.description as {
+              title: string;
+              isAvailable: boolean;
+              continent?: string;
+            }[]
+          ).find((d) => d?.continent === 'North America');
+
+          return northAmericanRegionalPlans ? true : false;
+        });
       }
     } catch (error) {
       throw new HttpException(
