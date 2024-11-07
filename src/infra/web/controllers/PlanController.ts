@@ -28,7 +28,7 @@ export class PlanController {
     @Req() request: Request,
   ) {
     try {
-      const ipAddress = request['x-forwarded-for'] || request.connection.remoteAddress || request.ip;
+      const ipAddress = request['X-Forwarded-For'] || request.connection.remoteAddress || request.ip;
 
       const nairaCurrencyCode = 'NGN';
       const usdCurrencyCode = 'USD'
