@@ -18,34 +18,15 @@ export class PlanController {
     @Inject(PaystackPlansService)
     private paystackPlansService: PaystackPlansService,
     @Inject(IpInfoService)
-    private ipInfoService: IpInfoService
+    private ipInfoService: IpInfoService,
   ) {}
 
   @Get()
   public async getPlans(
     @Query('page') page: number,
     @Query('count') count: number,
-    @Req() request: Request,
   ) {
     try {
-      const ipAddress = request['X-Forwarded-For'] || request.connection.remoteAddress || request.ip;
-
-      const nairaCurrencyCode = 'NGN';
-      const usdCurrencyCode = 'USD'
-      let isUsersCountryNigeria = true;
-      let isUsersContinentAfrica = true;
-
-      const ipDetails =
-        await this.ipInfoService.getIpDetails(ipAddress);
-
-      if (ipDetails && ipDetails.country?.toLowerCase() !== 'ng') {
-        isUsersCountryNigeria = false;
-      }
-
-      if (ipDetails && !ipDetails.timezone?.toLowerCase().includes("africa")) {
-        isUsersContinentAfrica = false;
-      }
-
       const allPlans = await this.paystackPlansService.getPlans({
         page: page || 1,
         perPage: count || 50,
@@ -55,37 +36,7 @@ export class PlanController {
         return { ...p, description: JSON.parse(p.description) };
       });
 
-      if (isUsersContinentAfrica) {
-        if (isUsersCountryNigeria) {
-          return mappedPlans.filter(
-            (plan) => plan.currency === nairaCurrencyCode,
-          );
-        } else {
-          return mappedPlans.filter((plan) => {
-            const africanRegionalPlans = (
-              plan.description as {
-                title: string;
-                isAvailable: boolean;
-                continent?: string;
-              }[]
-            ).find((d) => d?.continent === 'Africa') && plan.currency === usdCurrencyCode;
-
-            return africanRegionalPlans ? true : false;
-          });
-        }
-      } else {
-        return mappedPlans.filter((plan) => {
-          const northAmericanRegionalPlans = (
-            plan.description as {
-              title: string;
-              isAvailable: boolean;
-              continent?: string;
-            }[]
-          ).find((d) => d?.continent === 'North America');
-
-          return northAmericanRegionalPlans ? true : false;
-        });
-      }
+      return mappedPlans;
     } catch (error) {
       throw new HttpException(
         'Failed to get plans',
