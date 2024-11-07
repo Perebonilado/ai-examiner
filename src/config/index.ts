@@ -25,6 +25,7 @@ export interface Config {
   emailPass: string;
   emailHost: string;
   ipStackApiKey: string;
+  ipInfoToken: string;
 }
 
 export default (): Config => ({
@@ -53,5 +54,6 @@ export default (): Config => ({
   emailPass: process.env.Email_pass,
   emailUser: process.env.Email_user,
   emailHost: process.env.Email_host,
-  ipStackApiKey: process.env.IP_STACK_API_KEY
+  ipStackApiKey: process.env.IP_STACK_API_KEY,
+  ipInfoToken: process.env.IP_INFO_TOKEN
 });

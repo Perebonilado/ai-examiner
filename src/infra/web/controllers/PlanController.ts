@@ -8,6 +8,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { IpInfoService } from 'src/integrations/ip-info/services/IpInfoService';
 import { IpStackIpDetailsService } from 'src/integrations/ip-stack/services/IpStackIpDetailsService';
 import { PaystackPlansService } from 'src/integrations/paystack/services/PaystackPlansService';
 
@@ -16,8 +17,8 @@ export class PlanController {
   constructor(
     @Inject(PaystackPlansService)
     private paystackPlansService: PaystackPlansService,
-    @Inject(IpStackIpDetailsService)
-    private ipStackIpDetailsService: IpStackIpDetailsService,
+    @Inject(IpInfoService)
+    private ipInfoService: IpInfoService
   ) {}
 
   @Get()
@@ -35,13 +36,13 @@ export class PlanController {
       let isUsersContinentAfrica = true;
 
       const ipDetails =
-        await this.ipStackIpDetailsService.getIpDetails(ipAddress);
+        await this.ipInfoService.getIpDetails(ipAddress);
 
-      if (ipDetails && ipDetails.countryName?.toLowerCase() !== 'nigeria') {
+      if (ipDetails && ipDetails.country?.toLowerCase() !== 'ng') {
         isUsersCountryNigeria = false;
       }
 
-      if (ipDetails && ipDetails.continentName?.toLowerCase() !== 'africa') {
+      if (ipDetails && !ipDetails.timezone?.toLowerCase().includes("africa")) {
         isUsersContinentAfrica = false;
       }
 
