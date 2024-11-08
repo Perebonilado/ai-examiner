@@ -38,6 +38,7 @@ For each question:
    - Vary the types of scenarios (e.g., diagnosis, treatment planning, interpretation of results)
    - Ensure that answering the question requires understanding and applying concepts from the document
    - Avoid overly complex or rare clinical situations unless specifically relevant to the document's focus
+   - CRITICAL: Vary the position of the correct answer within the options. If the first question has A at it's correct option, the next question may have D as its correct option. Ensure this is varied. THERE SHOULD BE NO PATTERN, THERE SHOULD BE AN UNEVEN DISTRIBUTION OF EITHER A, B, C OR D AS THE CORRECT OPTION.
 THIS INSTRUCTION IS CRITICAL FOR ALL QUESTIONS - STRICTLY ADHERE TO CREATING SCENARIO-BASED QUESTIONS THAT APPLY DOCUMENT CONCEPTS.`;
 
   const directQuestionPrompt = `8. IMPORTANT: Generate ONLY direct, concept-based questions. DO NOT use any scenarios, case studies, or hypothetical situations.
@@ -46,6 +47,7 @@ THIS INSTRUCTION IS CRITICAL FOR ALL QUESTIONS - STRICTLY ADHERE TO CREATING SCE
    - Use formats like ${questionType === 'Flash Cards' ? '"What is...", "Define...", "Name...", "Identify..."' : questionType === 'Multiple True-False' ? '"Which of the following statements are true regarding...?", "Evaluate the following statements about..."' : '"Which of the following best describes...?", "How does X differ from Y?", "What is...", "Identify...", "Which of the following..."'}
    - Avoid any patient scenarios or clinical vignettes
    - Questions should be straightforward and assess factual recall or conceptual understanding
+   - CRITICAL: Vary the position of the correct answer within the options. If the first question has A at it's correct option, the next question may have D as its correct option. Ensure this is varied. THERE SHOULD BE NO PATTERN. THERE SHOULD BE AN UNEVEN DISTRIBUTION OF EITHER A, B, C OR D AS THE CORRECT OPTION.
 THIS INSTRUCTION IS CRITICAL - STRICTLY ADHERE TO CREATING ONLY DIRECT QUESTIONS WITHOUT ANY SCENARIOS.`;
 
   const flashCardPrompt = `9. IMPORTANT: For flashcard questions, focus on the following:
