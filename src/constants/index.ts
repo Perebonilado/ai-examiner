@@ -17,8 +17,9 @@ export const generateQuestionsPrompt = (
   includeCaseStudies = false,
   questionType: QuestionType = 'Multiple Choice',
 ) => {
-  const basePrompt = `Analyze the document thoroughly. Generate ${questionCount} unique ${questionType === 'Flash Cards' ? 'flashcard-style' : questionType === 'Multiple True-False' ? 'multiple true-false' : 'multiple-choice'} questions based on key concepts. Before generating each question Double-check each question and its options against the document to ensure absolute accuracy while maintaining high difficulty.
-${focusAreas?.length ? `Focus on these concepts: ${focusAreas.join(', ')}. Create specific, concept-focused questions that test core understanding. ${focusAreas.length > 1 ? 'Distribute questions evenly across concepts and shuffle their order.' : ''}` : ''}
+  const basePrompt = `Analyze the document thoroughly. Generate ${questionCount} unique and new ${questionType === 'Flash Cards' ? 'flashcard-style' : questionType === 'Multiple True-False' ? 'multiple true-false' : 'multiple-choice'} questions based on key concepts. Before generating each question Double-check each question and its options against the document to ensure absolute accuracy while maintaining high difficulty. Ensure questions are new and differ from previously generated questions. 
+${focusAreas?.length ? `Focus specifically on these concepts: ${focusAreas.join(', ')}. Create specific, concept-focused questions that test core understanding. Distribute questions evenly across concepts and shuffle their order.` : 'Consider the differenct concepts the document taught within the document and distribute questions evenly across these concepts. Consider concepts not explored in previous questions'}
+
 For each question:
 1. Ensure relevance to document content
 2. Provide 4 options with unique IDs${questionType === 'Flash Cards' ? ', with the correct answer as the first option' : ''}

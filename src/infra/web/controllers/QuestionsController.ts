@@ -19,7 +19,11 @@ import { Request } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { GetQuestionByIdDto } from 'src/dto/GetQuestionByIdDto';
-import { extractJSONDataFromMessages, generateUUID } from 'src/utils';
+import {
+  extractJSONDataFromMessages,
+  generateUUID,
+  replaceAllSpacesInStringWithHyphen,
+} from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import {
   generateQuestionsPrompt,
@@ -474,7 +478,12 @@ export class QuestionsController {
           }
         }
 
-        return createdQuestions;
+        return {
+          id: createdQuestions.data.id,
+          type: replaceAllSpacesInStringWithHyphen(
+            questionTypeName.title.toLowerCase(),
+          ),
+        };
       } else {
         throw new HttpException(
           'Document does not exist',

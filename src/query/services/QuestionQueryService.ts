@@ -9,6 +9,7 @@ import { LookUpQueryService } from './LookUpQueryService';
 import * as moment from 'moment';
 import { Op } from 'sequelize';
 import { UserModel } from 'src/infra/db/models/UserModel';
+import { DocumentTopicQueryService } from './DocumentTopicQueryService';
 
 @Injectable()
 export class QuestionQueryService {
@@ -17,6 +18,7 @@ export class QuestionQueryService {
     @Inject(QuestionTopicQueryService)
     private questionTopicService: QuestionTopicQueryService,
     @Inject(LookUpQueryService) private lookUpQueryService: LookUpQueryService,
+    @Inject(DocumentTopicQueryService) private documentTopicQueryService: DocumentTopicQueryService
   ) {}
 
   public async findAllQuestionsByDocumentIdAndUserId(
@@ -118,6 +120,9 @@ export class QuestionQueryService {
       );
       const topics =
         await this.questionTopicService.findQuestionTopicsByQuestionId(id);
+      
+      const allTopics = await this.documentTopicQueryService.findAllByDocumentTopicsByDocumentIdAndUserId(courseDocument.id, userId)
+      const allTopicsMapped = allTopics.map((t)=>t.title)
 
       const type = await this.lookUpQueryService.findLookUpById(
         question.questionTypeId,
@@ -134,6 +139,8 @@ export class QuestionQueryService {
           ? topics.map((t) => ({ id: t.id, title: t.documentTopicTitle }))
           : null,
         type: type ? type.title : null,
+        fileId: courseDocument.openAiFileId,
+        allTopics: allTopicsMapped
       };
     } catch (error) {
       throw new QueryError('Failed to find questions by id').InnerError(error);
