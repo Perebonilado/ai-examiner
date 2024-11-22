@@ -251,7 +251,7 @@ export class CourseDocumentController {
 
       const desiredQuestionCount = questionCount || 5;
       let generatedQuestions = [];
-      const MAX_RETRIES = 5; // Prevent infinite loops
+      const MAX_RETRIES = 10; // Prevent infinite loops
       let retryCount = 0;
 
       while (
