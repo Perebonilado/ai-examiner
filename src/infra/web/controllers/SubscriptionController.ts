@@ -79,6 +79,8 @@ export class SubscriptionController {
       } else {
         // user either has one time subscription or recurring subscription
 
+        const activeSubscriptionStatuses = ['active', 'attention'];
+
         const userHasActiveOneTimeSubscription = !oneTimeSubscriptionDetails
           ? false
           : moment(oneTimeSubscriptionDetails?.expiresOn).isAfter(
@@ -86,13 +88,15 @@ export class SubscriptionController {
               'day',
             );
 
+        const subscriptionStatus = (
+          await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+            recurringSubscriptionDetails?.subscriptionCode,
+          )
+        ).subscrptionInformation.status;
+
         const userHasActiveRecurringSubscription = !recurringSubscriptionDetails
           ? false
-          : (
-              await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
-                recurringSubscriptionDetails?.subscriptionCode,
-              )
-            ).subscrptionInformation.status === 'active';
+          : activeSubscriptionStatuses.includes(subscriptionStatus.toLowerCase());
 
         if (userHasActiveOneTimeSubscription) {
           throw new HttpException(
@@ -268,7 +272,7 @@ export class SubscriptionController {
             planInformation: {
               amount: null,
               currency: null,
-              name: "Free",
+              name: 'Free',
               planCode: null,
             },
             subscrptionInformation: {
@@ -309,7 +313,7 @@ export class SubscriptionController {
     try {
       const oneTimeSubscriptionDetails =
         await this.oneTimeSubscriptionService.findByUserId(userId);
-      
+
       if (
         oneTimeSubscriptionDetails &&
         moment(oneTimeSubscriptionDetails?.expiresOn).isAfter(moment(), 'day')
