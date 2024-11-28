@@ -88,7 +88,7 @@ export class SubscriptionController {
               'day',
             );
 
-        const subscriptionStatus = (
+        const subscriptionStatus = !recurringSubscriptionDetails?.subscriptionCode ? null : (
           await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
             recurringSubscriptionDetails?.subscriptionCode,
           )
@@ -96,7 +96,7 @@ export class SubscriptionController {
 
         const userHasActiveRecurringSubscription = !recurringSubscriptionDetails
           ? false
-          : activeSubscriptionStatuses.includes(subscriptionStatus.toLowerCase());
+          : activeSubscriptionStatuses.includes(subscriptionStatus?.toLowerCase());
 
         if (userHasActiveOneTimeSubscription) {
           throw new HttpException(
