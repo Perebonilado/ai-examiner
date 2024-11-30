@@ -19,6 +19,7 @@ import { PermissionController } from './controllers/PermissionController';
 import { DocumentMessageController } from './controllers/DocumentMessageController';
 import { QuestionProgressController } from './controllers/QuestionProgressController';
 import { SpeechController } from './controllers/SpeechController';
+import { PerformanceTrackingController } from './controllers/PerformanceTrackingController';
 
 @Module({
   imports: [
@@ -44,7 +45,8 @@ import { SpeechController } from './controllers/SpeechController';
     PermissionController,
     DocumentMessageController,
     QuestionProgressController,
-    SpeechController
+    SpeechController,
+    PerformanceTrackingController
   ],
 })
 export class InfraWebModule {}
