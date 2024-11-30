@@ -25,6 +25,9 @@ import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerServi
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { generatePerformanceTrackingPrompt } from 'src/constants';
 import { extractJSONDataFromMessages, generateUUID } from 'src/utils';
+import { CourseDocumentModel } from 'src/infra/db/models/CourseDocumentModel';
+import { PerformanceTrackingQueryService } from 'src/query/services/PerformanceTrackingQueryService';
+import { CreatePerformanceTrackingHandler } from 'src/business/handlers/PerformanceTracking/CreatePerformanceTrackingHandler';
 
 @Controller('performance-tracking')
 export class PerformanceTrackingController {
@@ -34,40 +37,105 @@ export class PerformanceTrackingController {
     @Inject(ExaminerService) private examinerService: ExaminerService,
     @Inject(CourseDocumentQueryService)
     private courseDocumentQueryService: CourseDocumentQueryService,
+    @Inject(PerformanceTrackingQueryService)
+    private performanceTrackingQueryService: PerformanceTrackingQueryService,
+    @Inject(CreatePerformanceTrackingHandler)
+    private createPerformanceTrackingHandler: CreatePerformanceTrackingHandler,
   ) {}
 
   @UseGuards(AuthGuard)
   @Get('/:documentId')
   public async getPerformanceTrackingPerDocument(
     @Param('documentId') documentId: string,
+    @Query('period') period: 'this_week' | 'last_week',
     @Req() request: Request,
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
 
-      const startOfLastWeek = moment()
-        .subtract(1, 'week')
-        .startOf('week')
-        .format('YYYY-MM-DD');
-      const endOfLastWeek = moment()
-        .subtract(1, 'week')
-        .endOf('week')
-        .format('YYYY-MM-DD');
+      if (period === 'this_week') {
+        const startDate = moment().startOf('week').format('YYYY-MM-DD');
+        const endDate = moment().endOf('week').format('YYYY-MM-DD');
+        const progressInfo =
+          await this.questionProgressQueryService.getPreviousWeekProgress({
+            documentId,
+            userId: userToken.sub,
+            startDate,
+            endDate,
+          });
 
-      const progressInfo =
-        await this.questionProgressQueryService.getPreviousWeekProgress({
-          documentId,
-          userId: userToken.sub,
-          startDate: startOfLastWeek,
-          endDate: endOfLastWeek,
-        });
+        const documentInfo =
+          await this.courseDocumentQueryService.findCourseDocumentById(
+            documentId,
+            userToken.sub,
+          );
 
-      const documentInfo =
-        await this.courseDocumentQueryService.findCourseDocumentById(
-          documentId,
-          userToken.sub,
+        return await this.generatePerformanceTrackingData(
+          progressInfo,
+          documentInfo,
         );
+      } else {
+        const startOfLastWeek = moment().subtract(1, 'week').startOf('week');
+        // .format('YYYY-MM-DD');
+        const endOfLastWeek = moment().subtract(1, 'week').endOf('week');
+        // .format('YYYY-MM-DD');
+        const existingProgressData =
+          await this.performanceTrackingQueryService.findByStartAndEndDate(
+            startOfLastWeek.toDate(),
+            endOfLastWeek.toDate(),
+            userToken.sub,
+            documentId,
+          );
 
+        if (existingProgressData) {
+          return existingProgressData.data.length
+            ? JSON.parse(existingProgressData.data)
+            : [];
+        } else {
+          const progressInfo =
+            await this.questionProgressQueryService.getPreviousWeekProgress({
+              documentId,
+              userId: userToken.sub,
+              startDate: startOfLastWeek.format('YYYY-MM-DD'),
+              endDate: endOfLastWeek.format('YYYY-MM-DD'),
+            });
+
+          const documentInfo =
+            await this.courseDocumentQueryService.findCourseDocumentById(
+              documentId,
+              userToken.sub,
+            );
+
+          const generatedPerformance =
+            await this.generatePerformanceTrackingData(
+              progressInfo,
+              documentInfo,
+            );
+
+          await this.createPerformanceTrackingHandler.handle({
+            data: JSON.stringify(generatedPerformance),
+            documentId: documentId,
+            startDate: startOfLastWeek.toDate(),
+            endDate: endOfLastWeek.toDate(),
+            userId: userToken.sub,
+          });
+
+          return generatedPerformance;
+        }
+      }
+    } catch (error) {
+      throw new HttpException(
+        'Failed to get performance',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  public async generatePerformanceTrackingData(
+    progressInfo: PerformanceTrackingRawData[],
+    documentInfo: CourseDocumentModel,
+  ) {
+    try {
       const performanceDataForParsing =
         await this.getPerformaceDataForProcessing(progressInfo);
 
@@ -108,13 +176,13 @@ export class PerformanceTrackingController {
         run.id,
       );
 
-      const performanceTracking = extractJSONDataFromMessages(messages)
+      const performanceTracking = extractJSONDataFromMessages(messages);
 
-      return performanceTracking
+      return performanceTracking;
     } catch (error) {
       throw new HttpException(
-        'Failed to get performance',
-        HttpStatus.BAD_REQUEST,
+        'failed to generate performance tracking data',
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
