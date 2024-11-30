@@ -1,4 +1,5 @@
 import { MessageReponseType } from 'src/infra/web/models/MessageResponseTypeModel';
+import { PerformanceTrackingParsingData } from 'src/infra/web/models/PerformanceTrackingModel';
 import { QuestionType } from 'src/infra/web/models/QuestionTypeModel';
 
 export const saltRounds = 10;
@@ -229,6 +230,67 @@ Format Rules:
 
 Note: Like a search engine, the most relevant paragraph (containing the closest match to the question's main ask) should appear first.
 `;
+};
+
+export const generatePerformanceTrackingPrompt = (
+  questions: {
+    question: string;
+    answeredCorrectly: boolean;
+  }[],
+) => {
+  return `
+  Task: Comprehensive Performance Analysis of Document-Based Questions
+
+Detailed Steps:
+1. Document Comprehension
+   - Thoroughly read and analyze the provided document
+   - Identify key themes, concepts, and nuanced topics
+   - Develop a deep understanding of the document's core content
+
+2. Intelligent Topic Grouping
+   - Create precise, meaningful topic groups that:
+     a) Reflect the document's substantive content
+     b) Provide meaningful insight into knowledge distribution
+     c) Ensure no critical themes are overlooked
+
+3. Question Categorization
+   - Systematically map each question to its most appropriate topic
+   - Criteria for topic assignment:
+     a) Semantic alignment with topic
+     b) Depth of question's relationship to topic
+     c) Precise contextual relevance
+
+4. Performance Calculation
+   - Calculate topic-specific performance using:
+     Percentage Correct = (Correctly Answered Questions / Total Topic Questions) * 100
+   - Round percentages to two decimal places
+   - Identify knowledge strengths and potential improvement areas
+
+5. Output Requirements
+   Strict JSON Structure:
+   [[topic, percentageCorrect, "Insights-driven improvement recommendation"]]
+     
+
+Evaluation Principles:
+- Maximize granularity in topic identification
+- Ensure comprehensive document theme representation
+- Provide actionable, constructive feedback
+- Maintain objectivity and data-driven analysis
+
+questions:
+${questions}
+
+Critical Instructions:
+- Base analysis EXCLUSIVELY on document content
+- Avoid external knowledge
+- Provide precise, meaningful topics
+- Generate constructive, encouraging improvement message
+
+MANDATORY OUTPUT FORMAT:
+
+   [[topic, percentageCorrect, "Insights-driven improvement recommendation"]]
+
+  `;
 };
 
 export const defaultPageSize = 10;

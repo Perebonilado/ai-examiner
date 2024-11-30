@@ -20,12 +20,20 @@ import {
   PerformanceTrackingParsingData,
   PerformanceTrackingRawData,
 } from '../models/PerformanceTrackingModel';
+import { EnvironmentVariables } from 'src/EnvironmentVariables';
+import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
+import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
+import { generatePerformanceTrackingPrompt } from 'src/constants';
+import { extractJSONDataFromMessages, generateUUID } from 'src/utils';
 
 @Controller('performance-tracking')
 export class PerformanceTrackingController {
   constructor(
     @Inject(QuestionProgressQueryService)
     private questionProgressQueryService: QuestionProgressQueryService,
+    @Inject(ExaminerService) private examinerService: ExaminerService,
+    @Inject(CourseDocumentQueryService)
+    private courseDocumentQueryService: CourseDocumentQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -54,6 +62,67 @@ export class PerformanceTrackingController {
           endDate: endOfLastWeek,
         });
 
+      const documentInfo =
+        await this.courseDocumentQueryService.findCourseDocumentById(
+          documentId,
+          userToken.sub,
+        );
+
+      const performanceDataForParsing =
+        await this.getPerformaceDataForProcessing(progressInfo);
+
+      const assistantId = EnvironmentVariables.config.assistantIdPaidPlan;
+
+      const temporaryVectorStoreName = `${generateUUID()}_${new Date().getTime()}`;
+
+      const temporaryVectorStore = await this.examinerService.createVectorStore(
+        temporaryVectorStoreName,
+      );
+
+      const updatedVectorStoreId =
+        await this.examinerService.attachFileToVectorStore(
+          documentInfo.openAiFileId,
+          temporaryVectorStore.id,
+        );
+
+      const thread = await this.examinerService.createThread();
+
+      const updatedThread =
+        await this.examinerService.attachVectorStoreToThread(
+          thread.id,
+          updatedVectorStoreId,
+        );
+
+      await this.examinerService.createThreadMessage(
+        updatedThread.id,
+        generatePerformanceTrackingPrompt(performanceDataForParsing),
+      );
+
+      const run = await this.examinerService.createRun(
+        assistantId,
+        updatedThread.id,
+      );
+
+      const messages = await this.examinerService.retrieveThreadMessages(
+        updatedThread.id,
+        run.id,
+      );
+
+      const performanceTracking = extractJSONDataFromMessages(messages)
+
+      return performanceTracking
+    } catch (error) {
+      throw new HttpException(
+        'Failed to get performance',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  public async getPerformaceDataForProcessing(
+    progressInfo: PerformanceTrackingRawData[],
+  ) {
+    try {
       const progressInfoMapping = progressInfo.map((pi) => {
         let questionData = [];
         let savedProgress = [];
@@ -125,12 +194,9 @@ export class PerformanceTrackingController {
         });
       }
 
-      console.log(performanceDataForParsing)
+      return performanceDataForParsing;
     } catch (error) {
-      throw new HttpException(
-        'Failed to get performance',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new Error('Failed to get performace data for processing');
     }
   }
 }
