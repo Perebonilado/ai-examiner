@@ -17,6 +17,8 @@ import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { QuestionProgressQueryService } from 'src/query/services/QuestionProgressQueryService';
 import * as moment from 'moment';
 import {
+  PerformanceTracking,
+  PerformanceTrackingModel,
   PerformanceTrackingParsingData,
   PerformanceTrackingRawData,
 } from '../models/PerformanceTrackingModel';
@@ -49,7 +51,7 @@ export class PerformanceTrackingController {
     @Param('documentId') documentId: string,
     @Query('period') period: 'this_week' | 'last_week',
     @Req() request: Request,
-  ) {
+  ): Promise<PerformanceTrackingModel> {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
 
@@ -70,10 +72,17 @@ export class PerformanceTrackingController {
             userToken.sub,
           );
 
-        return await this.generatePerformanceTrackingData(
-          progressInfo,
-          documentInfo,
-        );
+        const performanceTrackingInfo: PerformanceTracking[] =
+          await this.generatePerformanceTrackingData(
+            progressInfo,
+            documentInfo,
+          );
+
+        return {
+          data: performanceTrackingInfo,
+          documentTitle: documentInfo.title,
+          period: `${startDate} - ${endDate}`,
+        };
       } else {
         const startOfLastWeek = moment().subtract(1, 'week').startOf('week');
         // .format('YYYY-MM-DD');
@@ -106,7 +115,7 @@ export class PerformanceTrackingController {
               userToken.sub,
             );
 
-          const generatedPerformance =
+          const generatedPerformance: PerformanceTracking[] =
             await this.generatePerformanceTrackingData(
               progressInfo,
               documentInfo,
@@ -120,7 +129,11 @@ export class PerformanceTrackingController {
             userId: userToken.sub,
           });
 
-          return generatedPerformance;
+          return {
+            data: generatedPerformance,
+            documentTitle: documentInfo.title,
+            period: `${startOfLastWeek.format('YYYY-MM-DD')} - ${endOfLastWeek.format('YYYY-MM-DD')}`,
+          };
         }
       }
     } catch (error) {

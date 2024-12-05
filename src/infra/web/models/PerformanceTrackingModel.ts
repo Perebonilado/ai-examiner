@@ -21,4 +21,15 @@ export interface PerformanceTrackingRawData {
   id: string;
   questionType: QuestionType;
 }
-;
+
+type Topic = string;
+type Score = number;
+type Review = string;
+
+export type PerformanceTracking = [Topic, Score, Review];
+
+export interface PerformanceTrackingModel {
+  data: PerformanceTracking[];
+  documentTitle: string;
+  period: string;
+}
