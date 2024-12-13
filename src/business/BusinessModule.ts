@@ -22,6 +22,7 @@ import { CreateOneTimeSubscriptionHandler } from './handlers/OneTimeSubscription
 import { UpdateOneTimeSubscriptionHandler } from './handlers/OneTimeSubscription/UpdateOneTimeSubscriptionHandler';
 import { UpserQuestionProgressHandler } from './handlers/QuestionProgress/UpsertQuestionProgressHandler';
 import { UpdateCourseDocumentHandler } from './handlers/CourseDocument/UpdateCourseDocumentHandler';
+import { CreatePerformanceTrackingHandler } from './handlers/PerformanceTracking/CreatePerformanceTrackingHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -45,7 +46,8 @@ import { UpdateCourseDocumentHandler } from './handlers/CourseDocument/UpdateCou
     CreateOneTimeSubscriptionHandler,
     UpdateOneTimeSubscriptionHandler,
     UpserQuestionProgressHandler,
-    UpdateCourseDocumentHandler
+    UpdateCourseDocumentHandler,
+    CreatePerformanceTrackingHandler
   ],
   exports: [
     CreateUserHandler,
@@ -67,7 +69,8 @@ import { UpdateCourseDocumentHandler } from './handlers/CourseDocument/UpdateCou
     CreateOneTimeSubscriptionHandler,
     UpdateOneTimeSubscriptionHandler,
     UpserQuestionProgressHandler,
-    UpdateCourseDocumentHandler
+    UpdateCourseDocumentHandler,
+    CreatePerformanceTrackingHandler
   ],
 })
 export class BusinessModule {}

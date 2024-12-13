@@ -13,6 +13,7 @@ import { PermissionQueryService } from './services/PermissionQueryService';
 import { DocumentMessageQueryService } from './services/DocumentMessageQueryService';
 import { OneTimeSubscriptionQueryService } from './services/OneTimeSubscriptionQueryService';
 import { QuestionProgressQueryService } from './services/QuestionProgressQueryService';
+import { PerformanceTrackingQueryService } from './services/PerformanceTrackingQueryService';
 
 @Module({
   providers: [
@@ -29,7 +30,8 @@ import { QuestionProgressQueryService } from './services/QuestionProgressQuerySe
     PermissionQueryService,
     DocumentMessageQueryService,
     OneTimeSubscriptionQueryService,
-    QuestionProgressQueryService
+    QuestionProgressQueryService,
+    PerformanceTrackingQueryService
   ],
   exports: [
     UserQueryService,
@@ -45,7 +47,8 @@ import { QuestionProgressQueryService } from './services/QuestionProgressQuerySe
     PermissionQueryService,
     DocumentMessageQueryService,
     OneTimeSubscriptionQueryService,
-    QuestionProgressQueryService
+    QuestionProgressQueryService,
+    PerformanceTrackingQueryService
   ],
 })
 export class QueryModule {}

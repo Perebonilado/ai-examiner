@@ -16,6 +16,7 @@ import { SubscriptionModel } from './SubscriptionModel';
 import { DocumentMessageModel } from './DocumentMessageModel';
 import { OneTimeSubscriptionModel } from './OneTimeSubscriptionModel';
 import { QuestionProgressModel } from './QuestionProgressModel';
+import { PerformanceTrackingModel } from './PerformanceTrackingModel';
 
 @Table({ tableName: 'user' })
 export class UserModel extends Model<UserModel> {
@@ -91,6 +92,9 @@ export class UserModel extends Model<UserModel> {
 
   @HasOne(() => OneTimeSubscriptionModel, 'user_id')
   oneTimeSubscription: OneTimeSubscriptionModel;
+
+  @HasMany(()=>PerformanceTrackingModel, 'user_id')
+  performanceTracking: PerformanceTrackingModel
 
   @BeforeCreate
   static addUUID(instance: UserModel) {
