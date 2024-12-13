@@ -46,7 +46,7 @@ import { PerformanceTrackingController } from './controllers/PerformanceTracking
     DocumentMessageController,
     QuestionProgressController,
     SpeechController,
-    PerformanceTrackingController
+    PerformanceTrackingController,
   ],
 })
 export class InfraWebModule {}

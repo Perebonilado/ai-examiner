@@ -19,7 +19,15 @@ export const generateQuestionsPrompt = (
   questionType: QuestionType = 'Multiple Choice',
 ) => {
   const basePrompt = `Analyze the document thoroughly. Generate ${questionCount} unique and new ${questionType === 'Flash Cards' ? 'flashcard-style' : questionType === 'Multiple True-False' ? 'multiple true-false' : 'multiple-choice'} questions based on key concepts. ENSURE THAT EVERY QUESTION IS VERY DIFFICULT TO ANSWER. THE KIND OF DIFFICULTY THAT A COLLEGE PROFESSOR WOULD FIND CHALLENGING. THE QUESTIONS SHOULD REQUIRE THE USER TO HAVE A LONG TRAIN OF THOUGHTS BEFORE FIGURING OUT THE ANSWER FROM THE OPTIONS. Before generating each question Double-check each question and its options against the document to ensure absolute accuracy while maintaining high difficulty. Ensure questions are new and differ from previously generated questions. 
-${focusAreas?.length ? `Focus specifically on these concepts: ${focusAreas.join(', ')}. Create specific, concept-focused questions that test core understanding. Distribute questions evenly across concepts and shuffle their order.` : 'Consider the differenct concepts the document taught within the document and distribute questions evenly across these concepts. Consider concepts not explored in previous questions'}. AGAIN, ENSURE THE QUESTIONS AND OPTIONS ARE AT THE HIGHEST DIFFICULTY POSSIBLE. THE OPTIONS SHOULD INCLUDE DISTRACTORS THAT REQUIRE DEEP UNDERSTANDING TO RULE OUT. THE QUESTIONS SHOULD REQUIRE THE READER TO UNDERGO MULTISTEP REASONING AND CRITICAL THINKING. 
+${focusAreas?.length ? `Focus specifically on these concepts: ${focusAreas.join(', ')}. Create specific, concept-focused questions that test core understanding. Distribute questions evenly across concepts and shuffle their order. QUESTIONS SHOULD SOLELY BE BASED ON THESE CONCEPTS, NO OTEHER AREAS WITHIN THE DOCUMENT.` : 'Consider the differenct concepts the document taught within the document and distribute questions evenly across these concepts. Consider concepts not explored in previous questions'}. 
+${questionType !== 'Flash Cards' ? 'AGAIN, ENSURE THE QUESTIONS AND OPTIONS ARE AT THE HIGHEST DIFFICULTY POSSIBLE. THE OPTIONS SHOULD INCLUDE DISTRACTORS THAT REQUIRE DEEP UNDERSTANDING TO RULE OUT. THE QUESTIONS SHOULD REQUIRE THE READER TO UNDERGO MULTISTEP REASONING AND CRITICAL THINKING.' : ''}
+
+TOPIC TAGGING INSTRUCTIONS [VERY IMPORTANT]:
+- ${focusAreas?.length ? 'Tag each question PRECISELY to the specific focus area it covers' : 'IDENTIFY and TAG each question with the most appropriate topic from the document'}
+- Topic tags should be EXTREMELY PRECISE and DIRECTLY RELATED to the question's content
+- Use concise, specific topic names that clearly indicate the exact concept being tested
+- Ensure each question is tagged to ONLY ONE primary topic
+${!focusAreas?.length ? '- Ensure that topics are broad concepts within the document that the question touches on.' : ''}
 
 For each question:
 1. Ensure relevance to document content
@@ -39,7 +47,7 @@ For each question:
    - Vary the types of scenarios (e.g., diagnosis, treatment planning, interpretation of results)
    - Ensure that answering the question requires understanding and applying concepts from the document
    - Avoid overly complex or rare clinical situations unless specifically relevant to the document's focus
-   - CRITICAL: Vary the position of the correct answer within the options. If the first question has A at it's correct option, the next question may have D as its correct option. Ensure this is varied. THERE SHOULD BE NO PATTERN, THERE SHOULD BE AN UNEVEN DISTRIBUTION OF EITHER A, B, C OR D AS THE CORRECT OPTION.
+   - CRITICAL: Vary the position of the correct answer within the options. If the first question has A at it's correct option, the next question may have D as its correct option. Ensure this is varied. THERE SHOULD BE NO PATTERN, THERE SHOULD BE AN UNEVEN DISTRIBUTION OF EITHER A, B, C OR D AS THE CORRECT OPTION. HOWEVER, EACH QUESTION SHOULD HAVE AT LEAST ONE AS ITS CORRECT OPTION. THIS IS COMPULSORY AND NON-NEGOTIABLE.
 THIS INSTRUCTION IS CRITICAL FOR ALL QUESTIONS - STRICTLY ADHERE TO CREATING SCENARIO-BASED QUESTIONS THAT APPLY DOCUMENT CONCEPTS.`;
 
   const directQuestionPrompt = `8. IMPORTANT: Generate ONLY direct, concept-based questions. DO NOT use any scenarios, case studies, or hypothetical situations.
@@ -48,7 +56,7 @@ THIS INSTRUCTION IS CRITICAL FOR ALL QUESTIONS - STRICTLY ADHERE TO CREATING SCE
    - Use formats like ${questionType === 'Flash Cards' ? '"What is...", "Define...", "Name...", "Identify..."' : questionType === 'Multiple True-False' ? '"Which of the following statements are true regarding...?", "Evaluate the following statements about..."' : '"Which of the following best describes...?", "How does X differ from Y?", "What is...", "Identify...", "Which of the following..."'}
    - Avoid any patient scenarios or clinical vignettes
    - Questions should be straightforward and assess factual recall or conceptual understanding
-   - CRITICAL: Vary the position of the correct answer within the options. If the first question has A at it's correct option, the next question may have D as its correct option. Ensure this is varied. THERE SHOULD BE NO PATTERN. THERE SHOULD BE AN UNEVEN DISTRIBUTION OF EITHER A, B, C OR D AS THE CORRECT OPTION.
+   - CRITICAL: Vary the position of the correct answer within the options. If the first question has A at it's correct option, the next question may have D as its correct option. Ensure this is varied. THERE SHOULD BE NO PATTERN, THERE SHOULD BE AN UNEVEN DISTRIBUTION OF EITHER A, B, C OR D AS THE CORRECT OPTION. HOWEVER, EACH QUESTION SHOULD HAVE AT LEAST ONE AS ITS CORRECT OPTION. THIS IS COMPULSORY AND NON-NEGOTIABLE.
 THIS INSTRUCTION IS CRITICAL - STRICTLY ADHERE TO CREATING ONLY DIRECT QUESTIONS WITHOUT ANY SCENARIOS.`;
 
   const flashCardPrompt = `9. IMPORTANT: For flashcard questions, focus on the following:
@@ -67,7 +75,7 @@ THIS INSTRUCTION IS CRITICAL - STRICTLY ADHERE TO CREATING ONLY DIRECT QUESTIONS
   - Ensure questions are concise and directly test recall of specific information
   - Answers should be brief and precise, promoting quick memorization
   - Vary question types to cover different aspects of memorization (e.g., term to definition, definition to term, cause to effect)
-  - Place the correct answer as the first option, and leave other options empty
+  - Place the correct answer as the first option, and leave other options empty [VERY IMPORTANT AND CRITICAL]
 
 CRITICAL: Ensure each generated question is unique and diverse:
 - Do not repeat question formats or topics within the same set of questions
@@ -156,15 +164,17 @@ Ignore images. Return only a JSON array in this format:
     ],
     ${questionType !== 'Multiple True-False' ? '"correctAnswerId": "string",' : ''}
     "explanation": "string",
-    "hint": "string"
+    "hint": "string",
+    "topic": "string"
   }
 ]
 
 IMPORTANT FORMAT RULES:
 1. For each question, the options' IDs should be A, B, C, or D consecutively
 2. The option "value" field should contain ONLY the statement text, without any option ID prefixes
-3. ${questionType === 'Flash Cards' ? 'For flashcards, include only one option with the correct answer, and set its ID as the correctAnswerId. Leave other options empty.' : ''}
-4. ${questionType === 'Multiple True-False' ? 'For Multiple True-False questions:\n   - Include the "answer" field for each option, set to either true or false\n   - Keep the true/false distribution COMPLETELY RANDOM with NO PATTERNS\n   - DO NOT include option IDs (A, B, C, D) in the option values' : ''}
+3. Ensure EVERY question is tagged with a topic. THIS IS VERY IMPORTANT AND NON-NEGOTIABLE
+4. ${questionType === 'Flash Cards' ? 'For flashcards, include only one option with the correct answer, and set its ID as the correctAnswerId. Leave other options empty.' : ''}
+5. ${questionType === 'Multiple True-False' ? 'For Multiple True-False questions:\n   - Include the "answer" field for each option, set to either true or false\n   - Keep the true/false distribution COMPLETELY RANDOM with NO PATTERNS\n   - DO NOT include option IDs (A, B, C, D) in the option values' : ''}
 
 If unable to generate questions, return "unable to generate questions".`;
 
@@ -239,54 +249,34 @@ export const generatePerformanceTrackingPrompt = (
   }[],
 ) => {
   return `
-  Task: Comprehensive Performance Analysis of Document-Based Questions
+  Follow the steps laid out below very strictly.
+  
+  Steps:
+  1. Please review the document, and understand thoroughly what the document is about deeply and in detail. Then, determine if it is divided into detailed distinct topics, chapters or content covering various specific concepts in the document. Check if the broad concepts or chapters or topics are further broken down into specific concepts or topics. If it is, extract and return all the specific topics. If not, analyze the document, identify different specific concepts or topics, and return them. Ensure that they are detailed, touching on specific concepts and not a broad overview.
 
-Detailed Steps:
-1. Document Comprehension
-   - Thoroughly read and analyze the provided document
-   - Identify key themes, concepts, and nuanced topics
-   - Develop a deep understanding of the document's core content
+  2. Using the questions provided below, group each into its most appropriate topic.
 
-2. Intelligent Topic Grouping
-   - Create precise, meaningful topic groups that:
-     a) Reflect the document's substantive content
-     b) Provide meaningful insight into knowledge distribution
-     c) Ensure no critical themes are overlooked
+  3. Calculate topic-specific performance using:
+     Percentage Correct = (Correctly Answered Questions / Total Topic Questions) * 100. Round off to 2 decimal places
 
-3. Question Categorization
-   - Systematically map each question to its most appropriate topic
-   - Criteria for topic assignment:
-     a) Semantic alignment with topic
-     b) Depth of question's relationship to topic
-     c) Precise contextual relevance
+  4. Based on the score for each topic, provide a recommendation on ways the student can improve. Be practical about this stating specific areas in the document that the student can focus on to improve on that topic. Give examples of questions (not statements) that they failed and small excerpts pointing to areas in the document that they can study to do better. These excerpts need to be verbatim, as it is in the document.
 
-4. Performance Calculation
-   - Calculate topic-specific performance using:
-     Percentage Correct = (Correctly Answered Questions / Total Topic Questions) * 100
-   - Round percentages to two decimal places
-   - Identify knowledge strengths and potential improvement areas
-
-5. Output Requirements
+     Recommendation Guidelines:
+     - Recommend ONLY study practices from these types: multiple choice, multiple true false, and flash cards
+     - Match recommended practice type to specific learning needs of each topic
+     - Explain brief rationale for why this practice type will help address performance gaps
+  
+  5. Output Requirements. Return only this JSON structure based on the data you provide. Only this structure below and nothing else.
    Strict JSON Structure:
    [[topic, percentageCorrect, "Insights-driven improvement recommendation"]]
      
 
-Evaluation Principles:
-- Maximize granularity in topic identification
-- Ensure comprehensive document theme representation
-- Provide actionable, constructive feedback
-- Maintain objectivity and data-driven analysis
-
-questions:
+Questions:
 ${questions}
 
-Critical Instructions:
-- Base analysis EXCLUSIVELY on document content
-- Avoid external knowledge
-- Provide precise, meaningful topics
-- Generate constructive, encouraging improvement message
 
-MANDATORY OUTPUT FORMAT:
+
+REMEMBER, MANDATORY OUTPUT FORMAT:
 
    [[topic, percentageCorrect, "Insights-driven improvement recommendation"]]
 

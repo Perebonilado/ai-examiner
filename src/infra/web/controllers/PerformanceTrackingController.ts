@@ -1,11 +1,9 @@
 import {
   Controller,
-  Post,
   HttpException,
   HttpStatus,
   Inject,
   Req,
-  Body,
   Param,
   UseGuards,
   Get,
@@ -30,6 +28,7 @@ import { extractJSONDataFromMessages, generateUUID } from 'src/utils';
 import { CourseDocumentModel } from 'src/infra/db/models/CourseDocumentModel';
 import { PerformanceTrackingQueryService } from 'src/query/services/PerformanceTrackingQueryService';
 import { CreatePerformanceTrackingHandler } from 'src/business/handlers/PerformanceTracking/CreatePerformanceTrackingHandler';
+import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 
 @Controller('performance-tracking')
 export class PerformanceTrackingController {
@@ -43,10 +42,54 @@ export class PerformanceTrackingController {
     private performanceTrackingQueryService: PerformanceTrackingQueryService,
     @Inject(CreatePerformanceTrackingHandler)
     private createPerformanceTrackingHandler: CreatePerformanceTrackingHandler,
+    @Inject(QuestionQueryService)
+    private questionQueryService: QuestionQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
-  @Get('/:documentId')
+  @Get('/question/:questionId')
+  public async getPerformanceReviewForQuestion(
+    @Param('questionId') questionId: string,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+
+      const performanceTrackingRawData =
+        await this.questionProgressQueryService.getPerformanceTrackingRawDataForQuestion(
+          questionId,
+          userToken.sub,
+        );
+
+      const questionInfo = await this.questionQueryService.findQuestionsById(
+        questionId,
+        userToken.sub,
+      );
+
+      const performanceTrackingParsingData =
+        this.getPerformaceDataForProcessing(performanceTrackingRawData);
+
+      const performanceData = this.groupQuestionsByTopicAndAccuracy(
+        performanceTrackingParsingData,
+      );
+
+      return {
+        ...performanceData,
+        documentTitle: questionInfo.documentTitle,
+        documentId: questionInfo.documentId,
+        score: questionInfo.score,
+        createdOn: questionInfo.createdOn,
+      };
+    } catch (error) {
+      throw new HttpException(
+        'Failed to get performance tracking for question',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/document/:documentId')
   public async getPerformanceTrackingPerDocument(
     @Param('documentId') documentId: string,
     @Query('period') period: 'this_week' | 'last_week',
@@ -54,6 +97,12 @@ export class PerformanceTrackingController {
   ): Promise<PerformanceTrackingModel> {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
+
+      const documentInfo =
+        await this.courseDocumentQueryService.findCourseDocumentById(
+          documentId,
+          userToken.sub,
+        );
 
       if (period === 'this_week') {
         const startDate = moment().startOf('week').format('YYYY-MM-DD');
@@ -65,12 +114,6 @@ export class PerformanceTrackingController {
             startDate,
             endDate,
           });
-
-        const documentInfo =
-          await this.courseDocumentQueryService.findCourseDocumentById(
-            documentId,
-            userToken.sub,
-          );
 
         const performanceTrackingInfo: PerformanceTracking[] =
           await this.generatePerformanceTrackingData(
@@ -97,9 +140,13 @@ export class PerformanceTrackingController {
           );
 
         if (existingProgressData) {
-          return existingProgressData.data.length
-            ? JSON.parse(existingProgressData.data)
-            : [];
+          return {
+            data: existingProgressData.data.length
+              ? JSON.parse(existingProgressData.data)
+              : [],
+            documentTitle: documentInfo.title,
+            period: `${startOfLastWeek.format('YYYY-MM-DD')} - ${endOfLastWeek.format('YYYY-MM-DD')}`,
+          };
         } else {
           const progressInfo =
             await this.questionProgressQueryService.getPreviousWeekProgress({
@@ -150,7 +197,7 @@ export class PerformanceTrackingController {
   ) {
     try {
       const performanceDataForParsing =
-        await this.getPerformaceDataForProcessing(progressInfo);
+        this.getPerformaceDataForProcessing(progressInfo);
 
       const assistantId = EnvironmentVariables.config.assistantIdPaidPlan;
 
@@ -200,7 +247,67 @@ export class PerformanceTrackingController {
     }
   }
 
-  public async getPerformaceDataForProcessing(
+  public groupQuestionsByTopicAndAccuracy(
+    performanceTrackingParsingData: PerformanceTrackingParsingData[],
+  ) {
+    try {
+      const groupedQuestions: Record<
+        string,
+        Record<'correct' | 'wrong', PerformanceTrackingParsingData[]>
+      > = {};
+
+      for (const parsingData of performanceTrackingParsingData) {
+        const topic = parsingData?.topic?.toLowerCase();
+        if (topic) {
+          // Initialize the topic group if it doesn't exist
+          if (groupedQuestions[topic] === undefined) {
+            groupedQuestions[topic] = { correct: [], wrong: [] };
+          }
+
+          // Correctly sort questions based on answeredCorrectly
+          if (parsingData.answeredCorrectly === true) {
+            groupedQuestions[topic].correct.push(parsingData);
+          } else {
+            groupedQuestions[topic].wrong.push(parsingData);
+          }
+        }
+      }
+
+      let topicsEvaluatedCorrectly: string[] = [];
+      let topicsEvaluatedWrongly: string[] = [];
+
+      const topicAnswerArr = Object.entries(groupedQuestions);
+
+      for (const item of topicAnswerArr) {
+        const topicIndex = 0;
+        const answerDataIndex = 1;
+        if (!item[answerDataIndex].wrong.length) {
+          topicsEvaluatedCorrectly.push(item[topicIndex]);
+        } else {
+          topicsEvaluatedWrongly.push(item[topicIndex]);
+        }
+      }
+
+      const totalTopics =
+        topicsEvaluatedCorrectly.length + topicsEvaluatedWrongly.length;
+      const percentageAnsweredCorrectly =
+        (topicsEvaluatedCorrectly.length / totalTopics) * 100;
+      const percentageAnsweredWrongly =
+        (topicsEvaluatedWrongly.length / totalTopics) * 100;
+
+      return {
+        groupedQuestions,
+        topicsEvaluatedCorrectly,
+        topicsEvaluatedWrongly,
+        percentageAnsweredCorrectly,
+        percentageAnsweredWrongly,
+      };
+    } catch (error) {
+      throw new Error('Failed to group questions');
+    }
+  }
+
+  public getPerformaceDataForProcessing(
     progressInfo: PerformanceTrackingRawData[],
   ) {
     try {
@@ -238,6 +345,8 @@ export class PerformanceTrackingController {
             performanceDataForParsing.push({
               answeredCorrectly: userAnsweredCorrectly,
               question,
+              topic: qd.topic,
+              selectedQuestionId: qd.id,
             });
           } else if (
             progressInfoMapping[i].questionType === 'Multiple True-False'
@@ -270,6 +379,8 @@ export class PerformanceTrackingController {
             performanceDataForParsing.push({
               answeredCorrectly: userAnsweredCorrectly,
               question,
+              topic: qd.topic,
+              selectedQuestionId: qd.id,
             });
           }
         });

@@ -4,6 +4,8 @@ import { QuestionType } from './QuestionTypeModel';
 export interface PerformanceTrackingParsingData {
   question: string;
   answeredCorrectly: boolean;
+  topic: string;
+  selectedQuestionId: string;
 }
 
 export interface PerformanceTrackingRawData {
@@ -16,6 +18,7 @@ export interface PerformanceTrackingRawData {
     correctAnswerId?: string;
     explanation: string;
     hint: string;
+    topic: string;
   }[];
   status: string;
   id: string;
