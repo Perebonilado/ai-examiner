@@ -40,13 +40,41 @@ export class QuestionProgressController {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
 
-      return await this.upsertQuestionProgressHandler.handle({
+      await this.upsertQuestionProgressHandler.handle({
         questionId,
         userId: userToken.sub,
         data: payload?.selectedQuestionId ? [{ ...payload }] : null,
         status: status ? status : 'in_progress',
         clearExistingProgress: clearExistingProgress === 'true' ? true : false,
       });
+
+      let retries = 0;
+      const MAX_RETRIES = 5;
+
+      let progress =
+        await this.questionProgressQueryService.findProgressByQuestionId(
+          questionId,
+        );
+
+      while (retries < MAX_RETRIES && status !== progress.status) {
+        await this.upsertQuestionProgressHandler.handle({
+          questionId,
+          userId: userToken.sub,
+          data: payload?.selectedQuestionId ? [{ ...payload }] : null,
+          status: status ? status : 'in_progress',
+          clearExistingProgress:
+            clearExistingProgress === 'true' ? true : false,
+        });
+
+        progress =
+          await this.questionProgressQueryService.findProgressByQuestionId(
+            questionId,
+          );
+
+        retries++;
+      }
+
+      return progress;
     } catch (error) {
       throw new HttpException(
         'An error occured while upserting progress',

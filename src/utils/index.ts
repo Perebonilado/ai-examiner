@@ -60,9 +60,13 @@ const extractJSONArray = (str: string): any[] => {
 export const extractJSONDataFromMessages = (
   messages: OpenAI.Beta.Threads.Messages.MessagesPage,
 ) => {
-  const data = (messages.data[0].content[0] as any).text.value;
+  const data = (messages?.data[0]?.content[0] as any)?.text?.value;
 
-  return extractJSONArray(data) as any;
+  if (data) {
+    return extractJSONArray(data) as any;
+  }
+
+  return []
 };
 
 export const convertSmallerDemoninationtoLarger = (
@@ -161,11 +165,9 @@ export const writeFileToStream = async (
   });
 };
 
-
 export const convertOldPptToText = async (file: Buffer) => {
   const tempDir = 'temp';
   try {
-
     // Create the temp directory if it doesn't exist
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir);
@@ -185,4 +187,4 @@ export const convertOldPptToText = async (file: Buffer) => {
     // Clean up the temporary directory and its contents
     await rm(tempDir, { recursive: true, force: true });
   }
-}
+};

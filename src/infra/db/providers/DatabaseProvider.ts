@@ -14,6 +14,7 @@ import { PlanPermissionModel } from '../models/PlanPermissionModel';
 import { DocumentMessageModel } from '../models/DocumentMessageModel';
 import { OneTimeSubscriptionModel } from '../models/OneTimeSubscriptionModel';
 import { QuestionProgressModel } from '../models/QuestionProgressModel';
+import { PerformanceTrackingModel } from '../models/PerformanceTrackingModel';
 
 export let sequelize: Sequelize;
 
@@ -46,7 +47,8 @@ export const databaseProviders = [
         PlanPermissionModel,
         DocumentMessageModel,
         OneTimeSubscriptionModel,
-        QuestionProgressModel
+        QuestionProgressModel,
+        PerformanceTrackingModel
       ]);
 
       try {

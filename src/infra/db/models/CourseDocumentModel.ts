@@ -12,6 +12,7 @@ import { generateUUID } from 'src/utils';
 import { UserModel } from './UserModel';
 import { QuestionModel } from './QuestionModel';
 import { DocumentMessageModel } from './DocumentMessageModel';
+import { PerformanceTrackingModel } from './PerformanceTrackingModel';
 
 @Table({ tableName: 'course_document' })
 export class CourseDocumentModel extends Model<CourseDocumentModel> {
@@ -105,6 +106,9 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
 
   @HasMany(()=>DocumentMessageModel, 'course_document_id')
   documentMessage: DocumentMessageModel
+
+  @HasMany(()=>PerformanceTrackingModel, 'course_document_id')
+  performanceTracking: PerformanceTrackingModel
 
   @BeforeCreate
   static addUUID(instance: CourseDocumentModel) {

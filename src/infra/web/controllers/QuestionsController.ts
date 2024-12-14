@@ -455,6 +455,7 @@ export class QuestionsController {
           if (
             body.selectedQuestionTopics &&
             body.selectedQuestionTopics.length
+            && body.saveSelectedTopics
           ) {
             const questionTopicsToCreate = await Promise.all(
               body.selectedQuestionTopics.map(async (t) => {
