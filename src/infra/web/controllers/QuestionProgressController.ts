@@ -57,12 +57,21 @@ export class QuestionProgressController {
         );
 
       while (retries < MAX_RETRIES && status !== progress.status) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await this.upsertQuestionProgressHandler.handle({
+          questionId,
+          userId: userToken.sub,
+          data: payload?.selectedQuestionId ? [{ ...payload }] : null,
+          status: status ? status : 'in_progress',
+          clearExistingProgress:
+            clearExistingProgress === 'true' ? true : false,
+        });
 
         progress =
           await this.questionProgressQueryService.findProgressByQuestionId(
             questionId,
           );
+
+        retries++;
       }
 
       return progress;
