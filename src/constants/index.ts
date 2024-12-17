@@ -172,7 +172,7 @@ IMPORTANT FORMAT RULES:
 1. For each question, the options' IDs should be A, B, C, or D consecutively
 2. The option "value" field should contain ONLY the statement text, without any option ID prefixes
 3. Ensure EVERY question is tagged with a topic. THIS IS VERY IMPORTANT AND NON-NEGOTIABLE
-4. ${questionType === 'Flash Cards' ? 'For flashcards, include only one option with the correct answer, and set its ID as the correctAnswerId. Leave other options empty.' : ''}
+4. ${questionType === 'Flash Cards' ? 'For flashcards, include only one option with the correct answer, and set its ID as the correctAnswerId. The option field will have only one object within it on this same shape: { "value": "string", "id": "string" } and that should be the correct option' : ''}
 5. ${questionType === 'Multiple True-False' ? 'For Multiple True-False questions:\n   - Include the "answer" field for each option, set to either true or false\n   - Keep the true/false distribution COMPLETELY RANDOM with NO PATTERNS\n   - DO NOT include option IDs (A, B, C, D) in the option values' : ''}
 
 If unable to generate questions, return "unable to generate questions".`;
