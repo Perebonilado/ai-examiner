@@ -1,5 +1,4 @@
 import { MessageReponseType } from 'src/infra/web/models/MessageResponseTypeModel';
-import { PerformanceTrackingParsingData } from 'src/infra/web/models/PerformanceTrackingModel';
 import { QuestionType } from 'src/infra/web/models/QuestionTypeModel';
 import { FloDeskSegmentKeys, FloDeskSegmentModel } from 'src/integrations/flo-desk-mailer/models/FloDeskSegmentModel';
 

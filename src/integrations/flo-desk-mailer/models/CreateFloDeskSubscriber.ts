@@ -1,4 +1,3 @@
-import { FloDeskSegmentModel } from './FloDeskSegmentModel';
 
 export interface CreateFloDeskSubscriberPayload {
   email: string;
