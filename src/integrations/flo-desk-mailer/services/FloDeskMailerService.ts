@@ -24,6 +24,7 @@ export class FloDeskMailerService {
           email: payload.email,
           first_name: payload.firstName,
           last_name: payload.lastName,
+          segment_ids: [...payload.segment_ids],
         },
         {
           headers: {
@@ -33,7 +34,7 @@ export class FloDeskMailerService {
         },
       );
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new HttpException(
         'Failed to create subscriber on FloDesk',
         HttpStatus.INTERNAL_SERVER_ERROR,
