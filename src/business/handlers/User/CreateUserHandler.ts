@@ -12,6 +12,7 @@ import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { hashPassword } from 'src/utils';
 import { ManageMailChimpAudience } from 'src/integrations/mail-chimp/services/ManageMailChimpAudience';
 import { FloDeskMailerService } from 'src/integrations/flo-desk-mailer/services/FloDeskMailerService';
+import { FloDeskSegments } from 'src/constants';
 
 @Injectable()
 export class CreateUserHandler extends AbstractRequestHandlerTemplate<
@@ -54,6 +55,7 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
           email: savedUser.email,
           firstName: savedUser.firstName,
           lastName: savedUser.lastName,
+          segment_ids: [FloDeskSegments.newSubscribers.id]
         });
 
         const token = this.jwtService.sign(

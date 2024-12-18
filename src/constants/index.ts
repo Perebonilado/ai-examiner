@@ -1,6 +1,7 @@
 import { MessageReponseType } from 'src/infra/web/models/MessageResponseTypeModel';
 import { PerformanceTrackingParsingData } from 'src/infra/web/models/PerformanceTrackingModel';
 import { QuestionType } from 'src/infra/web/models/QuestionTypeModel';
+import { FloDeskSegmentKeys, FloDeskSegmentModel } from 'src/integrations/flo-desk-mailer/models/FloDeskSegmentModel';
 
 export const saltRounds = 10;
 
@@ -303,3 +304,11 @@ REMEMBER, MANDATORY OUTPUT FORMAT:
 export const defaultPageSize = 10;
 
 export const defaultPageNumber = 1;
+
+
+export const FloDeskSegments: Record<FloDeskSegmentKeys, FloDeskSegmentModel> = {
+  newSubscribers: {
+    id: '672f779aa31d3077e11aca54',
+    name: 'NEW SIGN UP',
+  },
+};
