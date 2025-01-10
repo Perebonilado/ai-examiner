@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import { createReadStream, existsSync } from 'fs';
 import { extname, join } from 'path';
@@ -10,13 +10,15 @@ import {
   extractTextFromBuffer,
   extractTextFromPDF,
   generateUUID,
-  getFileNameWithoutExtension,
   writeFileToStream,
 } from 'src/utils';
+import { ILovePdfService } from 'src/integrations/i-love-pdf/services/ILovePdfService';
 
 @Injectable()
 export class ExaminerService {
-  constructor() {
+  constructor(
+    @Inject(ILovePdfService) private IlovePdfService: ILovePdfService,
+  ) {
     this.intializeOpenAiClient();
   }
 
@@ -184,7 +186,7 @@ export class ExaminerService {
     },
   ) {
     try {
-      let tempFilePath: string | null
+      let tempFilePath: string | null;
       const isPDF = file.mimetype === 'application/pdf';
       const mimeTypesToConvertToText = [
         'application/pdf',
@@ -209,7 +211,9 @@ export class ExaminerService {
             });
           }
         } else {
-          fileContent = await extractTextFromPDF(file, {
+          const fileArrayBuffer =
+            await this.IlovePdfService.processFileBasedOnTool(file, 'pdfocr');
+          fileContent = fileContent = await extractTextFromPDF(fileArrayBuffer, {
             firstPage: pdfPageRange?.start,
             lastPage: pdfPageRange?.end,
           });
@@ -220,7 +224,7 @@ export class ExaminerService {
 
       if (isPDF && !fileContent.length) {
         throw new HttpException(
-          'Scanned PDFs or PDFs containing only images are not allowed / Select a valid page range',
+          'PDF content is unreadable',
           HttpStatus.BAD_REQUEST,
         );
       }
@@ -237,20 +241,22 @@ export class ExaminerService {
       });
 
       // Add a small delay before attempting to delete the file
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       if (tempFilePath && existsSync(tempFilePath)) {
         try {
           await unlink(tempFilePath);
         } catch (unlinkError) {
-          console.warn(`Failed to delete temporary file: ${tempFilePath}`, unlinkError);
+          console.warn(
+            `Failed to delete temporary file: ${tempFilePath}`,
+            unlinkError,
+          );
           // Continue execution even if file deletion fails
         }
       }
 
       return uploadedFile;
     } catch (error) {
-      console.log(error)
       throw new HttpException(
         error || 'Failed to upload file',
         HttpStatus.BAD_GATEWAY,
@@ -311,11 +317,14 @@ export class ExaminerService {
     }
   }
 
-  public async retrieveRun(threadId: string, runId: string){
+  public async retrieveRun(threadId: string, runId: string) {
     try {
-      return await this.openAiClient.beta.threads.runs.retrieve(threadId, runId)
+      return await this.openAiClient.beta.threads.runs.retrieve(
+        threadId,
+        runId,
+      );
     } catch (error) {
-      throw new HttpException("Failed to retrieve run", HttpStatus.BAD_GATEWAY)
+      throw new HttpException('Failed to retrieve run', HttpStatus.BAD_GATEWAY);
     }
   }
 

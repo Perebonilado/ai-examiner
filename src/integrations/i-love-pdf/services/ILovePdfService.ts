@@ -18,12 +18,33 @@ export class ILovePdfService {
   private baseUrl = `https://api.ilovepdf.com/v1`;
   private token = ``;
 
+  public async authenticate(): Promise<string> {
+    try {
+      const { data } = await this.httpService.axiosRef.post(
+        `${this.baseUrl}/auth`,
+        {
+          public_key:
+            'project_public_2e41c19f1c9dd6ed272ab4451f942386_bcxMIa08262049c01552b04793d2e590d0217',
+        },
+      );
+
+      return data['token'];
+    } catch (error) {
+      throw new HttpException(
+        'Failed to authenticate pdf lib',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   public async processFileBasedOnTool(
     file: Express.Multer.File,
     tool: ToolType,
     optionalArgs?: any,
-  ): Promise<ArrayBuffer> {
+  ): Promise<Buffer> {
     try {
+      const token = await this.authenticate();
+      this.token = token;
       const { server, task } = await this.startTask(tool);
 
       const uploadedFile = await this.uploadFile(server, {
@@ -33,13 +54,13 @@ export class ILovePdfService {
 
       const fileInfo = [
         {
-          filename: file.filename,
+          filename: file['originalname'] ?? 'file-to-upload',
           server_filename: uploadedFile.server_filename,
         },
       ];
 
-      const fileProcessingInfo = await this.processFile(
-        task,
+      await this.processFile(
+        server,
         {
           files: fileInfo,
           task,
@@ -80,17 +101,36 @@ export class ILovePdfService {
     payload: UploadFilePayloadModel,
   ): Promise<FileUploadModel> {
     try {
+      const formData = new FormData();
+      formData.append('task', payload.task);
+      
+      // Create a blob from the Multer file buffer
+      const blob = new Blob([payload.file.buffer], { 
+        type: payload.file.mimetype 
+      });
+      
+      // Append file to FormData with original filename
+      formData.append('file', blob, payload.file.originalname);
+  
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      };
+  
       const { data } = await this.httpService.axiosRef.post(
         `https://${server}/v1/upload`,
-        { ...payload },
-        { headers: { Authorization: `Bearer ${this.token}` } },
+        formData,
+        config
       );
-
+  
       return data;
     } catch (error) {
+
       throw new HttpException(
         'Failed to upload file for processing',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
   }
@@ -119,14 +159,14 @@ export class ILovePdfService {
   private async downloadFile(
     server: string,
     task: string,
-  ): Promise<ArrayBuffer> {
+  ): Promise<Buffer> {
     try {
       const { data } = await this.httpService.axiosRef.get(
         `https://${server}/v1/download/${task}`,
-        { headers: { Authorization: `Bearer ${this.token}` } },
+        { headers: { Authorization: `Bearer ${this.token}` }, responseType: 'arraybuffer' },
       );
 
-      return data;
+      return Buffer.from(data);
     } catch (error) {
       throw new HttpException(
         'Failed to process download file',
@@ -135,3 +175,4 @@ export class ILovePdfService {
     }
   }
 }
+
