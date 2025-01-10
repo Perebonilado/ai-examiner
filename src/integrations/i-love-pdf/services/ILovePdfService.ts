@@ -10,6 +10,7 @@ import {
   ProcessFileModel,
   ProcessFilePayloadModel,
 } from '../models/ProcessFileModel';
+import { EnvironmentVariables } from 'src/EnvironmentVariables';
 
 @Injectable()
 export class ILovePdfService {
@@ -23,8 +24,7 @@ export class ILovePdfService {
       const { data } = await this.httpService.axiosRef.post(
         `${this.baseUrl}/auth`,
         {
-          public_key:
-            'project_public_2e41c19f1c9dd6ed272ab4451f942386_bcxMIa08262049c01552b04793d2e590d0217',
+          public_key: EnvironmentVariables.config.iLovePdfPublicKey,
         },
       );
 
@@ -103,34 +103,33 @@ export class ILovePdfService {
     try {
       const formData = new FormData();
       formData.append('task', payload.task);
-      
+
       // Create a blob from the Multer file buffer
-      const blob = new Blob([payload.file.buffer], { 
-        type: payload.file.mimetype 
+      const blob = new Blob([payload.file.buffer], {
+        type: payload.file.mimetype,
       });
-      
+
       // Append file to FormData with original filename
       formData.append('file', blob, payload.file.originalname);
-  
+
       const config = {
         headers: {
-          'Authorization': `Bearer ${this.token}`,
+          Authorization: `Bearer ${this.token}`,
           'Content-Type': 'multipart/form-data',
         },
       };
-  
+
       const { data } = await this.httpService.axiosRef.post(
         `https://${server}/v1/upload`,
         formData,
-        config
+        config,
       );
-  
+
       return data;
     } catch (error) {
-
       throw new HttpException(
         'Failed to upload file for processing',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
@@ -156,14 +155,14 @@ export class ILovePdfService {
     }
   }
 
-  private async downloadFile(
-    server: string,
-    task: string,
-  ): Promise<Buffer> {
+  private async downloadFile(server: string, task: string): Promise<Buffer> {
     try {
       const { data } = await this.httpService.axiosRef.get(
         `https://${server}/v1/download/${task}`,
-        { headers: { Authorization: `Bearer ${this.token}` }, responseType: 'arraybuffer' },
+        {
+          headers: { Authorization: `Bearer ${this.token}` },
+          responseType: 'arraybuffer',
+        },
       );
 
       return Buffer.from(data);
@@ -175,4 +174,3 @@ export class ILovePdfService {
     }
   }
 }
-

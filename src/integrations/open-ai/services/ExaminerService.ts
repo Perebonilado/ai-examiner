@@ -213,10 +213,13 @@ export class ExaminerService {
         } else {
           const fileArrayBuffer =
             await this.IlovePdfService.processFileBasedOnTool(file, 'pdfocr');
-          fileContent = fileContent = await extractTextFromPDF(fileArrayBuffer, {
-            firstPage: pdfPageRange?.start,
-            lastPage: pdfPageRange?.end,
-          });
+          fileContent = fileContent = await extractTextFromPDF(
+            fileArrayBuffer,
+            {
+              firstPage: pdfPageRange?.start,
+              lastPage: pdfPageRange?.end,
+            },
+          );
         }
       } else {
         fileContent = file.buffer;
