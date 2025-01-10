@@ -115,12 +115,12 @@ export const getPaystackHash = (data: string): string => {
 };
 
 export const extractTextFromPDF = async (
-  file: Express.Multer.File,
+  buffer: Buffer,
   options: PDFExtractOptions = {},
 ) => {
   try {
     const pdfExtract = new PDFExtract();
-    const data = await pdfExtract.extractBuffer(file.buffer, options);
+    const data = await pdfExtract.extractBuffer(buffer, options);
     return data.pages
       .flatMap((page) => page.content.map((item) => item.str))
       .join(' ');

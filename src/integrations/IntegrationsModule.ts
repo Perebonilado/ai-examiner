@@ -7,6 +7,7 @@ import { PaystackModule } from './paystack/PaystackModule';
 import { IpStackModule } from './ip-stack/IpStackModule';
 import { FloDeskMailerModule } from './flo-desk-mailer/FloDeskMailerModule';
 import { IpInfoModule } from './ip-info/IpInfoModule';
+import { ILovePDFModule } from './i-love-pdf/ILovePDFModule';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { IpInfoModule } from './ip-info/IpInfoModule';
     PaystackModule,
     IpStackModule,
     FloDeskMailerModule,
-    IpInfoModule
+    IpInfoModule,
+    ILovePDFModule
   ],
   exports: [
     OpenAiModule,
@@ -27,7 +29,8 @@ import { IpInfoModule } from './ip-info/IpInfoModule';
     PaystackModule,
     IpStackModule,
     FloDeskMailerModule,
-    IpInfoModule
+    IpInfoModule,
+    ILovePDFModule
   ],
 })
 export class IntegrationsModule {}
