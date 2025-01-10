@@ -26,6 +26,7 @@ export interface Config {
   emailHost: string;
   ipStackApiKey: string;
   ipInfoToken: string;
+  iLovePdfPublicKey: string;
 }
 
 export default (): Config => ({
@@ -55,5 +56,6 @@ export default (): Config => ({
   emailUser: process.env.Email_user,
   emailHost: process.env.Email_host,
   ipStackApiKey: process.env.IP_STACK_API_KEY,
-  ipInfoToken: process.env.IP_INFO_TOKEN
+  ipInfoToken: process.env.IP_INFO_TOKEN,
+  iLovePdfPublicKey: process.env.ILOVEPDF_PUBLIC_KEY,
 });
