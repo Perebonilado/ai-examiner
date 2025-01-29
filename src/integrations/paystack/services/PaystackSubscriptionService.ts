@@ -44,6 +44,9 @@ export class PaystackSubscriptionService {
       email: payload.email,
       amount: '50',
       plan: payload.plan,
+      metadata: {
+        cancel_action: `${EnvironmentVariables.config.frontendBaseUrl}/pricing`,
+      },
     } as Record<string, any>;
 
     if (payload.startDate) {
@@ -97,8 +100,9 @@ export class PaystackSubscriptionService {
           channels: ['bank_transfer', 'bank', 'ussd'],
           metadata: {
             plan_code: planCode,
+            cancel_action: `${EnvironmentVariables.config.frontendBaseUrl}/pricing`,
           },
-          callback_url: `${EnvironmentVariables.config.frontendBaseUrl}/new-document`
+          callback_url: `${EnvironmentVariables.config.frontendBaseUrl}/new-document`,
         },
         {
           headers: {
