@@ -203,7 +203,8 @@ export class ExaminerService {
       if (mimeTypesToConvertToText.includes(file.mimetype)) {
         if (!isPDF) {
           if (file.mimetype === 'application/vnd.ms-powerpoint') {
-            fileContent = await convertOldPptToText(file.buffer);
+            const fileArrayBuffer = await this.IlovePdfService.processFileBasedOnTool(file, 'officepdf')
+            fileContent = await extractTextFromPDF(fileArrayBuffer)
           } else {
             fileContent = await extractTextFromBuffer({
               mimeType: file.mimetype,
