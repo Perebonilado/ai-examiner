@@ -16,7 +16,7 @@ import { CreateUserDto } from 'src/dto/CreateUserDto';
 import { AuthService } from 'src/infra/auth/services/AuthService';
 import { ZodValidationPipe } from 'src/pipes/ZodValidationPipe.pipe';
 import { SignUpValidationSchema } from '../zod-validation-schemas/SignUpValidationSchema';
-import { LoginUserDto } from 'src/dto/LoginUserDto';
+import { LoginGoogleMobileDto, LoginUserDto } from 'src/dto/LoginUserDto';
 import { LoginValidationSchema } from '../zod-validation-schemas/LoginValidationSchema';
 import { GoogleOauthGuard } from 'src/infra/auth/guards/GoogleOauthGuard';
 import { Request, Response } from 'express';
@@ -30,6 +30,7 @@ import { MailerService } from 'src/integrations/mailer/services/MailerService';
 import { ResetPasswordValidationSchema } from '../zod-validation-schemas/ResetPasswordValidationSchema';
 import { ResetPasswordDto } from 'src/dto/ResetPasswordDto';
 import { UpdateUserHandler } from 'src/business/handlers/User/UpdateUserHandler';
+import { MobileGoogleValidationSchema } from '../zod-validation-schemas/MobileGoogleValidationSchema';
 
 @Controller('auth')
 export class AuthController {
@@ -63,6 +64,56 @@ export class AuthController {
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to login user',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Post('/mobile/google-auth')
+  @UsePipes(new ZodValidationPipe(MobileGoogleValidationSchema))
+  public async loginWithGoogleMobile(@Body() body: LoginGoogleMobileDto) {
+    try {
+      const { email, firstName, lastName } = body;
+
+      const user = await this.userQueryService.findOne(email);
+
+      if (user) {
+        const token = this.jwtService.sign(
+          {
+            sub: user.id,
+            email: user.email,
+          },
+          { secret: EnvironmentVariables.config.jwtSecret },
+        );
+
+        return {
+          status: HttpStatus.OK,
+          data: {
+            token,
+            message: 'Successful',
+          },
+        };
+      } else {
+        const createdUser = await this.createUserHandler.handle({
+          payload: {
+            email,
+            firstName,
+            lastName,
+            password: '',
+          },
+        });
+
+        return {
+          status: HttpStatus.OK,
+          data: {
+            token: createdUser.data.token,
+            message: 'Successful',
+          },
+        };
+      }
+    } catch (error) {
+      throw new HttpException(
+        'google oauth login error on mobile',
         HttpStatus.BAD_REQUEST,
       );
     }
