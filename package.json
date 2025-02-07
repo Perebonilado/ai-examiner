@@ -47,7 +47,7 @@
     "mysql2": "^3.9.7",
     "nodemailer": "^6.9.13",
     "office-text-extractor": "3.4.0-beta.4",
-    "openai": "^4.56.0",
+    "openai": "^4.82.0",
     "passport": "^0.7.0",
     "passport-google-oauth2": "^0.2.0",
     "passport-jwt": "^4.0.1",
