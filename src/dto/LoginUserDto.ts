@@ -4,7 +4,5 @@ export interface LoginUserDto {
 }
 
 export interface LoginGoogleMobileDto {
-  firstName: string;
-  lastName: string;
-  email: string;
+  token: string;
 }
