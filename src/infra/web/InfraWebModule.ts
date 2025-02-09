@@ -20,6 +20,7 @@ import { DocumentMessageController } from './controllers/DocumentMessageControll
 import { QuestionProgressController } from './controllers/QuestionProgressController';
 import { SpeechController } from './controllers/SpeechController';
 import { PerformanceTrackingController } from './controllers/PerformanceTrackingController';
+import { GoogleAuthService } from '../auth/services/GoogleAuthService';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { PerformanceTrackingController } from './controllers/PerformanceTracking
     BusinessModule,
     QueryModule,
   ],
-  providers: [AuthService, GoogleStrategy],
+  providers: [AuthService, GoogleStrategy, GoogleAuthService],
   controllers: [
     QuestionsController,
     AuthController,
