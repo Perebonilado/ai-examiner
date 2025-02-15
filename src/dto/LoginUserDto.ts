@@ -5,4 +5,5 @@ export interface LoginUserDto {
 
 export interface LoginGoogleMobileDto {
   token: string;
+  os: string;
 }

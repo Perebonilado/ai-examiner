@@ -28,6 +28,7 @@ export interface Config {
   ipInfoToken: string;
   iLovePdfPublicKey: string;
   firebaseWebOAuthClientId: string;
+  firebaseIOSOAuthClientId: string;
 }
 
 export default (): Config => ({
@@ -59,5 +60,6 @@ export default (): Config => ({
   ipStackApiKey: process.env.IP_STACK_API_KEY,
   ipInfoToken: process.env.IP_INFO_TOKEN,
   iLovePdfPublicKey: process.env.ILOVEPDF_PUBLIC_KEY,
-  firebaseWebOAuthClientId: process.env.FIREBASE_OAUTH_CLIENT_ID
+  firebaseWebOAuthClientId: process.env.FIREBASE_OAUTH_CLIENT_ID,
+  firebaseIOSOAuthClientId: process.env.FIREBASE_IOS_OAUTH_CLIENT_ID,
 });

@@ -75,7 +75,10 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(MobileGoogleValidationSchema))
   public async loginWithGoogleMobile(@Body() body: LoginGoogleMobileDto) {
     try {
-      const userIdentity = await this.googleAuthService.verifyGoogleToken(body.token)
+      const userIdentity = await this.googleAuthService.verifyGoogleToken(
+        body.token,
+        body.os,
+      );
       const { email, firstName, lastName } = userIdentity;
 
       const user = await this.userQueryService.findOne(email);
