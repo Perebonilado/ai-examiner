@@ -21,7 +21,6 @@ import { QuestionProgressController } from './controllers/QuestionProgressContro
 import { SpeechController } from './controllers/SpeechController';
 import { PerformanceTrackingController } from './controllers/PerformanceTrackingController';
 import { GoogleAuthService } from '../auth/services/GoogleAuthService';
-import { GoogleAuthWebService } from '../auth/services/GoogleAuthWebService';
 
 @Module({
   imports: [
@@ -32,7 +31,7 @@ import { GoogleAuthWebService } from '../auth/services/GoogleAuthWebService';
     BusinessModule,
     QueryModule,
   ],
-  providers: [AuthService, GoogleStrategy, GoogleAuthService, GoogleAuthWebService],
+  providers: [AuthService, GoogleStrategy, GoogleAuthService],
   controllers: [
     QuestionsController,
     AuthController,
