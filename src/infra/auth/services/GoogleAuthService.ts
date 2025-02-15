@@ -4,13 +4,16 @@ import { EnvironmentVariables } from 'src/EnvironmentVariables';
 
 @Injectable()
 export class GoogleAuthService {
-  private client = new OAuth2Client(EnvironmentVariables.config.firebaseWebOAuthClientId);
-
-  async verifyGoogleToken(token: string) {
+  async verifyGoogleToken(token: string, platformOs: string) {
+    const authIDToUse =
+      platformOs.toLowerCase() === 'ios'
+        ? EnvironmentVariables.config.firebaseIOSOAuthClientId
+        : EnvironmentVariables.config.firebaseWebOAuthClientId;
+    const client = new OAuth2Client(authIDToUse);
     try {
-      const ticket = await this.client.verifyIdToken({
+      const ticket = await client.verifyIdToken({
         idToken: token,
-        audience: EnvironmentVariables.config.firebaseWebOAuthClientId, 
+        audience: authIDToUse,
       });
 
       const payload = ticket.getPayload();
