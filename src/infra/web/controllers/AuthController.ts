@@ -89,7 +89,7 @@ export class AuthController {
       } else {
         userIdentity = await this.googleAuthService.verifyGoogleToken(body.token)
       }
-      
+
       const { email, firstName, lastName } = userIdentity;
 
       const user = await this.userQueryService.findOne(email);
