@@ -32,7 +32,6 @@ import { ResetPasswordDto } from 'src/dto/ResetPasswordDto';
 import { UpdateUserHandler } from 'src/business/handlers/User/UpdateUserHandler';
 import { MobileGoogleValidationSchema } from '../zod-validation-schemas/MobileGoogleValidationSchema';
 import { GoogleAuthService } from 'src/infra/auth/services/GoogleAuthService';
-import { GoogleAuthWebService } from 'src/infra/auth/services/GoogleAuthWebService';
 
 @Controller('auth')
 export class AuthController {
@@ -43,8 +42,6 @@ export class AuthController {
     @Inject(MailerService) private mailerService: MailerService,
     @Inject(UpdateUserHandler) private updateUserHandler: UpdateUserHandler,
     @Inject(GoogleAuthService) private googleAuthService: GoogleAuthService,
-    @Inject(GoogleAuthWebService)
-    private googleAuthWebService: GoogleAuthWebService,
     private jwtService: JwtService,
   ) {}
 
@@ -78,17 +75,7 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(MobileGoogleValidationSchema))
   public async loginWithGoogleMobile(@Body() body: LoginGoogleMobileDto) {
     try {
-      let userIdentity: {
-        email: string;
-        firstName: string;
-        lastName: string;
-      } | null = null;
-
-      if(body.os.toLowerCase() !== 'android') {
-        userIdentity = await this.googleAuthWebService.verifyGoogleToken(body.token)
-      } else {
-        userIdentity = await this.googleAuthService.verifyGoogleToken(body.token)
-      }
+      const userIdentity= await this.googleAuthService.verifyGoogleToken(body.token, body.os)
 
       const { email, firstName, lastName } = userIdentity;
 
