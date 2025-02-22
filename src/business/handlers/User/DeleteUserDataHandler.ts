@@ -57,7 +57,7 @@ export class DeleteUserDataHandler extends AbstractRequestHandlerTemplate<
     super();
   }
 
-  public async handleRequest(
+  protected async handleRequest(
     request: DeleteUserDataRequest,
   ): Promise<CommandResponse<DeleteUserDataResponse>> {
     try {
@@ -103,14 +103,18 @@ export class DeleteUserDataHandler extends AbstractRequestHandlerTemplate<
         await this.subscriptionRepository.deleteUserSubscriptionData(userId);
       }
 
-      // unsubscribe user from flo desk
-      const user = await this.userQueryService.findById(userId);
-      const floDeskDetails = await this.floDeskMailerService.retrieveSubscriber(
-        user.email,
-      );
+      try {
+        // unsubscribe user from flo desk
+        const user = await this.userQueryService.findById(userId);
+        const floDeskDetails =
+          await this.floDeskMailerService.retrieveSubscriber(user.email);
 
-      if (floDeskDetails.status !== FlodeskSubscriberStatus.Unsubscribed) {
-        await this.floDeskMailerService.unsubscribe(user.email);
+        if (floDeskDetails.status !== FlodeskSubscriberStatus.Unsubscribed) {
+          await this.floDeskMailerService.unsubscribe(user.email);
+        }
+      } catch (error) {
+        // flodesk fails if the subscriber is not found
+        console.log('flodesk error ===>', error);
       }
 
       // delete user
@@ -123,6 +127,7 @@ export class DeleteUserDataHandler extends AbstractRequestHandlerTemplate<
         status: HttpStatus.OK,
       };
     } catch (error) {
+      console.log(error);
       throw new HandlerError('Failed to delete user data').InnerError(error);
     }
   }
