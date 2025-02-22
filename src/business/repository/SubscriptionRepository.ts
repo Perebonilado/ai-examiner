@@ -5,4 +5,5 @@ export const SubscriptionRepository = Symbol('SubscriptionRepository');
 export interface SubscriptionRepository {
   create(subscription: SubscriptionModel): Promise<SubscriptionModel>;
   update(subscription: SubscriptionModel): Promise<SubscriptionModel>;
+  deleteUserSubscriptionData(userId: string): Promise<number>;
 }

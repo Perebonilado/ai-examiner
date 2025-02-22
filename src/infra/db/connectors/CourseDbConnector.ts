@@ -13,4 +13,14 @@ export class CourseDbConnector {
       throw new DatabaseError('Failed to save course').InnerError(error);
     }
   }
+
+  public async deleteAllUserCourses(userId: string) {
+    try {
+      return await CourseModel.destroy({ where: { userId } });
+    } catch (error) {
+      throw new DatabaseError('Failed to delete all user courses').InnerError(
+        error,
+      );
+    }
+  }
 }

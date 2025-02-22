@@ -34,4 +34,10 @@ export class CourseDocumentSequelizeRepository
       );
     }
   }
+
+  public async deleteAllUserCourseDocuments(userId: string): Promise<number> {
+    return await this.courseDocumentDbConnector.deleteAllUserCourseDocuments(
+      userId,
+    );
+  }
 }

@@ -4,4 +4,5 @@ export const CourseRepository = Symbol('CourseRepository');
 
 export interface CourseRepository {
   create(course: CourseModel): Promise<CourseModel>;
+  deleteAllUserCourses(userId: string): Promise<number>
 }

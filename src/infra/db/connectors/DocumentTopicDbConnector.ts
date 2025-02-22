@@ -30,7 +30,7 @@ export class DocumentTopicDbConnector {
         }),
       );
 
-      return documentTopicsWithIds
+      return documentTopicsWithIds;
     } catch (error) {
       throw new DatabaseError(
         'Failed to bulk create document topics',
@@ -45,6 +45,16 @@ export class DocumentTopicDbConnector {
       throw new DatabaseError('Failed to delete document topic').InnerError(
         error,
       );
+    }
+  }
+
+  public async deleteAllUserDocumentTopics(userId: string) {
+    try {
+      return await DocumentTopicModel.destroy({ where: { userId } });
+    } catch (error) {
+      throw new DatabaseError(
+        'Failed to delete all user document topics',
+      ).InnerError(error);
     }
   }
 }

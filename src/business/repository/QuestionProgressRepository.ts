@@ -4,4 +4,5 @@ export const QuestionProgressRepository = Symbol('QuestionProgressRepository');
 
 export interface QuestionProgressRepository {
   upsert(progress: QuestionProgressModel): Promise<any>;
+  deleteAllUserQuestionProgressData(userId: string): Promise<number>;
 }

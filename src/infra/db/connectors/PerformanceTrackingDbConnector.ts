@@ -11,4 +11,14 @@ export class PerformanceTrackingDbConnector {
       throw new DatabaseError('Failed to save performance').InnerError(error);
     }
   }
+
+  public async deleteUserPerformanceTrackingData(userId: string) {
+    try {
+      return await PerformanceTrackingModel.destroy({ where: { userId } });
+    } catch (error) {
+      throw new DatabaseError(
+        'Failed to delete user performance tracking data',
+      ).InnerError(error);
+    }
+  }
 }

@@ -34,4 +34,8 @@ export class DocumentTopicSequelizeRepository
       );
     }
   }
+
+  public async deleteAllUserDocumentTopics(userId: string): Promise<number> {
+    return await this.documentDbConnector.deleteAllUserDocumentTopics(userId);
+  }
 }
