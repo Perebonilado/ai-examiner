@@ -8,4 +8,5 @@ export interface PerformanceTrackingRepository {
   create(
     performance: PerformanceTrackingModel,
   ): Promise<PerformanceTrackingModel>;
+  deleteUserPerformanceTrackingData(userId: string): Promise<number>;
 }

@@ -37,4 +37,14 @@ export class CourseDocumentDbConnector {
       );
     }
   }
+
+  public async deleteAllUserCourseDocuments(userId: string) {
+    try {
+      return await CourseDocumentModel.destroy({ where: { userId } });
+    } catch (error) {
+      throw new DatabaseError(
+        'Failed to delete all user course documents',
+      ).InnerError(error);
+    }
+  }
 }

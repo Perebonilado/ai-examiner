@@ -25,7 +25,7 @@ export class CourseDocumentQueryService {
 
       const courseIdQuery = courseId ? { courseId } : {};
       const idQuery = id ? { id } : {};
-      
+
       const totalCount = await CourseDocumentModel.count({
         where: {
           [Op.and]: [
@@ -85,6 +85,16 @@ export class CourseDocumentQueryService {
       };
     } catch (error) {
       throw new QueryError('Failed to find all documents').InnerError(error);
+    }
+  }
+
+  public async findAllCourseDocumentsByUserId(userId: string) {
+    try {
+      return await CourseDocumentModel.findAll({ where: { userId } });
+    } catch (error) {
+      throw new QueryError(
+        'Failed to find all course documents by user id',
+      ).InnerError(error);
     }
   }
 

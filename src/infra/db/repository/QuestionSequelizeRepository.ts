@@ -21,9 +21,13 @@ export class QuestionSequelizeRepository implements QuestionRepository {
 
   public async delete(questionId: string): Promise<void> {
     try {
-      return await this.questionDbConnector.delete(questionId)
+      return await this.questionDbConnector.delete(questionId);
     } catch (error) {
       throw new RepositoryError('Failed to delete question').InnerError(error);
     }
+  }
+
+  public async deleteAllUserQuestionsData(userId: string) {
+    return await this.questionDbConnector.deleteAllUserQuestionsData(userId);
   }
 }

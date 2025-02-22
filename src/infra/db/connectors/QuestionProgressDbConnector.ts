@@ -102,7 +102,7 @@ export class QuestionProgressDbConnector {
                 }
               });
             } else {
-              updatedProgress = [...savedProgress, progressToSave[0]]
+              updatedProgress = [...savedProgress, progressToSave[0]];
             }
 
             return await QuestionProgressModel.update(
@@ -155,6 +155,16 @@ export class QuestionProgressDbConnector {
       }
     } catch (error) {
       throw new DatabaseError('Failed to upsert progress').InnerError(error);
+    }
+  }
+
+  public async deleteAllUserQuestionProgressData(userId: string) {
+    try {
+      return await QuestionProgressModel.destroy({ where: { userId } });
+    } catch (error) {
+      throw new DatabaseError(
+        'Failed to delete all user question progress data',
+      ).InnerError(error);
     }
   }
 }

@@ -29,4 +29,14 @@ export class SubscriptionDbConnector {
       );
     }
   }
+
+  public async deleteUserSubscriptionData(userId: string) {
+    try {
+      return await SubscriptionModel.destroy({ where: { userId } });
+    } catch (error) {
+      throw new DatabaseError(
+        'Failed to delete user subscription data',
+      ).InnerError(error);
+    }
+  }
 }

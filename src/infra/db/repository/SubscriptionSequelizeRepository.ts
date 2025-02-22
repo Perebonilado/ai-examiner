@@ -38,4 +38,10 @@ export class SubscriptionSequelizeRepository implements SubscriptionRepository {
       );
     }
   }
+
+  public async deleteUserSubscriptionData(userId: string) {
+    return await this.subscriptionDbConnector.deleteUserSubscriptionData(
+      userId,
+    );
+  }
 }

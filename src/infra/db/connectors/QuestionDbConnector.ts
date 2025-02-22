@@ -20,4 +20,14 @@ export class QuestionDbConnector {
       throw new DatabaseError('Failed to delete question').InnerError(error);
     }
   }
+
+  public async deleteAllUserQuestionsData(userId: string) {
+    try {
+      return await QuestionModel.destroy({ where: { userId } });
+    } catch (error) {
+      throw new DatabaseError('Failed to delete all user questions').InnerError(
+        error,
+      );
+    }
+  }
 }
