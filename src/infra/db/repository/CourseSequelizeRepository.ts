@@ -17,4 +17,8 @@ export class CourseSequelizeRepository implements CourseRepository {
       throw new RepositoryError('Failed to create course').InnerError(error);
     }
   }
+
+  public async deleteAllUserCourses(userId: string): Promise<number> {
+    return await this.courseDbConnector.deleteAllUserCourses(userId)
+  }
 }

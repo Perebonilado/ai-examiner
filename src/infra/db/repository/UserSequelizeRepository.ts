@@ -17,9 +17,13 @@ export class UserSequelizeRepository implements UserRepository {
 
   public async update(user: UserModel) {
     try {
-      return await this.dbConnector.update(user)
+      return await this.dbConnector.update(user);
     } catch (error) {
       throw new RepositoryError('Failed to updateuser').InnerError(error);
     }
+  }
+
+  public async deleteUser(userId: string): Promise<number> {
+    return await this.dbConnector.deleteUser(userId);
   }
 }

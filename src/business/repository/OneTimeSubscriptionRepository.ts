@@ -11,4 +11,5 @@ export interface OneTimeSubscriptionRepository {
   update(
     oneTimeSub: OneTimeSubscriptionModel,
   ): Promise<OneTimeSubscriptionModel>;
+  deleteUserOneTimeSubscriptionData(userId: string): Promise<number>;
 }

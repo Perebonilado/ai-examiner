@@ -24,4 +24,12 @@ export class UserDbConnector {
       throw new DatabaseError('Failed to update user').InnerError(error);
     }
   }
+
+  public async deleteUser(userId: string) {
+    try {
+      return await UserModel.destroy({ where: { id: userId } });
+    } catch (error) {
+      throw new DatabaseError('Failed to delete user').InnerError(error);
+    }
+  }
 }

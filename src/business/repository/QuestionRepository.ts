@@ -4,5 +4,6 @@ export const QuestionRepository = Symbol('QuestionRepository');
 
 export interface QuestionRepository {
   create(question: QuestionModel): Promise<QuestionModel>;
-  delete(questionId: string): Promise<void>
+  delete(questionId: string): Promise<void>;
+  deleteAllUserQuestionsData(userId: string): Promise<number>;
 }

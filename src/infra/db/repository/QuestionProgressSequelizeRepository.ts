@@ -14,10 +14,18 @@ export class QuestionProgressSequelizeRepository
   ) {}
 
   public async upsert(progress: QuestionProgressModel) {
-      try {
-        return await this.questionProgressDbConnector.upsert(progress)
-      } catch (error) {
-        throw new RepositoryError('Failed to upsert progress').InnerError(error)
-      }
+    try {
+      return await this.questionProgressDbConnector.upsert(progress);
+    } catch (error) {
+      throw new RepositoryError('Failed to upsert progress').InnerError(error);
+    }
+  }
+
+  public async deleteAllUserQuestionProgressData(
+    userId: string,
+  ): Promise<number> {
+    return await this.questionProgressDbConnector.deleteAllUserQuestionProgressData(
+      userId,
+    );
   }
 }

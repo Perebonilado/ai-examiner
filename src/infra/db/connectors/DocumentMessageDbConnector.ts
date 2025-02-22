@@ -13,4 +13,14 @@ export class DocumentMessageDbConnector {
       throw new DatabaseError('Failed to save message').InnerError(error);
     }
   }
+
+  public async deleteAllUserDocumentMessages(userId: string) {
+    try {
+      return await DocumentMessageModel.destroy({ where: { userId } });
+    } catch (error) {
+      throw new DatabaseError(
+        'Failed to delete all user document messages',
+      ).InnerError(error);
+    }
+  }
 }

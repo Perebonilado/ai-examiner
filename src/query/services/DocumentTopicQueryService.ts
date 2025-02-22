@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Op } from 'sequelize';
 import QueryError from 'src/error-handlers/query/QueryError';
 import { DocumentTopicModel } from 'src/infra/db/models/DocumentTopicModel';
 
@@ -23,6 +24,22 @@ export class DocumentTopicQueryService {
     } catch (error) {
       throw new QueryError(
         'Failed to find document topics by document and user id',
+      ).InnerError(error);
+    }
+  }
+
+  public async findAllDocumentTopicsByDocumentIds(docIds: string[]) {
+    try {
+      return await DocumentTopicModel.findAll({
+        where: {
+          documentId: {
+            [Op.in]: docIds,
+          },
+        },
+      });
+    } catch (error) {
+      throw new QueryError(
+        'Failed to find all document topics by id',
       ).InnerError(error);
     }
   }

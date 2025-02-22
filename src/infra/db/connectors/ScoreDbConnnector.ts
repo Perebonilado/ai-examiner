@@ -30,4 +30,14 @@ export class ScoreDbConnector {
       throw new DatabaseError('Failed to delete score').InnerError(error);
     }
   }
+
+  public async deleteAllUserScoreData(userId: string) {
+    try {
+      return await ScoreModel.destroy({ where: { userId } });
+    } catch (error) {
+      throw new DatabaseError(
+        'Failed to delete all user score data',
+      ).InnerError(error);
+    }
+  }
 }

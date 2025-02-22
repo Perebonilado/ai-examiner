@@ -23,7 +23,7 @@ import { OneTimeSubscriptionRepository } from 'src/business/repository/OneTimeSu
 import { OneTimeSubscriptionSequelizeRepository } from './repository/OneTimeSubscriptionSequelizeRepository';
 import { QuestionProgressRepository } from 'src/business/repository/QuestionProgressRepository';
 import { QuestionProgressSequelizeRepository } from './repository/QuestionProgressSequelizeRepository';
-import { PerformanceTrackingRepository } from 'src/business/repository/CreatePerformanceTrackingRepository';
+import { PerformanceTrackingRepository } from 'src/business/repository/PerformanceTrackingRepository';
 import { PerformanceTrackingSequelizeRepository } from './repository/PerformanceTrackingSequelizeRepository';
 
 @Module({
@@ -55,28 +55,28 @@ import { PerformanceTrackingSequelizeRepository } from './repository/Performance
     },
     {
       provide: QuestionTopicRepository,
-      useClass: QuestionTopicSequelizeRepository
+      useClass: QuestionTopicSequelizeRepository,
     },
     {
       provide: SubscriptionRepository,
-      useClass: SubscriptionSequelizeRepository
+      useClass: SubscriptionSequelizeRepository,
     },
     {
       provide: DocumentMessageRepository,
-      useClass: DocumentMessageSequelizeRepository
+      useClass: DocumentMessageSequelizeRepository,
     },
     {
       provide: OneTimeSubscriptionRepository,
-      useClass: OneTimeSubscriptionSequelizeRepository
+      useClass: OneTimeSubscriptionSequelizeRepository,
     },
     {
       provide: QuestionProgressRepository,
-      useClass: QuestionProgressSequelizeRepository
+      useClass: QuestionProgressSequelizeRepository,
     },
     {
       provide: PerformanceTrackingRepository,
-      useClass: PerformanceTrackingSequelizeRepository
-    }
+      useClass: PerformanceTrackingSequelizeRepository,
+    },
   ],
   exports: [
     UserRepository,
@@ -90,7 +90,7 @@ import { PerformanceTrackingSequelizeRepository } from './repository/Performance
     DocumentMessageRepository,
     OneTimeSubscriptionRepository,
     QuestionProgressRepository,
-    PerformanceTrackingRepository
+    PerformanceTrackingRepository,
   ],
 })
 export class InfraRepositoryModule {}

@@ -4,4 +4,5 @@ export const DocumentMessageRepository = Symbol('DocumentMessageRepository');
 
 export interface DocumentMessageRepository {
   create(documentMessage: DocumentMessageModel): Promise<DocumentMessageModel>;
+  deleteAllUserDocumentMessages(userId: string): Promise<number>;
 }
