@@ -28,5 +28,5 @@ export class QuestionTopicDbConnector {
         'Failed to bulk delete question topics',
       ).InnerError(error);
     }
-  }
+  } 
 }

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { PerformanceTrackingRepository } from 'src/business/repository/CreatePerformanceTrackingRepository';
+import { PerformanceTrackingRepository } from 'src/business/repository/PerformanceTrackingRepository';
 import { PerformanceTrackingDbConnector } from '../connectors/PerformanceTrackingDbConnector';
 import { PerformanceTrackingModel } from '../models/PerformanceTrackingModel';
 import RepositoryError from 'src/error-handlers/infra/RepositoryError';
@@ -21,5 +21,11 @@ export class PerformanceTrackingSequelizeRepository
         'Failed to create performance tracking',
       ).InnerError(error);
     }
+  }
+
+  public async deleteUserPerformanceTrackingData(userId: string) {
+    return await this.performanceTrackingDbConnector.deleteUserPerformanceTrackingData(
+      userId,
+    );
   }
 }

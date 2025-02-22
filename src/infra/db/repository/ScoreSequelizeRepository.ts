@@ -33,4 +33,7 @@ export class ScoreSequelizeRepository implements ScoreRepository {
       throw new RepositoryError('Failed to delete score').InnerError(error);
     }
   }
+  public async deleteAllUserScoreData(userId: string): Promise<number> {
+    return await this.scoreDbConnector.deleteAllUserScoreData(userId);
+  }
 }

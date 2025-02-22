@@ -27,4 +27,14 @@ export class OneTimeSubscriptionDbConnector {
       ).InnerError(error);
     }
   }
+
+  public async deleteUserOneTimeSubscriptionData(userId: string) {
+    try {
+      return await OneTimeSubscriptionModel.destroy({ where: { userId } });
+    } catch (error) {
+      throw new DatabaseError(
+        'Failed to delete user one time sub data',
+      ).InnerError(error);
+    }
+  }
 }

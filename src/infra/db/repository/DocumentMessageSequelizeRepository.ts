@@ -19,4 +19,10 @@ export class DocumentMessageSequelizeRepository
       throw new RepositoryError('Failed to save message').InnerError(error);
     }
   }
+
+  public async deleteAllUserDocumentMessages(userId: string): Promise<number> {
+    return await this.documentMessageDbConnector.deleteAllUserDocumentMessages(
+      userId,
+    );
+  }
 }

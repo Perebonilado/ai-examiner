@@ -39,4 +39,10 @@ export class OneTimeSubscriptionSequelizeRepository
       ).InnerError(error);
     }
   }
+
+  public async deleteUserOneTimeSubscriptionData(userId: string) {
+    return await this.oneTimeSubscriptionDbConnector.deleteUserOneTimeSubscriptionData(
+      userId,
+    );
+  }
 }

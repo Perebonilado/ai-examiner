@@ -1,5 +1,5 @@
 import { Injectable, Inject, HttpStatus } from '@nestjs/common';
-import { PerformanceTrackingRepository } from 'src/business/repository/CreatePerformanceTrackingRepository';
+import { PerformanceTrackingRepository } from 'src/business/repository/PerformanceTrackingRepository';
 import AbstractRequestHandlerTemplate from '../AbstractRequestHandlerTemplate';
 import { CreatePerformanceTrackingRequest } from '../request/CreatePerformanceTrackingRequest';
 import { CreatePerformanceTrackingResponse } from '../response/CreatePerformanceTrackingResponse';
