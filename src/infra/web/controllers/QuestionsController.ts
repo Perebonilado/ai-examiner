@@ -52,6 +52,7 @@ import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocumen
 import { SaveSharedQuestionDto } from 'src/dto/SaveSharedQuestionDto';
 import { QuestionType } from '../models/QuestionTypeModel';
 import { QuestionSourceRequesDto } from 'src/dto/QuestionSourceRequestDto';
+import { generatePromptForQuestions } from 'src/constants/QuestionGenerationPrompt';
 
 @Controller('questions')
 export class QuestionsController {
@@ -382,12 +383,12 @@ export class QuestionsController {
 
           await this.examinerService.createThreadMessage(
             existingThread.id,
-            generateQuestionsPrompt(
-              remainingCount,
-              body.selectedQuestionTopics || undefined,
-              includeUseCases === 'true' ? true : false,
-              questionTypeName.title as QuestionType,
-            ),
+            generatePromptForQuestions({
+              questionCount: remainingCount,
+              focusAreas: body.selectedQuestionTopics || undefined,
+              includeCaseStudies: includeUseCases === 'true' ? true : false,
+              questionType: questionTypeName.title as QuestionType,
+            }),
           );
 
           const run = await this.examinerService.createRun(
@@ -454,8 +455,8 @@ export class QuestionsController {
         } else {
           if (
             body.selectedQuestionTopics &&
-            body.selectedQuestionTopics.length
-            && body.saveSelectedTopics
+            body.selectedQuestionTopics.length &&
+            body.saveSelectedTopics
           ) {
             const questionTopicsToCreate = await Promise.all(
               body.selectedQuestionTopics.map(async (t) => {
