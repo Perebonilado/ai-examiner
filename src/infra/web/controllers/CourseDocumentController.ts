@@ -37,6 +37,7 @@ import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocumen
 import { UpdateCourseDocumentDto } from 'src/dto/UpdateCourseDocumentDto';
 import { ThreadTypeModel } from '../models/ThreadTypeModel';
 import { QuestionType } from '../models/QuestionTypeModel';
+import { generatePromptForQuestions } from 'src/constants/QuestionGenerationPrompt';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -262,11 +263,13 @@ export class CourseDocumentController {
 
         await this.examinerService.createThreadMessage(
           existingThread.id,
-          generateQuestionsPrompt(
-            remainingCount,
-            body.selectedQuestionTopics || undefined,
-            includeUseCases === 'true' ? true : false,
-            questionTypeName.title as QuestionType,
+          generatePromptForQuestions(
+            {
+              questionCount: remainingCount,
+              focusAreas: body.selectedQuestionTopics || undefined,
+              includeCaseStudies: includeUseCases === 'true' ? true : false,
+              questionType: questionTypeName.title as QuestionType
+            }
           ),
         );
 
