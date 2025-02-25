@@ -226,14 +226,15 @@ export const messagePromptPrefixGenerator = (question: NotSureQuestion) => {
       ${question.options.map((q, i) => `${optionLetters[i]}. ${q}`).join('\n')}
 
       \n
-      I need you to thoroughly go through each option, evaluate each very indepthly. Then, work out and reason by going through the documen to deduce 
+      I need you to thoroughly go through each option, evaluate each very indepthly. Then, work out and reason by going through the document to deduce 
       whether each option is correct or wrong. For each option, explain why it is wrong or correct. Explain it to me like I am 12. Meaning, in very simple terms, break it
       down for me. You may support it with excerpts (verbatim) from the document to buttress your points. Let me know if there are things about each option that may cause me
       to mistake it for the right answer when it is indeed wrong. 
 
       I need you to first tell me which option is correct, then below that, give your explanations. BUT LET ME KNOW WHICH IS CORRECT FIRST!
 
-      IMPORTANT: DO NOT CITE SOURCE IN YOUR RESPONSE
+      IMPORTANT: DO NOT CITE SOURCE IN YOUR RESPONSE. SEPARATE EACH SECTION WITH A LINE. IN YOUR RESPONSE, WHEN EVALUATING, ENSURE TO LIST THE RIGHT OPTION FIRST IN YOUR EVALUATION BEFORE EVALUATING THE REST. 
+      FOR BETTER READABILITY, SEPARATE EACH SECTION WITH A DIVIDING LINE.
     `;
   }
 
@@ -249,7 +250,8 @@ export const messagePromptPrefixGenerator = (question: NotSureQuestion) => {
 
       I NEED YOU TO LET ME KNOW WHICH STATEMENTS ARE RIGHT AND WHICH STATEMENTS ARE WRONG FIRST. THEN BELOW THAT, GIVE YOUR EXPLANATIONS.
 
-      IMPORTANT: DO NOT CITE SOURCE IN YOUR RESPONSE
+      IMPORTANT: DO NOT CITE SOURCE IN YOUR RESPONSE. SEPARATE EACH SECTION WITH A LINE. IN YOUR RESPONSE, WHEN EVALUATING, ENSURE TO LIST THE CORRECT STATEMENTS FIRST IN YOUR EVALUATION BEFORE EVALUATING THE WRONG ONES.
+      IN ESSENCE, AFTER EVALUATING, LIST THEM OUT FROM RIGHT TO WRONG IN TERMS OF ORDERING. FOR BETTER READABILITY, SEPARATE EACH SECTION WITH A DIVIDING LINE.
     `;
   }
 
