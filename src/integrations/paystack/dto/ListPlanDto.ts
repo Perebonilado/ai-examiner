@@ -6,7 +6,7 @@ export interface Plan {
   plan_code: string;
   description: string | null;
   amount: number;
-  interval: string;
+  interval: PlanInterval;
   send_invoices: boolean;
   send_sms: boolean;
   hosted_page: boolean;
@@ -17,6 +17,8 @@ export interface Plan {
   createdAt: string;
   updatedAt: string;
 }
+
+export type PlanInterval = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'bianually' | 'annualy'
 
 interface Subscription {
   customer: number;
