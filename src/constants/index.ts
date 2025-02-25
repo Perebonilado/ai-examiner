@@ -1,6 +1,10 @@
+import { NotSureQuestion } from 'src/dto/CreateDocumentMessageDto';
 import { MessageReponseType } from 'src/infra/web/models/MessageResponseTypeModel';
 import { QuestionType } from 'src/infra/web/models/QuestionTypeModel';
-import { FloDeskSegmentKeys, FloDeskSegmentModel } from 'src/integrations/flo-desk-mailer/models/FloDeskSegmentModel';
+import {
+  FloDeskSegmentKeys,
+  FloDeskSegmentModel,
+} from 'src/integrations/flo-desk-mailer/models/FloDeskSegmentModel';
 
 export const saltRounds = 10;
 
@@ -207,12 +211,62 @@ Output the result in the following JSON format:
 
 Provide only the JSON array, nothing else. Be detailed and fast`;
 
-export const generateMessagePrompt = (
-  message: string,
-  responseFormat: MessageReponseType,
-) => {
+const optionLetters = ['a', 'b', 'c', 'd']
+
+export const messagePromptPrefixGenerator = (question: NotSureQuestion) => {
+  if (question.questionType === 'Multiple Choice') {
+    return `
+      TAKE A DEEP BREATH, RELAX, AND GO THROUGH THE INSTRUCTIONS BELOW VERY CAREFULLY.
+
+      I need help picking the right answer for the following question. I was presented with the following options and only one of the answers is correct.
+
+      Here is the question: ${question.question}
+
+      Here are the options - 
+      ${question.options.map((q, i) => `${optionLetters[i]}. ${q}`).join('\n')}
+
+      \n
+      I need you to thoroughly go through each option, evaluate each very indepthly. Then, work out and reason by going through the documen to deduce 
+      whether each option is correct or wrong. For each option, explain why it is wrong or correct. Explain it to me like I am 12. Meaning, in very simple terms, break it
+      down for me. You may support it with excerpts (verbatim) from the document to buttress your points. Let me know if there are things about each option that may cause me
+      to mistake it for the right answer when it is indeed wrong. 
+
+      I need you to first tell me which option is correct, then below that, give your explanations. BUT LET ME KNOW WHICH IS CORRECT FIRST!
+
+      IMPORTANT: DO NOT CITE SOURCE IN YOUR RESPONSE
+    `;
+  }
+
+  if (question.questionType === 'Multiple True-False') {
+    return `
+      TAKE A DEEP BREATH, RELAX, AND GO THROUGH THE INSTRUCTIONS BELOW VERY CAREFULLY.
+
+      I need help picking the right answer for the following question. I was presented with the following statements. I need you to deeply evaluate each statement and let me know
+      if each is right or wrong. I need to to reason this out before letting me know. Thoroughly go through the document and see why each statement might be right or wrong.
+      I need you to explain this to me like I am 12. I need you to break it down for me and make it very simple. Let me know if there are tricky things in each statement that
+      might cause it to look like its right when indeed it might be wrong or not the best option. Each statement might be true or false, so you need to evaluate each closely. You may support
+      you explanation with short excerpts from the document.
+
+      I NEED YOU TO LET ME KNOW WHICH STATEMENTS ARE RIGHT AND WHICH STATEMENTS ARE WRONG FIRST. THEN BELOW THAT, GIVE YOUR EXPLANATIONS.
+
+      IMPORTANT: DO NOT CITE SOURCE IN YOUR RESPONSE
+    `;
+  }
+
+  return question.question;
+};
+
+export const generateMessagePrompt = ({
+  message,
+  responseFormat,
+  prefix,
+}: {
+  message: string;
+  responseFormat: MessageReponseType;
+  prefix: string;
+}) => {
   return `
-${message}
+${prefix.length ? prefix : message}
 
 Format the response as follows:
    - Use markdown format
@@ -304,10 +358,10 @@ export const defaultPageSize = 10;
 
 export const defaultPageNumber = 1;
 
-
-export const FloDeskSegments: Record<FloDeskSegmentKeys, FloDeskSegmentModel> = {
-  newSubscribers: {
-    id: '672f779aa31d3077e11aca54',
-    name: 'NEW SIGN UP',
-  },
-};
+export const FloDeskSegments: Record<FloDeskSegmentKeys, FloDeskSegmentModel> =
+  {
+    newSubscribers: {
+      id: '672f779aa31d3077e11aca54',
+      name: 'NEW SIGN UP',
+    },
+  };
