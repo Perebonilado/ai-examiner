@@ -10,7 +10,10 @@ import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerServi
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { DocumentMessageModel } from 'src/infra/db/models/DocumentMessageModel';
-import { generateMessagePrompt } from 'src/constants';
+import {
+  generateMessagePrompt,
+  messagePromptPrefixGenerator,
+} from 'src/constants';
 import { UpdateCourseDocumentHandler } from '../CourseDocument/UpdateCourseDocumentHandler';
 
 @Injectable()
@@ -21,8 +24,6 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
   constructor(
     @Inject(DocumentMessageRepository)
     private documentMessageRepository: DocumentMessageRepository,
-    @Inject(DocumentMessageQueryService)
-    private documentMessageQueryService: DocumentMessageQueryService,
     @Inject(ExaminerService) private examinerService: ExaminerService,
     @Inject(CourseDocumentQueryService)
     private courseDocumentQueryService: CourseDocumentQueryService,
@@ -86,7 +87,13 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
 
         await this.examinerService.createThreadMessage(
           updatedThread.id,
-          generateMessagePrompt(userMessage, request.payload.responseFormat),
+          generateMessagePrompt({
+            message: userMessage,
+            responseFormat: request.payload.responseFormat,
+            prefix: request.payload.notSureQuestion
+              ? messagePromptPrefixGenerator(request.payload.notSureQuestion)
+              : '',
+          }),
         );
 
         const run = await this.examinerService.createRun(
@@ -129,7 +136,8 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           status: HttpStatus.CREATED,
         };
       } else {
-        const existingThread = await this.examinerService.findThread(existingThreadId);
+        const existingThread =
+          await this.examinerService.findThread(existingThreadId);
         const vectorStore = await this.examinerService.retrieveVectorStore(
           existingThread.tool_resources.file_search.vector_store_ids[0],
         );
@@ -155,7 +163,13 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
 
         await this.examinerService.createThreadMessage(
           existingThread.id,
-          generateMessagePrompt(userMessage, request.payload.responseFormat),
+          generateMessagePrompt({
+            message: userMessage,
+            responseFormat: request.payload.responseFormat,
+            prefix: request.payload.notSureQuestion
+              ? messagePromptPrefixGenerator(request.payload.notSureQuestion)
+              : '',
+          }),
         );
 
         const run = await this.examinerService.createRun(
