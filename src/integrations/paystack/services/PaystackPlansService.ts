@@ -34,6 +34,7 @@ export class PaystackPlansService {
         planName: pl.name,
         planId: pl.plan_code,
         currency: pl.currency,
+        interval: pl.interval,
         amount: convertSmallerDemoninationtoLarger(pl.amount, 100),
         description: pl.description,
       }));

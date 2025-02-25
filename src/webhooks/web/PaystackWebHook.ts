@@ -64,13 +64,17 @@ export class PaystackWebhook {
                 subscriptionInformation.customer.email,
               );
 
-              const oneMonthExpiration = moment(new Date())
+              // we currently only have monthly/quarterly plans
+              const monthsToExpiration =
+                subscriptionInformation.plan.interval === 'monthly' ? 1 : 3;
+
+              const expiresOnDate = moment(new Date())
                 .utc()
-                .add(1, 'month')
+                .add(monthsToExpiration, 'month')
                 .toDate();
-                
+
               await this.createOneTimeSubscriptionHandler.handle({
-                expiresOn: oneMonthExpiration,
+                expiresOn: expiresOnDate,
                 planCode: subscriptionInformation.metadata.plan_code,
                 userId: user.id,
               });
