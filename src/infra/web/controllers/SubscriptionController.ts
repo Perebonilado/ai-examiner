@@ -237,6 +237,7 @@ export class SubscriptionController {
             currency: planDetails.currency,
             name: planDetails.planName,
             planCode: planDetails.planId,
+            interval: planDetails.interval
           },
           subscrptionInformation: {
             code: null,
@@ -274,6 +275,7 @@ export class SubscriptionController {
               currency: null,
               name: 'Free',
               planCode: null,
+              interval: "monthly"
             },
             subscrptionInformation: {
               code: null,
