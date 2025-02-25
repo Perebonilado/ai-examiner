@@ -1,3 +1,5 @@
+import { PlanInterval } from "src/integrations/paystack/dto/ListPlanDto";
+
 export interface ChargeSuccessEventDto<T> {
   id: number;
   domain: string;
@@ -48,7 +50,7 @@ export interface ChargeSuccessEventDto<T> {
     plan_code: string;
     description: string;
     amount: number;
-    interval: string;
+    interval: PlanInterval;
     send_invoices: boolean;
     send_sms: boolean;
     currency: string;
