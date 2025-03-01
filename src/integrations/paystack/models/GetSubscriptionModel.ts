@@ -1,3 +1,5 @@
+import { PlanInterval } from "../dto/ListPlanDto";
+
 export interface GetSubscriptionModel {
   cardInformation: {
     last4: string;
@@ -12,6 +14,7 @@ export interface GetSubscriptionModel {
     planCode: string;
     amount: number;
     currency: string;
+    interval: PlanInterval
   };
   subscrptionInformation: {
     code: string;
