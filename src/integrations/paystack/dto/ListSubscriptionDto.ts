@@ -1,3 +1,5 @@
+import { PlanInterval } from "./ListPlanDto";
+
 export interface SubscriptionDto {
   customer: {
     first_name: string;
@@ -26,7 +28,7 @@ export interface SubscriptionDto {
     plan_code: string;
     description: string | null;
     amount: number;
-    interval: string;
+    interval: PlanInterval;
     send_invoices: boolean;
     send_sms: boolean;
     hosted_page: boolean;
@@ -108,7 +110,7 @@ export interface FetchSubscriptionDto {
       plan_code: string;
       description: string | null;
       amount: number;
-      interval: string;
+      interval: PlanInterval;
       send_invoices: boolean;
       send_sms: boolean;
       hosted_page: boolean;
