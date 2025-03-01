@@ -8,6 +8,7 @@ import { IpStackModule } from './ip-stack/IpStackModule';
 import { FloDeskMailerModule } from './flo-desk-mailer/FloDeskMailerModule';
 import { IpInfoModule } from './ip-info/IpInfoModule';
 import { ILovePDFModule } from './i-love-pdf/ILovePDFModule';
+import { VapiModule } from './vapi/VapiModule';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { ILovePDFModule } from './i-love-pdf/ILovePDFModule';
     IpStackModule,
     FloDeskMailerModule,
     IpInfoModule,
-    ILovePDFModule
+    ILovePDFModule,
+    VapiModule,
   ],
   exports: [
     OpenAiModule,
@@ -30,7 +32,8 @@ import { ILovePDFModule } from './i-love-pdf/ILovePDFModule';
     IpStackModule,
     FloDeskMailerModule,
     IpInfoModule,
-    ILovePDFModule
+    ILovePDFModule,
+    VapiModule,
   ],
 })
 export class IntegrationsModule {}
