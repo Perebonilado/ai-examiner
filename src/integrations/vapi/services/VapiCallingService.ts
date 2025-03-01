@@ -15,7 +15,8 @@ export class VapiCallingService {
 
   public async initiateCall(initateCallPayload: InitiateCallModel) {
     try {
-      const { messageContent, userName, userPhoneNumber } = initateCallPayload;
+      const { messageContent, userName, userPhoneNumber, metadata } =
+        initateCallPayload;
 
       return await this.client.calls.create({
         assistant: {
@@ -30,6 +31,9 @@ export class VapiCallingService {
             tools: [{ type: 'endCall' }],
           },
           name: userName,
+          endCallMessage:
+            'Thank you for your time. We would notify you via email once your response has been graded. Have a great day!',
+          metadata: metadata as unknown as Record<string, unknown>,
         },
         phoneNumber: {
           twilioAccountSid: EnvironmentVariables.config.twilioAccountSID,

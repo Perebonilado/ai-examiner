@@ -15,6 +15,7 @@ import { DocumentMessageModel } from '../models/DocumentMessageModel';
 import { OneTimeSubscriptionModel } from '../models/OneTimeSubscriptionModel';
 import { QuestionProgressModel } from '../models/QuestionProgressModel';
 import { PerformanceTrackingModel } from '../models/PerformanceTrackingModel';
+import { OralQuestionAnalysisModel } from '../models/OralQuestionAnalysisModel';
 
 export let sequelize: Sequelize;
 
@@ -48,7 +49,8 @@ export const databaseProviders = [
         DocumentMessageModel,
         OneTimeSubscriptionModel,
         QuestionProgressModel,
-        PerformanceTrackingModel
+        PerformanceTrackingModel,
+        OralQuestionAnalysisModel,
       ]);
 
       try {
