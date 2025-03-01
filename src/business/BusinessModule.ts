@@ -24,6 +24,7 @@ import { UpserQuestionProgressHandler } from './handlers/QuestionProgress/Upsert
 import { UpdateCourseDocumentHandler } from './handlers/CourseDocument/UpdateCourseDocumentHandler';
 import { CreatePerformanceTrackingHandler } from './handlers/PerformanceTracking/CreatePerformanceTrackingHandler';
 import { DeleteUserDataHandler } from './handlers/User/DeleteUserDataHandler';
+import { CreateOralQuestionAnalysisHandler } from './handlers/OralQuestionAnalysis/CreateOralQuestionAnalysisHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -49,7 +50,8 @@ import { DeleteUserDataHandler } from './handlers/User/DeleteUserDataHandler';
     UpserQuestionProgressHandler,
     UpdateCourseDocumentHandler,
     CreatePerformanceTrackingHandler,
-    DeleteUserDataHandler
+    DeleteUserDataHandler,
+    CreateOralQuestionAnalysisHandler,
   ],
   exports: [
     CreateUserHandler,
@@ -73,7 +75,8 @@ import { DeleteUserDataHandler } from './handlers/User/DeleteUserDataHandler';
     UpserQuestionProgressHandler,
     UpdateCourseDocumentHandler,
     CreatePerformanceTrackingHandler,
-    DeleteUserDataHandler
+    DeleteUserDataHandler,
+    CreateOralQuestionAnalysisHandler,
   ],
 })
 export class BusinessModule {}
