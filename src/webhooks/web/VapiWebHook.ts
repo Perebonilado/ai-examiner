@@ -26,6 +26,8 @@ export class VapiWebhook {
     // acknowledge
     response.sendStatus(200);
 
+    console.log(body)
+
     try {
       if (body.endedReason === 'hangup') {
         await this.createOralQuestionAnalysisHandler.handle({ data: body });

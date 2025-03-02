@@ -18,23 +18,24 @@ export class VapiCallingService {
       const { messageContent, userName, userPhoneNumber, metadata } =
         initateCallPayload;
 
-      return await this.client.calls.create({
-        assistant: {
-          firstMessage: '{{ name }}',
-          model: {
-            provider: 'openai',
-            model: 'gpt-4o-mini',
-            messages: [
-              { role: 'system', content: '' },
-              { role: 'assistant', content: messageContent },
-            ],
-            tools: [{ type: 'endCall' }],
-          },
-          name: userName,
-          endCallMessage:
-            'Thank you for your time. We would notify you via email once your response has been graded. Have a great day!',
-          metadata: metadata as unknown as Record<string, unknown>,
+      const assistant = await this.client.assistants.create({
+        model: {
+          provider: 'openai',
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'system', content: messageContent }],
+          tools: [{ type: 'endCall' }],
+          temperature: 0.8,
         },
+        firstMessage: 'Hello {{ name }}, how are you doing today?',
+        name: userName,
+        endCallMessage:
+          'Thank you for your time. We would notify you via email once your response has been graded. Have a great day!',
+        metadata: metadata as unknown as Record<string, unknown>,
+        maxDurationSeconds: 180
+      });
+
+      return await this.client.calls.create({
+        assistantId: assistant.id,
         phoneNumber: {
           twilioAccountSid: EnvironmentVariables.config.twilioAccountSID,
           twilioAuthToken: EnvironmentVariables.config.twilioAuthToken,

@@ -1,5 +1,9 @@
 // Types
-export type QuestionType = 'Flash Cards' | 'Multiple Choice' | 'Multiple True-False';
+export type QuestionType =
+  | 'Flash Cards'
+  | 'Multiple Choice'
+  | 'Multiple True-False'
+  | 'Oral (Viva)';
 
 interface PromptConfig {
   questionCount: number;
@@ -10,6 +14,8 @@ interface PromptConfig {
 
 // Constants for shared prompts
 const DIFFICULTY_PROMPT = `ENSURE THAT EVERY QUESTION IS VERY DIFFICULT TO ANSWER. THE KIND OF DIFFICULTY THAT A COLLEGE PROFESSOR WOULD FIND CHALLENGING. THE QUESTIONS SHOULD REQUIRE THE USER TO HAVE A LONG TRAIN OF THOUGHTS BEFORE FIGURING OUT THE ANSWER FROM THE OPTIONS.`;
+
+const VIVADIFFICULTYPROMPT = `ENSURE THE QUESTION IS STRAIGHTFORWARD AND SHORT! THE QUESTION SHOULD BE SHAPED IN A MANNER SUITABLE FOR A SHORT ORAL EXAMINATION. IT SHOULD REQUIRE THE USER TO EXPLAIN A CONCEPT OR DESCRIBE VERY BRIEFLY`;
 
 const CRITICAL_DIVERSITY_INSTRUCTIONS = `
 CRITICAL: Ensure each generated question is unique and diverse:
@@ -60,9 +66,11 @@ CRITICAL: Vary the position of the correct answer within the options. If the fir
 // Helper functions
 const getTopicTaggingInstructions = (hasFocusAreas: boolean): string => `
 TOPIC TAGGING INSTRUCTIONS [VERY IMPORTANT]:
-- ${hasFocusAreas 
-    ? 'Tag each question PRECISELY to the specific focus area it covers' 
-    : 'IDENTIFY and TAG each question with the most appropriate topic from the document'}
+- ${
+  hasFocusAreas
+    ? 'Tag each question PRECISELY to the specific focus area it covers'
+    : 'IDENTIFY and TAG each question with the most appropriate topic from the document'
+}
 - Topic tags should be EXTREMELY PRECISE and DIRECTLY RELATED to the question's content
 - Use concise, specific topic names that clearly indicate the exact concept being tested
 - Ensure each question is tagged to ONLY ONE primary topic
@@ -74,6 +82,8 @@ const getQuestionFormats = (questionType: QuestionType): string => {
       return '"What is...", "Define...", "Name...", "Identify..."';
     case 'Multiple True-False':
       return '"Which of the following statements are true regarding...?", "Evaluate the following statements about..."';
+    case 'Oral (Viva)':
+      return `"Explain the term...", "Define the term...", "What does it mean to..."`;
     default:
       return `"Which of the following best encapsulates the multifaceted dynamics of...?", "How does the interplay between X and Y fundamentally alter our understanding of Z?", "What are the intricate implications of... when examined through multiple lenses?", "Dissect the critical components that differentiate... in advanced contexts.", "Identify the underlying principles that drive... considering its layered complexity.", "To what extent do the following factors interact to influence...?"`;
   }
@@ -85,6 +95,8 @@ const getOptionInstructions = (questionType: QuestionType): string => {
       return 'For flashcards, include only one correct answer as the first option, and leave the other options empty';
     case 'Multiple True-False':
       return 'For each option, determine if it is true or false based on the document content';
+    case 'Oral (Viva)':
+      return 'Leave the options empty';
     default:
       return 'Include one correct answer; vary its position';
   }
@@ -145,7 +157,6 @@ ${CORRECT_ANSWER_DISTRIBUTION}
 THIS INSTRUCTION IS CRITICAL FOR ALL QUESTIONS - STRICTLY ADHERE TO CREATING SCENARIO-BASED QUESTIONS THAT APPLY DOCUMENT CONCEPTS.
 `;
 
-
 const getDirectQuestionPrompt = (questionType: QuestionType): string => `
 CRITICAL INSTRUCTIONS:  
 - Generate ONLY direct, concept-driven questions that demand advanced reasoning, deep understanding, and synthesis of knowledge.  
@@ -178,9 +189,6 @@ STRICT REQUIREMENT:
 - DO NOT make answers obvious.  
 - Questions should require **active intellectual effort** to solve.  
 `;
-
-
-
 
 const getFlashCardPrompt = (): string => `
 IMPORTANT: For flashcard questions, generate questions that, while eliciting a concise answer, demand advanced, multi-layered reasoning and deep conceptual analysis. Each question should appear straightforward but be underpinned by complex, nuanced insights that challenge even experienced professors. The answer itself should be a simple key term or definition, yet arriving at that answer must require careful, multi-step thought.
@@ -216,6 +224,40 @@ IMPORTANT: For flashcard questions, generate questions that, while eliciting a c
 ${CRITICAL_DIVERSITY_INSTRUCTIONS}
 `;
 
+const getOralQuestionPrompt = (): string => `
+INSTRUCTIONS:
+Generate straightforward oral examination questions that test understanding through clear explanation.
+Questions should be:
+- Brief (one line only)
+- Direct and clear
+- Focused on explanation or description
+- Easy to understand but still testing comprehension
+
+Questions should ask students to:
+- Explain key concepts in their own words
+- Describe processes or principles
+- Outline important relationships
+- Summarize main ideas
+
+Example Transformations:
+❌ Instead of:
+"Why does entropy increase in a system, yet order still emerges in nature?"
+
+✅ Ask:
+"Explain what entropy is and why it matters."
+
+❌ Instead of:
+"Why do some reinforcements fail to change behavior?"
+
+✅ Ask:
+"Describe how reinforcement affects behavior in psychology."
+
+REQUIREMENTS:
+- Keep questions to one line
+- Focus on explanation rather than complex analysis
+- Use clear language the student can immediately understand
+- Begin with words like "Explain," "Describe," "Outline," or "Summarize"
+`;
 
 const getMultipleTrueFalsePrompt = (): string => `
 CRITICAL: For Multiple True-False questions, adhere to these guidelines:
@@ -253,26 +295,36 @@ THIS INSTRUCTION IS CRITICAL FOR MULTIPLE TRUE-FALSE QUESTIONS:
 4. ENSURE FALSE STATEMENTS ARE CREATED BY MAKING SUBTLE, MEANINGFUL CHANGES TO TRUE STATEMENTS FROM THE DOCUMENT
 5. DO NOT INCLUDE OPTION IDs (A, B, C, D) IN THE OPTION VALUES - KEEP THEM SEPARATE IN THE ID FIELD`;
 
-const getBasePrompt = (questionCount: number, focusAreas?: string[], questionType?: QuestionType): string => `
+const getBasePrompt = (
+  questionCount: number,
+  focusAreas?: string[],
+  questionType?: QuestionType,
+): string => `
 Analyze the document thoroughly. Generate ${questionCount} unique and new ${
-  questionType === 'Flash Cards' 
-    ? 'flashcard-style' 
-    : questionType === 'Multiple True-False' 
-    ? 'multiple true-false' 
-    : 'multiple-choice'
-} questions based on key concepts. ${DIFFICULTY_PROMPT}
+  questionType === 'Flash Cards'
+    ? 'flashcard-style'
+    : questionType === 'Multiple True-False'
+      ? 'multiple true-false'
+      : 'multiple-choice'
+} questions based on key concepts. ${questionType === 'Oral (Viva)' ? VIVADIFFICULTYPROMPT : DIFFICULTY_PROMPT}
 
-${focusAreas?.length 
-  ? `Focus specifically on these concepts: ${focusAreas.join(', ')}. Create specific, concept-focused questions that test core understanding. Distribute questions evenly across concepts and shuffle their order. QUESTIONS SHOULD SOLELY BE BASED ON THESE CONCEPTS, NO OTHER AREAS WITHIN THE DOCUMENT.` 
-  : 'Consider the different concepts the document taught within the document and distribute questions evenly across these concepts. Consider concepts not explored in previous questions'}
+${
+  focusAreas?.length
+    ? `Focus specifically on these concepts: ${focusAreas.join(', ')}. Create specific, concept-focused questions that test core understanding. Distribute questions evenly across concepts and shuffle their order. QUESTIONS SHOULD SOLELY BE BASED ON THESE CONCEPTS, NO OTHER AREAS WITHIN THE DOCUMENT.`
+    : 'Consider the different concepts the document taught within the document and distribute questions evenly across these concepts. Consider concepts not explored in previous questions'
+}
 
-${questionType !== 'Flash Cards' 
-  ? 'AGAIN, ENSURE THE QUESTIONS AND OPTIONS ARE AT THE HIGHEST DIFFICULTY POSSIBLE. THE OPTIONS SHOULD INCLUDE DISTRACTORS THAT REQUIRE DEEP UNDERSTANDING TO RULE OUT. THE QUESTIONS SHOULD REQUIRE THE READER TO UNDERGO MULTISTEP REASONING AND CRITICAL THINKING.' 
-  : ''}
+${
+  !['Flash Cards', 'Oral (Viva)'].includes(questionType)
+    ? 'AGAIN, ENSURE THE QUESTIONS AND OPTIONS ARE AT THE HIGHEST DIFFICULTY POSSIBLE. THE OPTIONS SHOULD INCLUDE DISTRACTORS THAT REQUIRE DEEP UNDERSTANDING TO RULE OUT. THE QUESTIONS SHOULD REQUIRE THE READER TO UNDERGO MULTISTEP REASONING AND CRITICAL THINKING.'
+    : ''
+}
 
-${!focusAreas?.length 
-  ? 'Ensure questions are not repetitive, explore the document extensively and produce questions from different areas within the document. DO NOT FOCUS QUESTIONS ON A SMALL AREA. EXPLORE THE WHOLE DOCUMENT AND GIVE QUESTIONS FROM DIFFERENT AREAS WITHIN THE DOCUMENT.' 
-  : ''}
+${
+  !focusAreas?.length
+    ? 'Ensure questions are not repetitive, explore the document extensively and produce questions from different areas within the document. DO NOT FOCUS QUESTIONS ON A SMALL AREA. EXPLORE THE WHOLE DOCUMENT AND GIVE QUESTIONS FROM DIFFERENT AREAS WITHIN THE DOCUMENT.'
+    : ''
+}
 
 ${getTopicTaggingInstructions(!!focusAreas?.length)}
 
@@ -284,6 +336,19 @@ const getJsonFormat = (questionType: QuestionType): string => {
     "id": "string",
     "question": "string",
     "options": [`;
+
+  if (questionType === 'Oral (Viva)') {
+    return `[
+  {
+    "id": "string",
+    "question": "string",
+    "options": [], // THIS WILL HAVE A LENGTH OF 0. NO OPTIONS SHOULD BE WITHIN AND SHOULD BE LEFT EMPTY 
+    "explanation": "string",
+    "hint": "string",
+    "topic": "string"
+  }
+]`;
+  }
 
   if (questionType === 'Flash Cards') {
     return `${baseFormat}
@@ -297,9 +362,11 @@ const getJsonFormat = (questionType: QuestionType): string => {
   }
 
   return `${baseFormat}
-      ${questionType === 'Multiple True-False' 
-        ? '{ "value": "string", "id": "string", "answer": boolean }' 
-        : '{ "value": "string", "id": "string" }'}
+      ${
+        questionType === 'Multiple True-False'
+          ? '{ "value": "string", "id": "string", "answer": boolean }'
+          : '{ "value": "string", "id": "string" }'
+      }
     ],
     ${questionType !== 'Multiple True-False' ? '"correctAnswerId": "string",' : ''}
     "explanation": "string",
@@ -314,9 +381,11 @@ IMPORTANT FORMAT RULES:
 1. For each question, the options' IDs should be A, B, C, or D consecutively
 2. The option "value" field should contain ONLY the statement text, without any option ID prefixes
 3. Ensure EVERY question is tagged with a topic. THIS IS VERY IMPORTANT AND NON-NEGOTIABLE
-${questionType === 'Multiple True-False' 
-  ? '4. For Multiple True-False questions:\n   - Include the "answer" field for each option, set to either true or false\n   - Keep the true/false distribution COMPLETELY RANDOM with NO PATTERNS\n   - DO NOT include option IDs (A, B, C, D) in the option values' 
-  : ''}`;
+${
+  questionType === 'Multiple True-False'
+    ? '4. For Multiple True-False questions:\n   - Include the "answer" field for each option, set to either true or false\n   - Keep the true/false distribution COMPLETELY RANDOM with NO PATTERNS\n   - DO NOT include option IDs (A, B, C, D) in the option values'
+    : ''
+}`;
 
 // Main generator function
 export const generatePromptForQuestions = ({
@@ -325,8 +394,19 @@ export const generatePromptForQuestions = ({
   includeCaseStudies = false,
   questionType = 'Multiple Choice',
 }: PromptConfig): string => {
-  const basePrompt = getBasePrompt(questionCount, focusAreas, questionType);
-  const specificPrompt = getSpecificPrompt(questionType, includeCaseStudies);
+  const questionCountToUse = questionType === 'Oral (Viva)' ? 2 : questionCount;
+  const includeCaseStudiesToUse =
+    questionType === 'Oral (Viva)' ? false : includeCaseStudies;
+
+  const basePrompt = getBasePrompt(
+    questionCountToUse,
+    focusAreas,
+    questionType,
+  );
+  const specificPrompt = getSpecificPrompt(
+    questionType,
+    includeCaseStudiesToUse,
+  );
   const jsonFormat = getJsonFormat(questionType);
 
   return `
@@ -338,12 +418,71 @@ Ignore images. Return only a JSON array in this format:
 ${jsonFormat}
 
 If unable to generate questions, return "unable to generate questions".`;
-}
-
-// Continued helper functions
-const getSpecificPrompt = (questionType: QuestionType, includeCaseStudies: boolean): string => {
-  if (questionType === 'Flash Cards') return getFlashCardPrompt();
-  if (questionType === 'Multiple True-False') return getMultipleTrueFalsePrompt();
-  return includeCaseStudies ? getCaseStudyPrompt() : getDirectQuestionPrompt(questionType);
 };
 
+export const generateOralExaminationPrompt = (questions: string[]): string => {
+  let questionsToAsk = '';
+
+  questions.forEach((q, i) => {
+    questionsToAsk += `${i + 1}. ${q} \n`;
+  });
+
+  return `
+
+You are an AI oral examiner conducting an interactive and engaging oral exam for a student.
+
+IMPORTANT - YOU MUST LET THE STUDENT KNOW AT THE START OF THE CALL THAT THEY HAVE A TOTAL OF ${questions.length} QUESTIONS TO ANSWER
+AND THAT THEY HAVE A MAX OF 30 SECONDS FOR EACH QUESTION SO THEIR RESPONSE SHOULD BE SHORT AND STRAIGHT TO THE POINT.
+
+VERY IMPORTANT - THIS CALL IS IDEALLY TO LAST FOR 2 MINUTES MAX. THE MOST IT SHOULD BE SHOULD BE 3 MINUTES SO TRY TO KEEP THE CONVERSATION SHORT AND STAY WITHIN THESE LIMITS.
+IF THE STUDENT CANNOT ANSWER THE QUESTIONS BEFORE THE LIMIT, LET THEM KNOW THAT THE EXAMINATION WOULD END SOON AND AN ASSESSMENT WOULD BE PROVIDED. TRY TO NOT INDULGE IN QUESTIONS NOT RELATING DIRECTLY TO THE EXAM. BE PROFESSIONAL.
+
+[YOUR GOAL]
+
+Your goal is to ask questions clearly and patiently, ensuring the student has enough time to think before responding. You should be friendly, encouraging, and professional while maintaining the integrity of the examination.
+
+Here’s how you should conduct the exam:
+
+Greet the student warmly and set a relaxed tone.
+Read each question slowly and clearly, giving the student time to process before moving on.
+If the student asks for clarification, politely repeat the question but do not explain or provide hints.
+If the student asks for an answer, kindly state that you cannot provide answers and encourage them to try their best.
+Wait for the student’s response before proceeding to the next question.
+Maintain a friendly and professional tone throughout the session.
+Keep responses short and conversational—no long speeches.
+Use a warm and encouraging tone, making the student feel comfortable.
+If a student asks questions about the exam or document, politely say you cannot answer and encourage them to focus on their response.
+Example Interaction
+AI: "Hey there! Ready for your oral exam? Take a deep breath—you got this! Here’s your first question."
+
+AI: "In the context of neonatal sepsis, how does the definition of 'confirmed sepsis' differ from 'severe sepsis,' and what implications do these distinctions have for treatment?"
+
+(Wait for response.)
+
+Student: "Could you explain what you mean by implications?"
+AI: "I can’t explain that, but feel free to answer in a way that makes sense to you!"
+
+Student: [Answers]
+
+AI: "Great! Let’s move on." (Proceeds to next question.)
+
+Here are the questions you are to ask the user - 
+
+${questions}
+  
+  `;
+};
+
+// Continued helper functions
+const getSpecificPrompt = (
+  questionType: QuestionType,
+  includeCaseStudies: boolean,
+): string => {
+  if (questionType === 'Flash Cards') return getFlashCardPrompt();
+  if (questionType === 'Multiple True-False')
+    return getMultipleTrueFalsePrompt();
+  if (questionType === 'Oral (Viva)') return getOralQuestionPrompt();
+  return includeCaseStudies
+    ? getCaseStudyPrompt()
+    : getDirectQuestionPrompt(questionType);
+};

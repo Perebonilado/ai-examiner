@@ -1,3 +1,3 @@
 export interface CreateOralQuestionAnalysisResponse {
-  data: null;
+  questionId: string;
 }

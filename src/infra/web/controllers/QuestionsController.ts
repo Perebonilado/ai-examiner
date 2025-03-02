@@ -52,7 +52,12 @@ import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocumen
 import { SaveSharedQuestionDto } from 'src/dto/SaveSharedQuestionDto';
 import { QuestionType } from '../models/QuestionTypeModel';
 import { QuestionSourceRequesDto } from 'src/dto/QuestionSourceRequestDto';
-import { generatePromptForQuestions } from 'src/constants/QuestionGenerationPrompt';
+import {
+  generateOralExaminationPrompt,
+  generatePromptForQuestions,
+} from 'src/constants/QuestionGenerationPrompt';
+import { VapiCallingService } from 'src/integrations/vapi/services/VapiCallingService';
+import { UserQueryService } from 'src/query/services/UserQueryService';
 
 @Controller('questions')
 export class QuestionsController {
@@ -87,6 +92,8 @@ export class QuestionsController {
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
     @Inject(CreateCourseDocumentHandler)
     private createCourseDocumentHandler: CreateCourseDocumentHandler,
+    @Inject(VapiCallingService) private vapiCallingService: VapiCallingService,
+    @Inject(UserQueryService) private userQueryService: UserQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -104,6 +111,36 @@ export class QuestionsController {
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find question by id ' + params.id,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/start-viva/:id')
+  public async startOralExamination(
+    @Param('id') questionId: string,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      const user = await this.userQueryService.findById(userToken.sub);
+      const questions = await this.questionQueryService.findQuestionsById(
+        questionId,
+        userToken.sub,
+      );
+      const questionsToAsk = questions.questions.map(
+        (q) => q.question,
+      ) as string[];
+      await this.vapiCallingService.initiateCall({
+        messageContent: generateOralExaminationPrompt(questionsToAsk),
+        metadata: { customerEmail: user.email, questionId: questions.id },
+        userName: user.firstName,
+        userPhoneNumber: '+2347081271903',
+      });
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to start viva for question id ' + questionId,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -304,6 +341,8 @@ export class QuestionsController {
           questionTypeName.title.toLowerCase() === 'multiple true-false'
         ) {
           threadIdKey = 'multipleTrueFalseThreadId';
+        } else if (questionTypeName.title.toLowerCase().includes('oral')) {
+          threadIdKey = 'oralQuestionThreadId';
         } else {
           threadIdKey = 'flashCardThreadId';
         }
