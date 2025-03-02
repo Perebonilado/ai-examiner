@@ -408,7 +408,10 @@ export class QuestionsController {
           );
         }
 
-        const desiredQuestionCount = questionCount || 5;
+        const desiredQuestionCount =
+          (questionTypeName.title as QuestionType) === 'Oral (Viva)'
+            ? 2
+            : questionCount || 5;
         let generatedQuestions = [];
         const MAX_RETRIES = 10; // Prevent infinite loops
         let retryCount = 0;

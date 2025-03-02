@@ -295,18 +295,24 @@ THIS INSTRUCTION IS CRITICAL FOR MULTIPLE TRUE-FALSE QUESTIONS:
 4. ENSURE FALSE STATEMENTS ARE CREATED BY MAKING SUBTLE, MEANINGFUL CHANGES TO TRUE STATEMENTS FROM THE DOCUMENT
 5. DO NOT INCLUDE OPTION IDs (A, B, C, D) IN THE OPTION VALUES - KEEP THEM SEPARATE IN THE ID FIELD`;
 
+const getQuestionStyle = (questionType: QuestionType) => {
+  if (questionType === 'Flash Cards') return 'flashcard-style';
+
+  if (questionType === 'Multiple Choice') return 'multiple-choice';
+
+  if (questionType === 'Multiple True-False') return 'multiple true-false';
+
+  if (questionType === 'Oral (Viva)') return 'oral (viva)';
+};
+
 const getBasePrompt = (
   questionCount: number,
   focusAreas?: string[],
   questionType?: QuestionType,
 ): string => `
-Analyze the document thoroughly. Generate ${questionCount} unique and new ${
-  questionType === 'Flash Cards'
-    ? 'flashcard-style'
-    : questionType === 'Multiple True-False'
-      ? 'multiple true-false'
-      : 'multiple-choice'
-} questions based on key concepts. ${questionType === 'Oral (Viva)' ? VIVADIFFICULTYPROMPT : DIFFICULTY_PROMPT}
+Analyze the document thoroughly. Generate ${questionCount} unique and new ${getQuestionStyle(
+  questionType,
+)} questions based on key concepts. ${questionType === 'Oral (Viva)' ? VIVADIFFICULTYPROMPT : DIFFICULTY_PROMPT}
 
 ${
   focusAreas?.length
@@ -394,18 +400,15 @@ export const generatePromptForQuestions = ({
   includeCaseStudies = false,
   questionType = 'Multiple Choice',
 }: PromptConfig): string => {
-  const questionCountToUse = questionType === 'Oral (Viva)' ? 2 : questionCount;
-  const includeCaseStudiesToUse =
-    questionType === 'Oral (Viva)' ? false : includeCaseStudies;
 
   const basePrompt = getBasePrompt(
-    questionCountToUse,
+    questionCount,
     focusAreas,
     questionType,
   );
   const specificPrompt = getSpecificPrompt(
     questionType,
-    includeCaseStudiesToUse,
+    includeCaseStudies,
   );
   const jsonFormat = getJsonFormat(questionType);
 
@@ -424,7 +427,7 @@ export const generateOralExaminationPrompt = (questions: string[]): string => {
   let questionsToAsk = '';
 
   questions.forEach((q, i) => {
-    questionsToAsk += `${i + 1}. ${q} \n`;
+    questionsToAsk += `\n ${i + 1}. ${q}`;
   });
 
   return `
@@ -432,10 +435,7 @@ export const generateOralExaminationPrompt = (questions: string[]): string => {
 You are an AI oral examiner conducting an interactive and engaging oral exam for a student.
 
 IMPORTANT - YOU MUST LET THE STUDENT KNOW AT THE START OF THE CALL THAT THEY HAVE A TOTAL OF ${questions.length} QUESTIONS TO ANSWER
-AND THAT THEY HAVE A MAX OF 30 SECONDS FOR EACH QUESTION SO THEIR RESPONSE SHOULD BE SHORT AND STRAIGHT TO THE POINT.
-
-VERY IMPORTANT - THIS CALL IS IDEALLY TO LAST FOR 2 MINUTES MAX. THE MOST IT SHOULD BE SHOULD BE 3 MINUTES SO TRY TO KEEP THE CONVERSATION SHORT AND STAY WITHIN THESE LIMITS.
-IF THE STUDENT CANNOT ANSWER THE QUESTIONS BEFORE THE LIMIT, LET THEM KNOW THAT THE EXAMINATION WOULD END SOON AND AN ASSESSMENT WOULD BE PROVIDED. TRY TO NOT INDULGE IN QUESTIONS NOT RELATING DIRECTLY TO THE EXAM. BE PROFESSIONAL.
+AND THAT THEY HAVE A MAX OF 30 SECONDS FOR EACH QUESTION SO THEIR RESPONSE SHOULD BE SHORT AND STRAIGHT TO THE POINT. IF NEED BE, LET THEM KNOW THAT THE EXAMINATION WOULD END SOON AND AN ASSESSMENT WOULD BE PROVIDED. TRY TO NOT INDULGE IN QUESTIONS NOT RELATING DIRECTLY TO THE EXAM. BE PROFESSIONAL.
 
 [YOUR GOAL]
 
@@ -469,6 +469,10 @@ AI: "Great! Let’s move on." (Proceeds to next question.)
 Here are the questions you are to ask the user - 
 
 ${questions}
+
+IMPORTANT - READ THE QUESTIONS VERY SLOWLY. DO NOT RUSH
+
+At the end of the assessment, let the user know that their response would be graded and they would be notified accordingly.
   
   `;
 };

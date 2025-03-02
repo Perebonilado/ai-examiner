@@ -5,7 +5,7 @@ export interface InitiateCallModel {
   metadata: CallAssistantMetaData
 }
 
-interface CallAssistantMetaData {
+export interface CallAssistantMetaData {
   customerEmail: string;
   questionId: string;
 }

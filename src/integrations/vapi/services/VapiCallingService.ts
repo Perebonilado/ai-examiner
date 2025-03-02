@@ -26,12 +26,10 @@ export class VapiCallingService {
           tools: [{ type: 'endCall' }],
           temperature: 0.8,
         },
-        firstMessage: 'Hello {{ name }}, how are you doing today?',
+        firstMessage: `Hello ${userName}, how are you doing today?`,
         name: userName,
-        endCallMessage:
-          'Thank you for your time. We would notify you via email once your response has been graded. Have a great day!',
         metadata: metadata as unknown as Record<string, unknown>,
-        maxDurationSeconds: 180
+        maxDurationSeconds: 120
       });
 
       return await this.client.calls.create({
