@@ -117,7 +117,7 @@ export class QuestionsController {
   }
 
   @UseGuards(AuthGuard)
-  @Post('/viva/start-call/:id')
+  @Post('/viva/start-call')
   public async initiateClientCall(
     @Body() body: { questionId: string },
     @Req() request: Request,

@@ -26,6 +26,7 @@ export class VapiWebhook {
     // acknowledge
     response.sendStatus(200);
 
+    
     try {
       if (body.message.type === 'end-of-call-report') {
         await this.createOralQuestionAnalysisHandler.handle({ data: body });

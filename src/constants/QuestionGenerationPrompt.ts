@@ -400,16 +400,8 @@ export const generatePromptForQuestions = ({
   includeCaseStudies = false,
   questionType = 'Multiple Choice',
 }: PromptConfig): string => {
-
-  const basePrompt = getBasePrompt(
-    questionCount,
-    focusAreas,
-    questionType,
-  );
-  const specificPrompt = getSpecificPrompt(
-    questionType,
-    includeCaseStudies,
-  );
+  const basePrompt = getBasePrompt(questionCount, focusAreas, questionType);
+  const specificPrompt = getSpecificPrompt(questionType, includeCaseStudies);
   const jsonFormat = getJsonFormat(questionType);
 
   return `
@@ -476,7 +468,6 @@ At the end of the assessment, let the user know that their response will be grad
   `;
 };
 
-
 // Continued helper functions
 const getSpecificPrompt = (
   questionType: QuestionType,
@@ -493,28 +484,60 @@ const getSpecificPrompt = (
 
 export const getOralExaminationTranscriptAnalysisPrompt = (transcript: string): string => {
   return `
-  Below is the transcript of a conversation for an oral test where a student is questioned by an AI agent. Your job is to analyze the transcript, deduce what each question was and the corresponding summary of the student's answer to that question depending on if the student answered the question or not.
+  # Oral Examination Analysis Task
 
-  For each question asked, you are to go through the document and answer the question yourself first as if you were the one being asked. Then, you are to compare your answer with that of the student's to determine if the student was on track and got it right or wrong. You are then to give remarks as though you are a teacher assessing a student. Give remarks on where the student did well, suggest what the student could have done better if need be. Be positive, encouraging and at the same time, brief. We do not want very lengthy responses.
+  ## Instructions:
+  1. First, thoroughly review the reference document attached to this conversation thread. This document contains the authoritative information against which you must evaluate all student answers.
+  
+  2. Identify only the academic test questions in the transcript below (ignore greetings, small talk, and closing remarks).
+  
+  3. For each identified question:
+     - Determine the expected correct answer based EXCLUSIVELY on the attached reference document
+     - Extract the student's actual response from the transcript
+     - Perform a rigorous comparison between the student's answer and the information in the attached document
+     - Craft a detailed, evidence-based analysis with direct quotations from the reference document when relevant
+  
+  4. Apply strict scoring criteria (0-10) based on accuracy, completeness, and precision in relation to the reference document.
 
-  At the end of it all, you are to give the student a score out of 10 based on what your analysis was.
+  ## System Analysis Requirements:
+  - Address the student directly using "you" and "your" (e.g., "You demonstrated good understanding of...")
+  - Begin with positive observations about what the student did correctly
+  - Follow with specific areas for improvement, citing exact information from the reference document
+  - Include direct quotes from the reference document to support your analysis
+  - Be encouraging but honest about shortcomings
+  - Provide concrete suggestions for improvement
+  - Keep the overall tone supportive while maintaining evaluative rigor
+  - Be thorough in your analysis but avoid unnecessary length
+  
+  ## Scoring Guidelines:
+  - Apply strict standards when scoring
+  - Perfect scores (10/10) should be rare and only given for answers that align perfectly with the reference document
+  - Deduct points for any omissions, inaccuracies, or imprecise statements
+  - Consider both factual correctness and completeness in relation to the reference material
+  - A score of 7/10 should represent a good answer with minor omissions
+  - Scores below 5 indicate significant gaps or misunderstandings
 
-  Below is the structure of the data you need to only return. Be sure to return this and only this as your final response to this prompt.
-
+  ## Required Output Format:
+  Return ONLY a JSON array with this exact structure:
   [
     {
-      question: string;
-      userResponse: string;
-      systemAnalysis: string;
-      score: number;
+      "question": "The exact question as asked in the transcript",
+      "userResponse": "The student's answer (or 'no-answer' if they failed to respond)",
+      "systemAnalysis": "Your detailed, evidence-based analysis speaking directly to the student, with specific references to the attached document",
+      "score": number (between 0-10, applying strict standards)
     }
   ]
 
-  Note: If the user fails to answer the question, then let userResponse have the value, "no-answer" (IN LOWER CASE AND HYPHENATED)
+  Important rules:
+  - Base all evaluations EXCLUSIVELY on the attached reference document
+  - Include ONLY academic test questions in your analysis
+  - Use "no-answer" (lowercase, hyphenated) when the student doesn't provide a substantive response
+  - Ensure your analysis is specific, evidence-based, and cites the reference document
+  - Maintain an encouraging tone while being honest about shortcomings
+  - Apply strict scoring standards
+  - Ensure the output is valid JSON with the exact structure specified above
 
-
-  Here is the transcript:
-
+  ## Transcript to Analyze:
   ${transcript}
   `
-}
+};

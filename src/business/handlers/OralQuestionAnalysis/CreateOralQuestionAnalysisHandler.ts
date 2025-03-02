@@ -16,6 +16,7 @@ import { UpdateCourseDocumentHandler } from '../CourseDocument/UpdateCourseDocum
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { extractJSONDataFromMessages } from 'src/utils';
 import { getOralExaminationTranscriptAnalysisPrompt } from 'src/constants/QuestionGenerationPrompt';
+import { log } from 'console';
 
 @Injectable()
 export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTemplate<
@@ -41,8 +42,8 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
     request: CreateOralQuestionAnalysisRequest,
   ): Promise<CommandResponse<CreateOralQuestionAnalysisResponse>> {
     try {
-      const { customerEmail, questionId } = request.data.message.assistant
-        .metadata as unknown as CallAssistantMetaData;
+      const { customer_email: customerEmail, question_id: questionId } = request
+        .data.message.assistant.metadata as unknown as any;
 
       const user = await this.userQueryService.findOne(customerEmail);
 
@@ -56,6 +57,8 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
         question.documentId,
         user.id,
       );
+
+      console.log(analysis);
 
       await this.oralQuestionAnalysisRepository.create({
         callId: request.data.message.call.id,
