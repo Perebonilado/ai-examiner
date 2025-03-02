@@ -117,6 +117,36 @@ export class QuestionsController {
   }
 
   @UseGuards(AuthGuard)
+  @Get('/viva/start-call/:id')
+  public async initiateClientCall(
+    @Param('id') questionId: string,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      const user = await this.userQueryService.findById(userToken.sub);
+      const questions = await this.questionQueryService.findQuestionsById(
+        questionId,
+        userToken.sub,
+      );
+      const questionsToAsk = questions.questions.map(
+        (q) => q.question,
+      ) as string[];
+      return await this.vapiCallingService.createAssistantForClientCall({
+        messageContent: generateOralExaminationPrompt(questionsToAsk),
+        metadata: { customerEmail: user.email, questionId: questions.id },
+        userName: user.firstName,
+      });
+    } catch (error) {
+      throw new HttpException(
+        error?.response ??
+          'Failed to initiate viva call for question id ' + questionId,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
   @Post('/start-viva/:id')
   public async startOralExamination(
     @Param('id') questionId: string,

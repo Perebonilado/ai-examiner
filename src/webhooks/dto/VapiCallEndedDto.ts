@@ -1,4 +1,4 @@
-import { Call, Assistant } from '@vapi-ai/server-sdk/api/types';
+import { Call, Assistant, Artifact } from '@vapi-ai/server-sdk/api/types';
 
 interface Message {
   role: 'assistant' | 'user';
@@ -11,6 +11,7 @@ export interface VapiCallEndedDto {
     endedReason: string;
     call: Call;
     recordingUrl?: string;
+    artifact: Artifact;
     summary?: string;
     transcript?: string;
     assistant: Assistant;
