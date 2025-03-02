@@ -117,11 +117,12 @@ export class QuestionsController {
   }
 
   @UseGuards(AuthGuard)
-  @Get('/viva/start-call/:id')
+  @Post('/viva/start-call/:id')
   public async initiateClientCall(
-    @Param('id') questionId: string,
+    @Body() body: { questionId: string },
     @Req() request: Request,
   ) {
+    const { questionId } = body;
     try {
       const userToken = request['user'] as VerifiedTokenModel;
       const user = await this.userQueryService.findById(userToken.sub);
