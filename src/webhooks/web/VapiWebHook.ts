@@ -30,7 +30,6 @@ export class VapiWebhook {
       if (body.message.type === 'end-of-call-report') {
         await this.createOralQuestionAnalysisHandler.handle({ data: body });
       }
-      // send email report
     } catch (error) {
       throw new HttpException(
         'Failed to handle call ended request',
