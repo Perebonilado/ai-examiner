@@ -55,6 +55,14 @@ export class VapiCallingService {
     }
   }
 
+  public async getCallInformation(callId: string) {
+    try {
+      return await this.client.calls.get(callId);
+    } catch (error) {
+      throw new Error('Failed to find call information');
+    }
+  }
+
   public async initiateCall(initateCallPayload: InitiateCallModel) {
     try {
       const { messageContent, userName, userPhoneNumber, metadata } =

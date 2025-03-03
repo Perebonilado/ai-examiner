@@ -532,7 +532,8 @@ export const getOralExaminationTranscriptAnalysisPrompt = (transcript: string): 
   - Base all evaluations EXCLUSIVELY on the attached reference document
   - Include ONLY academic test questions in your analysis
   - Use "no-answer" (lowercase, hyphenated) when the student doesn't provide a substantive response
-  - Ensure your analysis is specific, evidence-based, and cites the reference document
+  - Ensure your analysis is specific, evidence-based. DO NOT CITE SOURCES.
+  - Ensure that the userResponse is filtered and does not contain fillers like "um". It should be close to verbatim but refined.
   - Maintain an encouraging tone while being honest about shortcomings
   - Apply strict scoring standards
   - Ensure the output is valid JSON with the exact structure specified above

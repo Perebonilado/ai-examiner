@@ -58,6 +58,8 @@ import {
 } from 'src/constants/QuestionGenerationPrompt';
 import { VapiCallingService } from 'src/integrations/vapi/services/VapiCallingService';
 import { UserQueryService } from 'src/query/services/UserQueryService';
+import { QuestionProgressStatusType } from '../models/QuestionProgressStatusType';
+import { OralQuestionAnalysisQueryService } from 'src/query/services/OralQuestionAnalysisQueryService';
 
 @Controller('questions')
 export class QuestionsController {
@@ -94,6 +96,8 @@ export class QuestionsController {
     private createCourseDocumentHandler: CreateCourseDocumentHandler,
     @Inject(VapiCallingService) private vapiCallingService: VapiCallingService,
     @Inject(UserQueryService) private userQueryService: UserQueryService,
+    @Inject(OralQuestionAnalysisQueryService)
+    private oralQuestionAnalysisQueryService: OralQuestionAnalysisQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -614,6 +618,26 @@ export class QuestionsController {
             ).length;
           }
 
+          let status: QuestionProgressStatusType = null;
+
+          const questionTypes =
+            await this.lookUpQueryService.findAllLookUpsByType('question_type');
+          const oralQuestionId = questionTypes?.find((qt) =>
+            qt.title.toLowerCase().includes('oral'),
+          );
+
+          if (q.questionTypeId === oralQuestionId?.id) {
+            const analysis =
+              await this.oralQuestionAnalysisQueryService.findByQuestionId(
+                q.id,
+              );
+            if (analysis && analysis.analysisData?.length) {
+              status = 'submitted';
+            }
+          } else {
+            status = progress?.status ?? null
+          }
+
           return {
             courseDocumentId: q.courseDocumentId,
             createdOn: q.createdOn,
@@ -621,7 +645,7 @@ export class QuestionsController {
             progressPercentage,
             count: questionCount,
             totalAnswered: `${totalAnswered}/${questionCount}`,
-            status: progress?.status ?? null,
+            status,
             score: q.score,
             topics: q.topics,
             type: q.type,
