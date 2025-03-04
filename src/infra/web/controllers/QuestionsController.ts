@@ -52,7 +52,14 @@ import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocumen
 import { SaveSharedQuestionDto } from 'src/dto/SaveSharedQuestionDto';
 import { QuestionType } from '../models/QuestionTypeModel';
 import { QuestionSourceRequesDto } from 'src/dto/QuestionSourceRequestDto';
-import { generatePromptForQuestions } from 'src/constants/QuestionGenerationPrompt';
+import {
+  generateOralExaminationPrompt,
+  generatePromptForQuestions,
+} from 'src/constants/QuestionGenerationPrompt';
+import { VapiCallingService } from 'src/integrations/vapi/services/VapiCallingService';
+import { UserQueryService } from 'src/query/services/UserQueryService';
+import { QuestionProgressStatusType } from '../models/QuestionProgressStatusType';
+import { OralQuestionAnalysisQueryService } from 'src/query/services/OralQuestionAnalysisQueryService';
 
 @Controller('questions')
 export class QuestionsController {
@@ -87,6 +94,10 @@ export class QuestionsController {
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
     @Inject(CreateCourseDocumentHandler)
     private createCourseDocumentHandler: CreateCourseDocumentHandler,
+    @Inject(VapiCallingService) private vapiCallingService: VapiCallingService,
+    @Inject(UserQueryService) private userQueryService: UserQueryService,
+    @Inject(OralQuestionAnalysisQueryService)
+    private oralQuestionAnalysisQueryService: OralQuestionAnalysisQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -104,6 +115,87 @@ export class QuestionsController {
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find question by id ' + params.id,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/viva/start-call')
+  public async initiateClientCall(
+    @Body() body: { questionId: string },
+    @Req() request: Request,
+  ) {
+    const { questionId } = body;
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      const user = await this.userQueryService.findById(userToken.sub);
+      const analysisIsAvailable =
+        await this.oralQuestionAnalysisQueryService.findByQuestionId(
+          questionId,
+        );
+      const numberOfVivasDoneForCurrentMonth =
+        await this.oralQuestionAnalysisQueryService.countOralQuestionsGenratedForCurrentMonth(
+          userToken.sub,
+        );
+      if(numberOfVivasDoneForCurrentMonth >= 3){
+        throw new HttpException(
+          'Your can only do 3 viva exams per month. Please, purchase call credits to take more viva exams',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      if (analysisIsAvailable) {
+        throw new HttpException(
+          'Your test has already been analyzed, please reload the page',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      const questions = await this.questionQueryService.findQuestionsById(
+        questionId,
+        userToken.sub,
+      );
+      const questionsToAsk = questions.questions.map(
+        (q) => q.question,
+      ) as string[];
+      return await this.vapiCallingService.createAssistantForClientCall({
+        messageContent: generateOralExaminationPrompt(questionsToAsk),
+        metadata: { customerEmail: user.email, questionId: questions.id },
+        userName: user.firstName,
+      });
+    } catch (error) {
+      throw new HttpException(
+        error?.response ??
+          'Failed to initiate viva call for question id ' + questionId,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/start-viva/:id')
+  public async startOralExamination(
+    @Param('id') questionId: string,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      const user = await this.userQueryService.findById(userToken.sub);
+      const questions = await this.questionQueryService.findQuestionsById(
+        questionId,
+        userToken.sub,
+      );
+      const questionsToAsk = questions.questions.map(
+        (q) => q.question,
+      ) as string[];
+      await this.vapiCallingService.initiateCall({
+        messageContent: generateOralExaminationPrompt(questionsToAsk),
+        metadata: { customerEmail: user.email, questionId: questions.id },
+        userName: user.firstName,
+        userPhoneNumber: '+2347081271903',
+      });
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to start viva for question id ' + questionId,
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -304,6 +396,8 @@ export class QuestionsController {
           questionTypeName.title.toLowerCase() === 'multiple true-false'
         ) {
           threadIdKey = 'multipleTrueFalseThreadId';
+        } else if (questionTypeName.title.toLowerCase().includes('oral')) {
+          threadIdKey = 'oralQuestionThreadId';
         } else {
           threadIdKey = 'flashCardThreadId';
         }
@@ -369,7 +463,10 @@ export class QuestionsController {
           );
         }
 
-        const desiredQuestionCount = questionCount || 5;
+        const desiredQuestionCount =
+          (questionTypeName.title as QuestionType) === 'Oral (Viva)'
+            ? 2
+            : questionCount || 5;
         let generatedQuestions = [];
         const MAX_RETRIES = 10; // Prevent infinite loops
         let retryCount = 0;
@@ -541,6 +638,26 @@ export class QuestionsController {
             ).length;
           }
 
+          let status: QuestionProgressStatusType = null;
+
+          const questionTypes =
+            await this.lookUpQueryService.findAllLookUpsByType('question_type');
+          const oralQuestionId = questionTypes?.find((qt) =>
+            qt.title.toLowerCase().includes('oral'),
+          );
+
+          if (q.questionTypeId === oralQuestionId?.id) {
+            const analysis =
+              await this.oralQuestionAnalysisQueryService.findByQuestionId(
+                q.id,
+              );
+            if (analysis && analysis.analysisData?.length) {
+              status = 'submitted';
+            }
+          } else {
+            status = progress?.status ?? null;
+          }
+
           return {
             courseDocumentId: q.courseDocumentId,
             createdOn: q.createdOn,
@@ -548,7 +665,7 @@ export class QuestionsController {
             progressPercentage,
             count: questionCount,
             totalAnswered: `${totalAnswered}/${questionCount}`,
-            status: progress?.status ?? null,
+            status,
             score: q.score,
             topics: q.topics,
             type: q.type,

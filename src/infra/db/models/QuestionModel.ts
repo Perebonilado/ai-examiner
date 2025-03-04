@@ -5,11 +5,13 @@ import {
   DataType,
   BeforeCreate,
   ForeignKey,
+  HasMany,
 } from 'sequelize-typescript';
 import { generateUUID } from 'src/utils';
 import * as moment from 'moment';
 import { UserModel } from './UserModel';
 import { CourseDocumentModel } from './CourseDocumentModel';
+import { OralQuestionAnalysisModel } from './OralQuestionAnalysisModel';
 
 @Table({ tableName: 'question' })
 export class QuestionModel extends Model<QuestionModel> {
@@ -55,6 +57,9 @@ export class QuestionModel extends Model<QuestionModel> {
     allowNull: false,
   })
   courseDocumentId: string;
+
+  @HasMany(() => OralQuestionAnalysisModel, 'question_id')
+  oralQuestionAnalysis: string;
 
   @BeforeCreate
   static addUUID(instance: QuestionModel) {

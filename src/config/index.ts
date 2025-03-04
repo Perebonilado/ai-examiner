@@ -29,6 +29,10 @@ export interface Config {
   iLovePdfPublicKey: string;
   firebaseAndroidOAuthClientId: string;
   firebaseIOSOAuthClientId: string;
+  vapiPrivateKey: string;
+  twilioAccountSID: string;
+  twilioAuthToken: string;
+  twilioPhoneNumber: string;
 }
 
 export default (): Config => ({
@@ -62,4 +66,8 @@ export default (): Config => ({
   iLovePdfPublicKey: process.env.ILOVEPDF_PUBLIC_KEY,
   firebaseAndroidOAuthClientId: process.env.FIREBASE_ANDROID_OAUTH_CLIENT_ID,
   firebaseIOSOAuthClientId: process.env.FIREBASE_IOS_OAUTH_CLIENT_ID,
+  vapiPrivateKey: process.env.VAPI_PRIVATE_KEY,
+  twilioAccountSID: process.env.TWILIO_ACCOUNT_SID,
+  twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
+  twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
 });
