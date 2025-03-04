@@ -10,6 +10,7 @@ import * as moment from 'moment';
 import { Op } from 'sequelize';
 import { UserModel } from 'src/infra/db/models/UserModel';
 import { DocumentTopicQueryService } from './DocumentTopicQueryService';
+import { OralQuestionAnalysisQueryService } from './OralQuestionAnalysisQueryService';
 
 @Injectable()
 export class QuestionQueryService {
@@ -18,7 +19,10 @@ export class QuestionQueryService {
     @Inject(QuestionTopicQueryService)
     private questionTopicService: QuestionTopicQueryService,
     @Inject(LookUpQueryService) private lookUpQueryService: LookUpQueryService,
-    @Inject(DocumentTopicQueryService) private documentTopicQueryService: DocumentTopicQueryService
+    @Inject(DocumentTopicQueryService)
+    private documentTopicQueryService: DocumentTopicQueryService,
+    @Inject(OralQuestionAnalysisQueryService)
+    private oralQuestionAnalysisQueryService: OralQuestionAnalysisQueryService,
   ) {}
 
   public async findAllQuestionsByDocumentIdAndUserId(
@@ -120,13 +124,32 @@ export class QuestionQueryService {
       );
       const topics =
         await this.questionTopicService.findQuestionTopicsByQuestionId(id);
-      
-      const allTopics = await this.documentTopicQueryService.findAllByDocumentTopicsByDocumentIdAndUserId(courseDocument.id, userId)
-      const allTopicsMapped = allTopics.map((t)=>t.title)
+
+      const allTopics =
+        await this.documentTopicQueryService.findAllByDocumentTopicsByDocumentIdAndUserId(
+          courseDocument.id,
+          userId,
+        );
+      const allTopicsMapped = allTopics.map((t) => t.title);
 
       const type = await this.lookUpQueryService.findLookUpById(
         question.questionTypeId,
       );
+
+      let analysisData = null;
+      if (type.title.toLowerCase().includes('oral')) {
+        const analysisDataAvailable =
+          await this.oralQuestionAnalysisQueryService.findByQuestionId(
+            question.id,
+          );
+        if (analysisDataAvailable) {
+          const dataToSet = {
+            analysis: JSON.parse(analysisDataAvailable.analysisData),
+            callId: analysisDataAvailable.callId,
+          };
+          analysisData = dataToSet;
+        }
+      }
 
       return {
         id: question.id,
@@ -140,7 +163,8 @@ export class QuestionQueryService {
           : null,
         type: type ? type.title : null,
         fileId: courseDocument.openAiFileId,
-        allTopics: allTopicsMapped
+        allTopics: allTopicsMapped,
+        analysisData,
       };
     } catch (error) {
       throw new QueryError('Failed to find questions by id').InnerError(error);

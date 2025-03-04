@@ -14,8 +14,11 @@ import { DocumentMessageQueryService } from './services/DocumentMessageQueryServ
 import { OneTimeSubscriptionQueryService } from './services/OneTimeSubscriptionQueryService';
 import { QuestionProgressQueryService } from './services/QuestionProgressQueryService';
 import { PerformanceTrackingQueryService } from './services/PerformanceTrackingQueryService';
+import { OralQuestionAnalysisQueryService } from './services/OralQuestionAnalysisQueryService';
+import { IntegrationsModule } from 'src/integrations/IntegrationsModule';
 
 @Module({
+  imports: [IntegrationsModule],
   providers: [
     UserQueryService,
     CourseQueryService,
@@ -31,7 +34,8 @@ import { PerformanceTrackingQueryService } from './services/PerformanceTrackingQ
     DocumentMessageQueryService,
     OneTimeSubscriptionQueryService,
     QuestionProgressQueryService,
-    PerformanceTrackingQueryService
+    PerformanceTrackingQueryService,
+    OralQuestionAnalysisQueryService,
   ],
   exports: [
     UserQueryService,
@@ -48,7 +52,8 @@ import { PerformanceTrackingQueryService } from './services/PerformanceTrackingQ
     DocumentMessageQueryService,
     OneTimeSubscriptionQueryService,
     QuestionProgressQueryService,
-    PerformanceTrackingQueryService
+    PerformanceTrackingQueryService,
+    OralQuestionAnalysisQueryService,
   ],
 })
 export class QueryModule {}
