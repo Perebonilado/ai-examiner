@@ -6,7 +6,6 @@ import { CommandResponse } from '../response/CommandResponse';
 import { HandlerError } from 'src/error-handlers/business/HandlerError';
 import { OralQuestionAnalysisRepository } from 'src/business/repository/OralQuestionAnalysisRepository';
 import { OralQuestionAnalysisModel } from 'src/infra/db/models/OralQuestionAnalysisModel';
-import { CallAssistantMetaData } from 'src/integrations/vapi/models/InitiateCallModel';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { UserQueryService } from 'src/query/services/UserQueryService';
@@ -16,7 +15,8 @@ import { UpdateCourseDocumentHandler } from '../CourseDocument/UpdateCourseDocum
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { extractJSONDataFromMessages } from 'src/utils';
 import { getOralExaminationTranscriptAnalysisPrompt } from 'src/constants/QuestionGenerationPrompt';
-import { log } from 'console';
+import { OralQuestionAnalysisQueryService } from 'src/query/services/OralQuestionAnalysisQueryService';
+import { MailerService } from 'src/integrations/mailer/services/MailerService';
 
 @Injectable()
 export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTemplate<
@@ -34,16 +34,31 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
     @Inject(ExaminerService) private examinerService: ExaminerService,
     @Inject(UpdateCourseDocumentHandler)
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
+    @Inject(OralQuestionAnalysisQueryService)
+    private oralQuestionQueryService: OralQuestionAnalysisQueryService,
+    @Inject(MailerService) private mailerService: MailerService,
   ) {
     super();
   }
 
-  protected async handleRequest(
+  public async handleRequest(
     request: CreateOralQuestionAnalysisRequest,
   ): Promise<CommandResponse<CreateOralQuestionAnalysisResponse>> {
     try {
-      const { customer_email: customerEmail, question_id: questionId } = request
-        .data.message.assistant.metadata as unknown as any;
+      const { customerEmail, questionId } = request.data.message.assistant
+        .metadata as unknown as any;
+
+      try {
+        await this.mailerService.sendEmail({
+          receiverEmail: customerEmail,
+          subject: 'Your oral test is being graded',
+          text: `
+          Your oral test is currently being analyzed and graded. Please, do not retake the test. A follow up email will be sent with a link to your assessment result
+          `,
+        });
+      } catch (error) {
+        console.error(error);
+      }
 
       const user = await this.userQueryService.findOne(customerEmail);
 
@@ -52,13 +67,18 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
         user.id,
       );
 
+      const analysisExists =
+        await this.oralQuestionQueryService.findByQuestionId(question.id);
+
+      if (analysisExists) {
+        throw new HandlerError('This call has already been analyzed');
+      }
+
       const analysis = await this.transcriptAnalysis(
         request.data.message.artifact.transcript,
         question.documentId,
         user.id,
       );
-
-      console.log(analysis);
 
       await this.oralQuestionAnalysisRepository.create({
         callId: request.data.message.call.id,
@@ -67,6 +87,28 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
       } as OralQuestionAnalysisModel);
 
       // send email
+      let testUrl = EnvironmentVariables.config.frontendBaseUrl
+
+      if(EnvironmentVariables.config.frontendBaseUrl.endsWith('/')) {
+        testUrl += `questions/practise-questions/oral-(viva)/${questionId}`
+      } else {
+        testUrl += `/questions/practise-questions/oral-(viva)/${questionId}`
+      }
+
+      try {
+        await this.mailerService.sendEmail({
+          receiverEmail: customerEmail,
+          subject: 'Your Test Assessment is Ready!',
+          text: `
+          Your oral test result is ready. Follow the link below to view your assessment.
+          \n
+          \n
+          Link - ${testUrl}
+          `,
+        })
+      } catch (error) {
+        console.error(error)
+      }
 
       return {
         data: { questionId },

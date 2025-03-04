@@ -130,6 +130,16 @@ export class QuestionsController {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
       const user = await this.userQueryService.findById(userToken.sub);
+      const analysisIsAvailable =
+        await this.oralQuestionAnalysisQueryService.findByQuestionId(
+          questionId,
+        );
+      if (analysisIsAvailable) {
+        throw new HttpException(
+          'Your test has already been analyzed, please reload the page',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
       const questions = await this.questionQueryService.findQuestionsById(
         questionId,
         userToken.sub,
@@ -635,7 +645,7 @@ export class QuestionsController {
               status = 'submitted';
             }
           } else {
-            status = progress?.status ?? null
+            status = progress?.status ?? null;
           }
 
           return {

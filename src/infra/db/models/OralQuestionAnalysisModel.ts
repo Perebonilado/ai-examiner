@@ -8,6 +8,7 @@ import {
 } from 'sequelize-typescript';
 import { QuestionModel } from './QuestionModel';
 import * as moment from 'moment';
+import { UserModel } from './UserModel';
 
 @Table({ tableName: 'oral_question_analysis' })
 export class OralQuestionAnalysisModel extends Model<OralQuestionAnalysisModel> {

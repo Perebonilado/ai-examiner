@@ -6,15 +6,47 @@ interface Message {
 }
 
 export interface VapiCallEndedDto {
-  message: {
-    type: 'end-of-call-report';
-    endedReason: string;
-    call: Call;
-    recordingUrl?: string;
-    artifact: Artifact;
-    summary?: string;
-    transcript?: string;
-    assistant: Assistant;
-    messages?: Message[];
+  message: Message
+}
+
+interface Message {
+  timestamp: number;
+  type: string;
+  analysis: {
+    summary: string;
+    successEvaluation: string;
   };
+  artifact: {
+    messages: any[];
+    messagesOpenAIFormatted: any[];
+    transcript: string;
+    recordingUrl: string;
+    stereoRecordingUrl: string;
+  };
+  startedAt: string;
+  endedAt: string;
+  endedReason: string;
+  cost: number;
+  costBreakdown: {
+    stt: number;
+    llm: number;
+    tts: number;
+    vapi: number;
+    total: number;
+    llmPromptTokens: number;
+    llmCompletionTokens: number;
+    ttsCharacters: number;
+    analysisCostBreakdown: object;
+  };
+  costs: object[];
+  durationMs: number;
+  durationSeconds: number;
+  durationMinutes: number;
+  summary: string;
+  transcript: string;
+  messages: Message[];
+  recordingUrl: string;
+  stereoRecordingUrl: string;
+  call: Call;
+  assistant: Assistant;
 }
