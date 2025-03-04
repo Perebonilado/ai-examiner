@@ -13,6 +13,7 @@ import { DocumentMessageDbConnector } from './connectors/DocumentMessageDbConnec
 import { OneTimeSubscriptionDbConnector } from './connectors/OneTimeSubscriptionDbConnector';
 import { QuestionProgressDbConnector } from './connectors/QuestionProgressDbConnector';
 import { PerformanceTrackingDbConnector } from './connectors/PerformanceTrackingDbConnector';
+import { OralQuestionAnalysisDbConnector } from './connectors/OralQuestionAnalysisDbConnector';
 
 @Module({
   imports: [QueryModule],
@@ -29,7 +30,8 @@ import { PerformanceTrackingDbConnector } from './connectors/PerformanceTracking
     DocumentMessageDbConnector,
     OneTimeSubscriptionDbConnector,
     QuestionProgressDbConnector,
-    PerformanceTrackingDbConnector
+    PerformanceTrackingDbConnector,
+    OralQuestionAnalysisDbConnector
   ],
   exports: [
     ...databaseProviders,
@@ -44,7 +46,8 @@ import { PerformanceTrackingDbConnector } from './connectors/PerformanceTracking
     DocumentMessageDbConnector,
     OneTimeSubscriptionDbConnector,
     QuestionProgressDbConnector,
-    PerformanceTrackingDbConnector
+    PerformanceTrackingDbConnector,
+    OralQuestionAnalysisDbConnector
   ],
 })
 export class InfraDbModule {}

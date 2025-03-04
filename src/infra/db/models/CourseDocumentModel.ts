@@ -42,7 +42,7 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
     field: 'is_deleted',
     defaultValue: false,
   })
-  isDeleted: boolean
+  isDeleted: boolean;
 
   @ForeignKey(() => UserModel)
   @Column({
@@ -58,7 +58,7 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
     allowNull: true,
   })
   mcqDirectThreadId: string;
-  
+
   @Column({
     type: DataType.STRING,
     field: 'mcq_use_case_thread_id',
@@ -89,6 +89,13 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
 
   @Column({
     type: DataType.STRING,
+    field: 'oral_question_thread_id',
+    allowNull: true,
+  })
+  oralQuestionThreadId: string
+
+  @Column({
+    type: DataType.STRING,
     field: 'open_ai_file_id',
     allowNull: false,
   })
@@ -104,11 +111,11 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
   @HasMany(() => QuestionModel, 'course_document_id')
   question: QuestionModel;
 
-  @HasMany(()=>DocumentMessageModel, 'course_document_id')
-  documentMessage: DocumentMessageModel
+  @HasMany(() => DocumentMessageModel, 'course_document_id')
+  documentMessage: DocumentMessageModel;
 
-  @HasMany(()=>PerformanceTrackingModel, 'course_document_id')
-  performanceTracking: PerformanceTrackingModel
+  @HasMany(() => PerformanceTrackingModel, 'course_document_id')
+  performanceTracking: PerformanceTrackingModel;
 
   @BeforeCreate
   static addUUID(instance: CourseDocumentModel) {

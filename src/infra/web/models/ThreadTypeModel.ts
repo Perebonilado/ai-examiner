@@ -4,3 +4,4 @@ export type ThreadTypeModel =
   | 'flashCardThreadId'
   | 'documentChatThreadId'
   | 'multipleTrueFalseThreadId'
+  | 'oralQuestionThreadId';

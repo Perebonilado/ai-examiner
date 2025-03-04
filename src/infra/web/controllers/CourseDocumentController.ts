@@ -184,6 +184,7 @@ export class CourseDocumentController {
         flashCardThreadId: '',
         documentChatThreadId: '',
         multipleTrueFalseThreadId: '',
+        oralQuestionThreadId: '',
       };
 
       if (questionTypeName.title.toLowerCase() === 'multiple choice') {
@@ -194,6 +195,8 @@ export class CourseDocumentController {
         questionTypeName.title.toLowerCase() === 'multiple true-false'
       ) {
         threadIdToAttach.multipleTrueFalseThreadId = updatedThread.id;
+      } else if (questionTypeName.title.toLowerCase().includes('oral')) {
+        threadIdToAttach.oralQuestionThreadId = updatedThread.id;
       } else {
         threadIdToAttach.flashCardThreadId = updatedThread.id;
       }
@@ -250,7 +253,10 @@ export class CourseDocumentController {
         );
       }
 
-      const desiredQuestionCount = questionCount || 5;
+      const desiredQuestionCount =
+        (questionTypeName.title as QuestionType) === 'Oral (Viva)'
+          ? 2
+          : questionCount || 5;
       let generatedQuestions = [];
       const MAX_RETRIES = 10; // Prevent infinite loops
       let retryCount = 0;
@@ -263,14 +269,12 @@ export class CourseDocumentController {
 
         await this.examinerService.createThreadMessage(
           existingThread.id,
-          generatePromptForQuestions(
-            {
-              questionCount: remainingCount,
-              focusAreas: body.selectedQuestionTopics || undefined,
-              includeCaseStudies: includeUseCases === 'true' ? true : false,
-              questionType: questionTypeName.title as QuestionType
-            }
-          ),
+          generatePromptForQuestions({
+            questionCount: remainingCount,
+            focusAreas: body.selectedQuestionTopics || undefined,
+            includeCaseStudies: includeUseCases === 'true' ? true : false,
+            questionType: questionTypeName.title as QuestionType,
+          }),
         );
 
         const run = await this.examinerService.createRun(
@@ -340,7 +344,7 @@ export class CourseDocumentController {
         },
       };
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,

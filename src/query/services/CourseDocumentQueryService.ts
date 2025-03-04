@@ -84,6 +84,7 @@ export class CourseDocumentQueryService {
         },
       };
     } catch (error) {
+      console.log(error)
       throw new QueryError('Failed to find all documents').InnerError(error);
     }
   }
