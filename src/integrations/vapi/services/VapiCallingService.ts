@@ -41,7 +41,7 @@ export class VapiCallingService {
       };
     } catch (error) {
       throw new HttpException(
-        'Failed to handle client call initiation',
+        error ?? 'Failed to handle client call initiation',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
