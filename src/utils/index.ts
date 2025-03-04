@@ -154,13 +154,12 @@ export const writeFileToStream = async (
   content: any,
   encoding: BufferEncoding,
 ) => {
-  await new Promise((resolve, reject) => {
-    const writeStream = createWriteStream(tempFilePath, {
-      encoding: encoding,
-    });
+  await new Promise<void>((resolve, reject) => {
+    const writeStream = createWriteStream(tempFilePath, { encoding });
+
     writeStream.write(content, encoding);
     writeStream.on('error', reject);
-    writeStream.on('finish', resolve);
+    writeStream.on('finish', () => resolve()); // Ensure resolve is called correctly
     writeStream.end();
   });
 };
