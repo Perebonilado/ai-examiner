@@ -121,6 +121,23 @@ export class QuestionsController {
   }
 
   @UseGuards(AuthGuard)
+  @Get('/viva/call-recording/:id')
+  public async getCallRecording(@Param('id') id: string) {
+    try {
+      const callInfo = await this.vapiCallingService.getCallInformation(id);
+
+      return {
+        callRecording: callInfo.artifact.recordingUrl,
+      };
+    } catch (error) {
+      throw new HttpException(
+        error ?? 'Failed to get call recording',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
   @Post('/viva/start-call')
   public async initiateClientCall(
     @Body() body: { questionId: string },
@@ -138,7 +155,7 @@ export class QuestionsController {
         await this.oralQuestionAnalysisQueryService.countOralQuestionsGenratedForCurrentMonth(
           userToken.sub,
         );
-      if(numberOfVivasDoneForCurrentMonth >= 3){
+      if (numberOfVivasDoneForCurrentMonth >= 3) {
         throw new HttpException(
           'Your can only do 3 viva exams per month. Please, purchase call credits to take more viva exams',
           HttpStatus.BAD_REQUEST,
