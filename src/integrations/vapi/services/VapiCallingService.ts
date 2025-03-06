@@ -33,7 +33,7 @@ export class VapiCallingService {
         firstMessage: `Hello ${userName}, how are you doing today?`,
         name: userName,
         metadata: metadata as unknown as Record<string, unknown>,
-        maxDurationSeconds: 120,
+        maxDurationSeconds: 180,
       });
 
       return {
