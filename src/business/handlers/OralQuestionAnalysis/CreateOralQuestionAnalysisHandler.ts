@@ -87,12 +87,12 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
       } as OralQuestionAnalysisModel);
 
       // send email
-      let testUrl = EnvironmentVariables.config.frontendBaseUrl
+      let testUrl = EnvironmentVariables.config.frontendBaseUrl;
 
-      if(EnvironmentVariables.config.frontendBaseUrl.endsWith('/')) {
-        testUrl += `questions/practise-questions/oral-(viva)/${questionId}`
+      if (EnvironmentVariables.config.frontendBaseUrl.endsWith('/')) {
+        testUrl += `questions/practise-questions/oral-(viva)/${questionId}`;
       } else {
-        testUrl += `/questions/practise-questions/oral-(viva)/${questionId}`
+        testUrl += `/questions/practise-questions/oral-(viva)/${questionId}`;
       }
 
       try {
@@ -105,9 +105,9 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
           \n
           Link - ${testUrl}
           `,
-        })
+        });
       } catch (error) {
-        console.error(error)
+        console.error(error);
       }
 
       return {
@@ -156,8 +156,7 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
 
         threadId = updatedThread.id;
 
-        // update course document
-
+        // Update course document
         await this.updateCourseDocumentHandler.handle({
           userId: userId,
           data: {
@@ -169,16 +168,16 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
 
       const existingThread = await this.examinerService.findThread(threadId);
 
-      // check if vector store has expired, if so:
-      // create new store, attach file and attach to thread
-
+      // Check if vector store has expired
       const vectorStore = await this.examinerService.retrieveVectorStore(
         existingThread.tool_resources.file_search.vector_store_ids[0],
       );
+
       if (vectorStore.status === 'expired') {
         const newVectorStore = await this.examinerService.createVectorStore(
           document.title,
         );
+
         const updatedVectorStoreId =
           await this.examinerService.attachFileToVectorStore(
             document.openAiFileId,
@@ -191,10 +190,14 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
         );
       }
 
-      const MAX_RETRIES = 3; // Prevent infinite loops
+      // Retry logic
+      const MAX_RETRIES = 3;
+      const RETRY_DELAY_MS = 1000;
       let retryCount = 0;
       let analysis: any[] = [];
+
       while (retryCount < MAX_RETRIES && !analysis.length) {
+
         await this.examinerService.createThreadMessage(
           existingThread.id,
           getOralExaminationTranscriptAnalysisPrompt(transcript),
@@ -212,19 +215,17 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
 
         const potentiallyAnalyzed = extractJSONDataFromMessages(messages);
 
-        if (
-          potentiallyAnalyzed instanceof Array &&
-          potentiallyAnalyzed.length
-        ) {
+        if (potentiallyAnalyzed instanceof Array && potentiallyAnalyzed.length) {
           analysis = potentiallyAnalyzed;
+        }
+
+        retryCount++;
+        if (!analysis.length && retryCount < MAX_RETRIES) {
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
         }
       }
 
-      if (analysis.length) {
-        return JSON.stringify(analysis);
-      }
-
-      return JSON.stringify([]);
+      return JSON.stringify(analysis);
     } catch (error) {
       throw new HandlerError('Failed to handle result analysis').InnerError(
         error,
