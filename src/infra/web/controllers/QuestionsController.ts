@@ -621,6 +621,7 @@ export class QuestionsController {
     @Query('courseDocumentId') courseDocumentId: string,
     @Query('page', ParseIntPipe) page: number,
     @Query('pageSize', ParseIntPipe) pageSize: number,
+    @Query('showOralQuestions') showOralQuestions = '0',
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
@@ -690,9 +691,17 @@ export class QuestionsController {
         }),
       );
 
+      let filteredQuestions = mappedQuestions;
+
+      if (Number(showOralQuestions) !== 1) {
+        filteredQuestions = mappedQuestions.filter((q) => {
+          return !q.type.toLowerCase().includes('oral');
+        });
+      }
+
       return {
         data: {
-          data: mappedQuestions,
+          data: filteredQuestions,
           fileId: document.openAiFileId,
         },
         meta: questions.meta,
