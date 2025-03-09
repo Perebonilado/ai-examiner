@@ -4,6 +4,7 @@ import {
   HttpException,
   HttpStatus,
   Inject,
+  ParseIntPipe,
   Query,
 } from '@nestjs/common';
 import { LookUpQueryService } from 'src/query/services/LookUpQueryService';
@@ -15,9 +16,17 @@ export class LookUpController {
   ) {}
 
   @Get('')
-  public async getLookUps(@Query('type') type: string) {
+  public async getLookUps(
+    @Query('type') type: string,
+    @Query('showOralQuestionOption')
+    showOralQuestionOption = '0',
+  ) {
     try {
-      return await this.lookUpQueryService.findAllLookUpsByType(type);
+      const lookUps = await this.lookUpQueryService.findAllLookUpsByType(type);
+      if (type === 'question_type' && Number(showOralQuestionOption) !== 1) {
+        return lookUps.filter((lk) => !lk.title.toLowerCase().includes('oral'));
+      }
+      return lookUps;
     } catch (error) {
       throw new HttpException('Failed to find lookups', HttpStatus.NOT_FOUND);
     }
