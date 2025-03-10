@@ -34,6 +34,7 @@ export interface Config {
   twilioAuthToken: string;
   twilioPhoneNumber: string;
   pineconeApiKey: string;
+  mistralApiKey: string;
 }
 
 export default (): Config => ({
@@ -71,5 +72,6 @@ export default (): Config => ({
   twilioAccountSID: process.env.TWILIO_ACCOUNT_SID,
   twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
   twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
-  pineconeApiKey: process.env.PINECONE_KEY
+  pineconeApiKey: process.env.PINECONE_KEY,
+  mistralApiKey: process.env.MISTRAL_API_KEY,
 });

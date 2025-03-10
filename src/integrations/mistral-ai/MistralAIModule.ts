@@ -1,4 +1,8 @@
-import { Module } from "@nestjs/common";
+import { Module } from '@nestjs/common';
+import { MistralOcrService } from './services/MistralOcrService';
 
-@Module({})
+@Module({
+  providers: [MistralOcrService],
+  exports: [MistralOcrService],
+})
 export class MistralAIModule {}
