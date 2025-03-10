@@ -1,10 +1,8 @@
-import { Module } from "@nestjs/common";
-import { PineconeChunkService } from "./services/PineconeChunksService";
-import { ILovePDFModule } from "../i-love-pdf/ILovePDFModule";
+import { Module } from '@nestjs/common';
+import { PineconeChunkService } from './services/PineconeChunksService';
 
 @Module({
-    imports: [ILovePDFModule],
-    providers: [PineconeChunkService],
-    exports: [PineconeChunkService]
+  providers: [PineconeChunkService],
+  exports: [PineconeChunkService],
 })
 export class PineconeModule {}

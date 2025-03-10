@@ -11,6 +11,7 @@ import { ILovePDFModule } from './i-love-pdf/ILovePDFModule';
 import { VapiModule } from './vapi/VapiModule';
 import { MistralAIModule } from './mistral-ai/MistralAIModule';
 import { PineconeModule } from './pinecone/PineconeModule';
+import { TextExtractionModule } from './text-extraction/TextExtractionModule';
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { PineconeModule } from './pinecone/PineconeModule';
     ILovePDFModule,
     VapiModule,
     MistralAIModule,
-    PineconeModule
+    PineconeModule,
+    TextExtractionModule
   ],
   exports: [
     OpenAiModule,
@@ -39,7 +41,8 @@ import { PineconeModule } from './pinecone/PineconeModule';
     ILovePDFModule,
     VapiModule,
     MistralAIModule,
-    PineconeModule
+    PineconeModule,
+    TextExtractionModule
   ],
 })
 export class IntegrationsModule {}

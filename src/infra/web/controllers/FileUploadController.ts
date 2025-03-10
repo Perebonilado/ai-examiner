@@ -13,12 +13,14 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
+import { ExtractTextService } from 'src/integrations/text-extraction/services/ExtractTextService';
 
 @Controller('file-upload')
 export class FileUploadController {
   constructor(
     @Inject(ExaminerService) private examinerService: ExaminerService,
-    @Inject(PineconeChunkService) private pineconeChunkService: PineconeChunkService
+    @Inject(PineconeChunkService) private pineconeChunkService: PineconeChunkService,
+    @Inject(ExtractTextService) private extractTextService: ExtractTextService
   ) {}
 
   // @UseGuards(AuthGuard)
@@ -65,7 +67,7 @@ export class FileUploadController {
     try {
       const pdfPageRange =
         pages === 'custom' ? { start: Number(start), end: Number(end) } : {};
-      const chunks = await this.pineconeChunkService.getChunksBasedOnFileMimeType(file)
+      const chunks = await this.extractTextService.getChunksBasedOnFileMimeType(file)
       console.log(chunks)
     } catch (error) {
       console.log(error)
