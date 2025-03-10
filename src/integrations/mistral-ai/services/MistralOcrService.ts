@@ -5,6 +5,8 @@ import { HttpService } from '@nestjs/axios';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { AxiosResponse } from 'axios';
 import { UploadMistralFileModel } from '../models/UploadMistralFileModel';
+import * as FormData from 'form-data';
+import { Readable } from 'stream';
 
 @Injectable()
 export class MistralOcrService extends MistralClient {
@@ -28,27 +30,40 @@ export class MistralOcrService extends MistralClient {
     }
   }
 
-  private async handleUploadForOCR(file: Express.Multer.File) {
+  private async handleUploadForOCR(
+    file: Express.Multer.File,
+  ): Promise<UploadMistralFileModel> {
     try {
-      const { data } = await this.httpService.axiosRef.postForm<
-        AxiosResponse<UploadMistralFileModel>
-      >(
-        `${this.baseUrl}/files`,
-        {
-          file: file,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${EnvironmentVariables.config.mistralApiKey}`,
-          },
-        },
-      );
+      const form = new FormData();
+      const stream = Readable.from(file.buffer); // Convert buffer to stream
 
-      return data.data;
+      form.append('purpose', 'ocr');
+      form.append('file', stream, file.originalname);
+
+      const { data } =
+        await this.httpService.axiosRef.post<UploadMistralFileModel>(
+          `${this.baseUrl}/files`,
+          form,
+          {
+            headers: {
+              Authorization: `Bearer ${EnvironmentVariables.config.mistralApiKey}`,
+              ...form.getHeaders(), // Set proper headers for FormData
+              Accept: 'application/json',
+            },
+          },
+        );
+
+      console.log(data);
+
+      return data;
     } catch (error) {
+      console.error(
+        'Mistral API error:',
+        error.response?.data || error.message,
+      );
       throw new HttpException(
-        error ?? 'Failed to ocr document',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        error?.response?.data || error?.message || 'Failed to OCR document',
+        error?.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

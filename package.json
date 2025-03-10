@@ -44,6 +44,7 @@
     "dayjs": "^1.11.10",
     "dayjs-plugin-utc": "^0.1.2",
     "extract-first-json": "^2.0.2",
+    "form-data": "^4.0.2",
     "google-auth-library": "^9.15.1",
     "got": "^14.2.1",
     "iconv-lite": "^0.6.3",

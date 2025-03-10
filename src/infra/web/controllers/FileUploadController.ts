@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
+import { MistralOcrService } from 'src/integrations/mistral-ai/services/MistralOcrService';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
 import { ExtractTextService } from 'src/integrations/text-extraction/services/ExtractTextService';
@@ -19,8 +20,10 @@ import { ExtractTextService } from 'src/integrations/text-extraction/services/Ex
 export class FileUploadController {
   constructor(
     @Inject(ExaminerService) private examinerService: ExaminerService,
-    @Inject(PineconeChunkService) private pineconeChunkService: PineconeChunkService,
-    @Inject(ExtractTextService) private extractTextService: ExtractTextService
+    @Inject(PineconeChunkService)
+    private pineconeChunkService: PineconeChunkService,
+    @Inject(ExtractTextService) private extractTextService: ExtractTextService,
+    @Inject(MistralOcrService) private mistralOcrService: MistralOcrService,
   ) {}
 
   // @UseGuards(AuthGuard)
@@ -55,7 +58,7 @@ export class FileUploadController {
   //   }
   // }
 
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   @Post('')
   @UseInterceptors(FileInterceptor('document'))
   public async uploadFileV2(
@@ -65,12 +68,16 @@ export class FileUploadController {
     @Query('end') end: string,
   ) {
     try {
+      console.log(file)
       const pdfPageRange =
         pages === 'custom' ? { start: Number(start), end: Number(end) } : {};
-      const chunks = await this.extractTextService.getChunksBasedOnFileMimeType(file)
-      console.log(chunks)
+      // const chunks = await this.extractTextService.getChunksBasedOnFileMimeType(file)
+      // console.log(chunks)
+      const chunks = await this.mistralOcrService.processPdf(file);
+      console.log(chunks);
+      return chunks
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new HttpException(
         error ?? 'V2: Failed to upload file',
         HttpStatus.BAD_REQUEST,
