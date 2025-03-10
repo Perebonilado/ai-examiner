@@ -4,11 +4,13 @@ import * as mammoth from 'mammoth';
 import { parseOfficeAsync } from 'officeparser';
 import { decode } from 'iconv-lite';
 import { ILovePdfService } from 'src/integrations/i-love-pdf/services/ILovePdfService';
+import { MistralOcrService } from 'src/integrations/mistral-ai/services/MistralOcrService';
 
 @Injectable()
 export class ExtractTextService {
   constructor(
     @Inject(ILovePdfService) private IlovePdfService: ILovePdfService,
+    @Inject(MistralOcrService) private mistralOcrService: MistralOcrService,
   ) {}
 
   public async getChunksBasedOnFileMimeType(file: Express.Multer.File) {
@@ -48,7 +50,7 @@ export class ExtractTextService {
       try {
         const chunks = await extractPagesTextsFromPDF(file.buffer);
 
-        if (chunks.length > 0) {
+        if (chunks.flatMap((c)=>c).join('').trim().length > 0) {
           return chunks;
         }
 
@@ -57,12 +59,7 @@ export class ExtractTextService {
         console.log('Error extracting text. Proceeding to OCR...');
       }
 
-      const fileArrayBuffer = await this.IlovePdfService.processFileBasedOnTool(
-        file,
-        'officepdf',
-      );
-      const chunks = await extractPagesTextsFromPDF(fileArrayBuffer);
-      return chunks;
+      return await this.mistralOcrService.processPdf(file);
     } catch (error) {
       throw new Error(`Failed to extract chunks from PDF: ${error.message}`);
     }

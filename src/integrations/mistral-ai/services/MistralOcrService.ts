@@ -53,14 +53,8 @@ export class MistralOcrService extends MistralClient {
           },
         );
 
-      console.log(data);
-
       return data;
     } catch (error) {
-      console.error(
-        'Mistral API error:',
-        error.response?.data || error.message,
-      );
       throw new HttpException(
         error?.response?.data || error?.message || 'Failed to OCR document',
         error?.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
