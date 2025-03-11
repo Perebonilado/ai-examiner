@@ -10,7 +10,10 @@ interface PromptConfig {
   focusAreas?: string[];
   includeCaseStudies: boolean;
   questionType: QuestionType;
+  difficulty: DifficultyType
 }
+
+export type DifficultyType = 'easy' | 'medium' | 'hard';
 
 // Constants for shared prompts
 const DIFFICULTY_PROMPT = `ENSURE THAT EVERY QUESTION IS VERY DIFFICULT TO ANSWER. THE KIND OF DIFFICULTY THAT A COLLEGE PROFESSOR WOULD FIND CHALLENGING. THE QUESTIONS SHOULD REQUIRE THE USER TO HAVE A LONG TRAIN OF THOUGHTS BEFORE FIGURING OUT THE ANSWER FROM THE OPTIONS.`;
@@ -76,7 +79,13 @@ TOPIC TAGGING INSTRUCTIONS [VERY IMPORTANT]:
 - Ensure each question is tagged to ONLY ONE primary topic
 ${!hasFocusAreas ? '- Ensure that topics are broad concepts within the document that the question touches on.' : ''}`;
 
-const getQuestionFormats = (questionType: QuestionType): string => {
+const getQuestionFormats = (questionType: QuestionType, difficulty: DifficultyType): string => {
+  // For easy questions, use the simplified formats regardless of question type
+  if (difficulty === 'easy' && questionType !== 'Flash Cards' && questionType !== 'Oral (Viva)' && questionType !== 'Multiple True-False') {
+    return getEasyQuestionFormats();
+  }
+
+  // Otherwise use the standard formats
   switch (questionType) {
     case 'Flash Cards':
       return '"What is...", "Define...", "Name...", "Identify..."';
@@ -121,7 +130,7 @@ For each question:
 4. ${getAnswerFormatInstructions(questionType)}
 5. Add a hint that aids recall without revealing the answer
 6. Include a detailed explanation. ${getExplanationInstructions(questionType)}
-7. Ensure the questions and options are ${questionType === 'Flash Cards' ? 'clear, concise, and promote effective memorization' : 'difficult and thought provoking'};`;
+7. Ensure the questions and options are ${questionType === 'Flash Cards' ? 'clear, concise, and promote effective memorization' : 'thought provoking'};`;
 
 const getAnswerFormatInstructions = (questionType: QuestionType): string => {
   switch (questionType) {
@@ -157,72 +166,167 @@ ${CORRECT_ANSWER_DISTRIBUTION}
 THIS INSTRUCTION IS CRITICAL FOR ALL QUESTIONS - STRICTLY ADHERE TO CREATING SCENARIO-BASED QUESTIONS THAT APPLY DOCUMENT CONCEPTS.
 `;
 
-const getDirectQuestionPrompt = (questionType: QuestionType): string => `
+const getDirectQuestionPrompt = (
+  questionType: QuestionType,
+  difficulty: DifficultyType,
+): string => `
 CRITICAL INSTRUCTIONS:  
-- Generate ONLY direct, concept-driven questions that demand advanced reasoning, deep understanding, and synthesis of knowledge.  
-- Questions should **not** rely on simple recall but instead require:  
-  • Identifying **underlying assumptions** in theories or principles.  
-  • Recognizing **logical contradictions** or hidden complexities.  
-  • Applying abstract concepts in **unconventional ways**.  
-  • Analyzing the **interdependencies** between concepts.  
-  • Evaluating how a concept **changes under different conditions**.  
-- Ensure that questions force users to engage in prolonged critical thinking, **even if the answer is brief**.  
-
-### Key Enhancements for Difficulty  
-- Introduce **counterintuitive** answer choices that challenge common misconceptions.  
-- Force respondents to **compare and contrast** subtly different concepts.  
-- Use **incomplete information**, requiring inference and extrapolation.  
-- Frame questions to reveal **hidden relationships** between concepts.  
-- Encourage **long-form mental reasoning**, even if the question appears simple.  
+- Generate ONLY direct, concept-driven questions that ${difficulty === 'easy' ? 'test basic recall and simple understanding' : 'demand advanced reasoning, deep understanding, and synthesis of knowledge'}.  
+- Questions should ${difficulty === 'easy' ? 'focus on simple memorization and basic recall' : '**not** rely on simple recall but instead require complex thinking'}.  
 
 ### Format Examples  
-${getQuestionFormats(questionType)}
+${getQuestionFormats(questionType, difficulty)}
+
+${getDirectQuestionDifficulty(difficulty)}  
+`;
+
+const getDirectQuestionDifficulty = (difficulty: DifficultyType) => {
+  if (difficulty === 'hard')
+    return `
+  \n \n 
+### Hard Difficulty Requirements
+- Questions must require multi-step reasoning and integration of multiple concepts
+- Include questions that test edge cases and exceptions to general rules
+- Require application of concepts in novel or complex scenarios
+- Ask about subtle distinctions between related concepts
+- Include distractors that are very plausible and require deep understanding to eliminate
 
 ### Example  
 Instead of:  
-❌ "What is Newton’s First Law?"  
+❌ "What is Newton's First Law?"  
 It will generate:  
-✅ "If Newton’s First Law holds universally, why do objects in motion appear to slow down? Identify the implicit factors that alter its observed effects."  
+✅ "A stationary object on Earth's surface doesn't appear to move relative to the planet despite Earth's rotation and orbital motion. Explain this apparent contradiction to Newton's First Law using the most precise physical framework."
+
+\n
+\n
+- Introduce **counterintuitive** answer choices that challenge common misconceptions  
+- Force respondents to **compare and contrast** subtly different concepts  
+- Use questions that require synthesizing information from different parts of the document
+- Questions should demand **extended analytical reasoning**`;
+
+  if (difficulty === 'medium')
+    return `
+   \n \n  
+### Medium Difficulty Requirements
+- Questions should require understanding and application, not just recall
+- Test ability to distinguish between related concepts
+- Require some analysis but not extensive multi-step reasoning
+- Include plausible but incorrect options that test for common misconceptions
+
+### Example  
+Instead of:  
+❌ "What happens to a moving object if nothing pushes or pulls on it?"  
+It will generate:  
+✅ "According to Newton's First Law, what happens to a moving object in deep space compared to one moving on Earth's surface?"  
 
 STRICT REQUIREMENT:  
-- DO NOT simplify the questions.  
-- DO NOT make answers obvious.  
-- Questions should require **active intellectual effort** to solve.  
+- Questions should be challenging but straightforward for someone who understands the material
+- Distractors should be plausible but distinguishable with proper understanding
+- Questions should require application of concepts, not just definition recall`;
+
+  return `
+   \n  \n 
+### EXTREMELY EASY Difficulty Requirements
+- Focus ONLY on the most basic recall and simple definitions
+- Use the SHORTEST possible questions - ideally under 10 words
+- Keep answer options EXTREMELY brief - ideally 1-5 words each
+- Test ONLY the most fundamental terms and concepts
+- Make the correct answer OBVIOUS to anyone who has read the material once
+
+### Examples  
+CORRECT EASY QUESTIONS:
+✅ "What is DNA?"
+✅ "When was World War II?"
+✅ "What is photosynthesis?"
+✅ "What does CPU stand for?"
+✅ "What is the definition of mitosis?"
+
+INCORRECT (TOO COMPLEX) QUESTIONS:
+❌ "What does Newton's First Law state about objects in motion?"
+❌ "How are proteins synthesized in the cell?"
+
+STRICT REQUIREMENTS:  
+- Questions MUST be extremely brief and direct
+- Questions should NEVER require any analysis or comparison
+- Correct answers should be clearly stated in the document
+- Distractors should be OBVIOUSLY wrong
+- Focus exclusively on MEMORIZED facts, definitions, and terms
+- Create questions that can be answered in 5 seconds or less
+- Questions should be suitable for absolute beginners
 `;
+};
 
-const getFlashCardPrompt = (): string => `
-IMPORTANT: For flashcard questions, generate questions that, while eliciting a concise answer, demand advanced, multi-layered reasoning and deep conceptual analysis. Each question should appear straightforward but be underpinned by complex, nuanced insights that challenge even experienced professors. The answer itself should be a simple key term or definition, yet arriving at that answer must require careful, multi-step thought.
+const getFlashCardPrompt = (difficulty: DifficultyType): string => `
+IMPORTANT: For flashcard questions, adhere to these critical guidelines:
 
-- Frame each flashcard question to test advanced recall of key terms, definitions, intricate processes, historical events, and interrelated concepts.
-- Craft questions that require integrating contextual details and subtle nuances to force the respondent to consider multiple facets of the concept before deducing the simple answer.
-- Use varied and challenging question formats, such as:
-  • "Considering the multifaceted implications of [context], what is the precise definition of [term/concept]?"
-  • "Given the complex interplay of factors in [advanced scenario], what is the primary function of [structure/organ]?"
-  • "Within the nuanced framework of [historical or scientific context], who is credited with [discovery/achievement]?"
-  • "Analyzing intricate anatomical details, where is [anatomical structure] precisely located?"
-  • "Integrating principles from advanced chemistry, what is the chemical symbol for [element]?"
-  • "In a system characterized by layered processes, in which segment does [process] occur?"
-  • "Considering the underlying principles of [law/theory] in depth, what does it explicitly state?"
-  • "When evaluating the subtle causes behind [condition/phenomenon], what is identified as the main cause?"
-  • "Taking into account historical complexities, what year did [event] occur?"
-  • "Within the framework of detailed system analysis, what is the definitive role of [component]?"
-  • "What are the critical characteristics of [concept/structure] when examined from an advanced perspective?"
-  • "How does the relationship between [concept A] and [concept B] manifest when analyzed in depth?"
-  • "What is the next logical step in [process] following [step], given the underlying complexities?"
-  • "Considering the antithetical nature of [concept/term] under rigorous analysis, what is its opposite?"
-  • "Identify a sophisticated real-world example of [concept/principle] that illustrates its multifaceted nature."
-  • "What are the three essential stages of [process] when analyzed in detail?"
-  • "What is the advanced significance of [event/concept] within its broader context?"
-  • "Using rigorous analytical reasoning, what is the formula for [calculation/concept]?"
-  • "Distinguish the differences between [term A] and [term B] through an in-depth comparative analysis."
-  • "In the context of advanced systems, what is the primary purpose of [tool/technique]?"
-  • "Enumerate the inputs and outputs of [process] considering its dynamic interplay."
-  • "Outline the sequence of events in [process] when examined through advanced reasoning."
-  • "What is the most critical factor in [phenomenon] when subjected to in-depth scholarly analysis?"
-- Ensure that although the answer is concise and straightforward, the question itself demands deep, multi-step reasoning.
-- Place the correct answer as the first option, and leave all other options empty [VERY IMPORTANT AND CRITICAL].
+1. ANSWERS MUST BE EXTREMELY CONCISE - typically single words, short phrases, or brief definitions
+2. Questions should be direct and clearly ask for a specific term, definition, or fact
+3. The primary purpose is rapid recall and memorization
+4. Place the correct answer as the first option, and leave all other options empty [CRITICAL]
+
+${getFlashCardDifficultyLevel(difficulty)}
+
+Example proper flashcard formats:
+- "What is the term for the tendency of an object to resist changes in motion?" → "Inertia"
+- "Define photosynthesis" → "Process by which plants convert light energy into chemical energy"
+- "What year did World War II end?" → "1945" 
+- "What is the capital of France?" → "Paris"
+- "What hormone regulates blood glucose levels?" → "Insulin"
+
+DO NOT create complex questions like:
+❌ "Considering the multifaceted implications of cellular metabolism, what is the precise definition of glycolysis?"
+✅ Instead use: "What is glycolysis?"
+
 ${CRITICAL_DIVERSITY_INSTRUCTIONS}
 `;
+
+// Helper function for flash card difficulty levels
+const getFlashCardDifficultyLevel = (difficulty: DifficultyType): string => {
+  if (difficulty === 'hard')
+    return `
+FOR HARD DIFFICULTY FLASH CARDS:
+- Test advanced terminology and specific technical definitions
+- Include numerical values, specific years, or exact formulas where appropriate
+- Focus on specialized subconcepts rather than general terms
+- Test distinctions between closely related terms
+- Answers should still be concise but may include precise technical language
+
+Examples:
+- "What is the Henderson-Hasselbalch equation?" → "pH = pKa + log([A-]/[HA])"
+- "Define bradykinesia" → "Abnormal slowness of movement"
+- "What specific enzyme catalyzes the first step of glycolysis?" → "Hexokinase"`;
+
+  if (difficulty === 'medium')
+    return `
+FOR MEDIUM DIFFICULTY FLASH CARDS:
+- Focus on important terms, processes, and concepts
+- Test understanding of relationships between concepts
+- Include questions about key functions and mechanisms
+- Answers should be concise but complete
+- Test application of terms in context
+
+Examples:
+- "What is the function of mitochondria?" → "Cellular energy production (ATP synthesis)"
+- "Define osmosis" → "Movement of water across a semipermeable membrane"
+- "What is a cytokine?" → "Signaling protein that regulates immune response"`;
+
+  return `
+FOR EXTREMELY EASY FLASH CARDS:
+- Focus EXCLUSIVELY on simple term-definition pairs
+- Questions should be 3-7 words maximum
+- Answers should be 1-5 words maximum when possible
+- Use the simplest possible language
+- Test ONLY the most basic terms from the document
+
+Examples:
+- "What is DNA?" → "Deoxyribonucleic acid"
+- "Define cell" → "Basic unit of life"
+- "What is metabolism?" → "Chemical processes in organisms"
+- "What is a neuron?" → "Nerve cell"
+- "Define atom" → "Smallest unit of matter"
+
+CRITICAL: Flash cards must be EXTREMELY basic and should NEVER require any reasoning or analysis.`;
+};
 
 const getOralQuestionPrompt = (): string => `
 INSTRUCTIONS:
@@ -291,9 +395,72 @@ Note how:
 THIS INSTRUCTION IS CRITICAL FOR MULTIPLE TRUE-FALSE QUESTIONS:
 1. ABSOLUTELY NO PATTERNS IN TRUE/FALSE DISTRIBUTION
 2. EACH QUESTION'S TRUE/FALSE PATTERN MUST BE INDEPENDENT AND RANDOM
-3. CREATE HIGHLY CHALLENGING QUESTIONS WITH OPTIONS THAT TEST DEEP UNDERSTANDING
-4. ENSURE FALSE STATEMENTS ARE CREATED BY MAKING SUBTLE, MEANINGFUL CHANGES TO TRUE STATEMENTS FROM THE DOCUMENT
-5. DO NOT INCLUDE OPTION IDs (A, B, C, D) IN THE OPTION VALUES - KEEP THEM SEPARATE IN THE ID FIELD`;
+3. ENSURE FALSE STATEMENTS ARE CREATED BY MAKING SUBTLE, MEANINGFUL CHANGES TO TRUE STATEMENTS FROM THE DOCUMENT
+4. DO NOT INCLUDE OPTION IDs (A, B, C, D) IN THE OPTION VALUES - KEEP THEM SEPARATE IN THE ID FIELD`;
+
+const getDifficultyPrompt = (difficulty: DifficultyType = 'medium') => {
+  if (difficulty === 'hard') {
+    return `
+    \n ### Key Enhancements for Difficulty - HARD LEVEL
+    [EXTREMELY IMPORTANT FOR DIFFICULTY LEVEL] 
+    
+    EVERY QUESTION MUST BE GENUINELY CHALLENGING, EVEN FOR SUBJECT MATTER EXPERTS:
+    
+    1. Design questions that require integrating multiple concepts from different parts of the document
+    2. Create distractors that are partially correct but contain subtle flaws
+    3. Test edge cases and exceptions to general principles
+    4. Require multi-step reasoning to arrive at the correct answer
+    5. Include answer options that represent common misconceptions or oversimplifications
+    6. Test the application of concepts in novel or complex scenarios
+    7. Ask about implications, consequences, or relationships rather than direct facts
+    8. Require precise understanding of technical definitions and their boundaries
+    
+    The questions should make even a professor pause and think carefully before answering.
+    `;
+  }
+
+  if (difficulty === 'medium') {
+    return `
+    \n ### Key Enhancements for Difficulty - MEDIUM LEVEL
+    [EXTREMELY IMPORTANT FOR DIFFICULTY LEVEL]
+    
+    QUESTIONS SHOULD BE MODERATELY CHALLENGING BUT APPROACHABLE:
+    
+    1. Test understanding and application, not just recall
+    2. Require some analysis but not extensive multi-step reasoning
+    3. Include plausible distractors that test for common misconceptions
+    4. Focus on important principles and their typical applications
+    5. Test ability to distinguish between related concepts
+    6. Questions should be challenging but straightforward for someone who understands the material
+    7. Distractors should be clearly wrong to someone who understands the concepts well
+    
+    The questions should require thought but be answerable by someone who has studied the material well.
+    `;
+  }
+
+  return `
+  \n ### Key Enhancements for Difficulty - EXTREMELY EASY LEVEL
+  [EXTREMELY IMPORTANT FOR DIFFICULTY LEVEL]
+  
+  QUESTIONS MUST BE EXTREMELY BASIC AND STRAIGHTFORWARD:
+  
+  1. USE EXTREMELY SHORT QUESTIONS - ideally under 10 words
+  2. USE EXTREMELY SHORT ANSWER OPTIONS - ideally 1-5 words each
+  3. TEST ONLY THE MOST BASIC FACTS AND DEFINITIONS
+  4. MAKE THE CORRECT ANSWER OBVIOUS to anyone who has glanced at the material
+  5. USE THE SIMPLEST POSSIBLE LANGUAGE - avoid all technical terms in the question itself
+  6. FOCUS ONLY ON DIRECT STATEMENTS from the document - never require inference
+  7. DISTRACTORS SHOULD BE OBVIOUSLY INCORRECT - no tricky or close options
+  
+  EXAMPLES OF PROPER EASY QUESTIONS:
+  ✅ "What is a cell?"
+  ✅ "Which element is represented by H?"
+  ✅ "What does DNA stand for?"
+  ✅ "Which organ pumps blood?"
+  
+  REMEMBER: These questions must be answerable within 3-5 seconds by absolute beginners.
+  `;
+};
 
 const getQuestionStyle = (questionType: QuestionType) => {
   if (questionType === 'Flash Cards') return 'flashcard-style';
@@ -309,10 +476,11 @@ const getBasePrompt = (
   questionCount: number,
   focusAreas?: string[],
   questionType?: QuestionType,
+  difficultyLevel?: DifficultyType,
 ): string => `
 Analyze the document thoroughly. Generate ${questionCount} unique and new ${getQuestionStyle(
   questionType,
-)} questions based on key concepts. ${questionType === 'Oral (Viva)' ? VIVADIFFICULTYPROMPT : DIFFICULTY_PROMPT}
+)} questions based on key concepts. ${questionType === 'Oral (Viva)' ? VIVADIFFICULTYPROMPT : getDifficultyPrompt(difficultyLevel)}
 
 ${
   focusAreas?.length
@@ -399,9 +567,10 @@ export const generatePromptForQuestions = ({
   focusAreas,
   includeCaseStudies = false,
   questionType = 'Multiple Choice',
+  difficulty
 }: PromptConfig): string => {
   const basePrompt = getBasePrompt(questionCount, focusAreas, questionType);
-  const specificPrompt = getSpecificPrompt(questionType, includeCaseStudies);
+  const specificPrompt = getSpecificPrompt(questionType, includeCaseStudies, difficulty);
   const jsonFormat = getJsonFormat(questionType);
 
   return `
@@ -472,17 +641,29 @@ At the end of the assessment, let the user know that their response will be grad
 const getSpecificPrompt = (
   questionType: QuestionType,
   includeCaseStudies: boolean,
+  difficulty: DifficultyType
 ): string => {
-  if (questionType === 'Flash Cards') return getFlashCardPrompt();
+  if (questionType === 'Flash Cards') return getFlashCardPrompt(difficulty);
   if (questionType === 'Multiple True-False')
     return getMultipleTrueFalsePrompt();
   if (questionType === 'Oral (Viva)') return getOralQuestionPrompt();
   return includeCaseStudies
     ? getCaseStudyPrompt()
-    : getDirectQuestionPrompt(questionType);
+    : getDirectQuestionPrompt(questionType, difficulty);
 };
 
-export const getOralExaminationTranscriptAnalysisPrompt = (transcript: string): string => {
+const getEasyQuestionFormats = (): string => `
+"What is...?", 
+"Define...", 
+"Who discovered...?", 
+"When did...?", 
+"Where is...?", 
+"Which of these is...?"
+`;
+
+export const getOralExaminationTranscriptAnalysisPrompt = (
+  transcript: string,
+): string => {
   return `
   # Oral Examination Analysis Task
 
@@ -540,5 +721,5 @@ export const getOralExaminationTranscriptAnalysisPrompt = (transcript: string): 
 
   ## Transcript to Analyze:
   ${transcript}
-  `
+  `;
 };

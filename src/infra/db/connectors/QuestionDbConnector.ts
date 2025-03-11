@@ -8,6 +8,7 @@ export class QuestionDbConnector {
     try {
       return await QuestionModel.create(question);
     } catch (error) {
+      console.log(error)
       throw new DatabaseError('Failed to save questions').InnerError(error);
     }
   }
