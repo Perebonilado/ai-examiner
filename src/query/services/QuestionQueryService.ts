@@ -103,6 +103,8 @@ export class QuestionQueryService {
         fileId: courseDocument.openAiFileId,
         type: type ? type.title : null,
         typeId: type ? type.id : null,
+        difficulty: question.difficulty,
+        isCaseStudy: question.isCaseStudy,
         sharedBy: {
           firstname: sharedBy.firstName,
           lastName: sharedBy.lastName,

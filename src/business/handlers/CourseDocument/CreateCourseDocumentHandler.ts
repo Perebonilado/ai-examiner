@@ -29,10 +29,26 @@ export class CreateCourseDocumentHandler extends AbstractRequestHandlerTemplate<
         courseId: payload.courseId,
         openAiFileId: payload.fileId,
         userId: payload.userId,
-        mcqDirectThreadId: payload.mcqDirectThreadId,
-        mcqUseCaseThreadId: payload.mcqUseCaseThreadId,
-        flashCardThreadId: payload.flashCardThreadId,
-        documentChatThreadId: payload.documentChatThreadId
+
+        mcqDirectEasyThreadId: payload.mcqDirectEasyThreadId,
+        mcqDirectMediumThreadId: payload.mcqDirectMediumThreadId,
+        mcqDirectHardThreadId: payload.mcqDirectHardThreadId,
+
+        mcqUseCaseEasyThreadId: payload.mcqUseCaseEasyThreadId,
+        mcqUseCaseMediumThreadId: payload.mcqUseCaseMediumThreadId,
+        mcqUseCaseHardThreadId: payload.mcqUseCaseHardThreadId,
+
+        multipleTrueFalseEasyThreadId: payload.multipleTrueFalseEasyThreadId,
+        multipleTrueFalseMediumThreadId:
+          payload.multipleTrueFalseMediumThreadId,
+        multipleTrueFalseHardThreadId: payload.multipleTrueFalseHardThreadId,
+
+        flashCardEasyThreadId: payload.flashCardEasyThreadId,
+        flashCardMediumThreadId: payload.flashCardMediumThreadId,
+        flashCardHardThreadId: payload.flashCardHardThreadId,
+
+        documentChatThreadId: payload.documentChatThreadId,
+        oralQuestionThreadId: payload.oralQuestionThreadId,
       } as CourseDocumentModel);
 
       return {
@@ -44,9 +60,9 @@ export class CreateCourseDocumentHandler extends AbstractRequestHandlerTemplate<
         },
       };
     } catch (error) {
-      throw new HandlerError(
-        'Failed to handle Document creation',
-      ).InnerError(error);
+      throw new HandlerError('Failed to handle Document creation').InnerError(
+        error,
+      );
     }
   }
 }

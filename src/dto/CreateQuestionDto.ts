@@ -1,3 +1,4 @@
+import { DifficultyType } from 'src/constants/QuestionGenerationPrompt';
 import { MCQModel } from 'src/integrations/open-ai/models/MCQModel';
 
 export interface CreateQuestionDto {
@@ -5,4 +6,6 @@ export interface CreateQuestionDto {
   userId: string;
   courseDocumentId: string;
   questionTypeId: number;
+  difficulty: DifficultyType;
+  isCaseStudy: boolean;
 }

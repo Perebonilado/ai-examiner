@@ -43,10 +43,25 @@ export class UpdateCourseDocumentHandler extends AbstractRequestHandlerTemplate<
         id: request.data.id,
         title: request.data?.title || existingDoc.title,
         isDeleted: request.data?.isDeleted || existingDoc.isDeleted,
-        mcqDirectThreadId: request.data?.mcqDirectThreadId || existingDoc.mcqDirectThreadId,
-        mcqUseCaseThreadId: request.data?.mcqUseCaseThreadId || existingDoc.mcqUseCaseThreadId,
-        documentChatThreadId: request.data?.documentChatThreadId || existingDoc.documentChatThreadId,
-        flashCardThreadId: request.data?.flashCardThreadId || existingDoc.flashCardThreadId 
+
+        mcqDirectEasyThreadId: request.data?.mcqDirectEasyThreadId || existingDoc.mcqDirectEasyThreadId,
+        mcqDirectMediumThreadId: request.data?.mcqDirectMediumThreadId || existingDoc.mcqDirectMediumThreadId,
+        mcqDirectHardThreadId: request.data?.mcqDirectHardThreadId || existingDoc.mcqDirectHardThreadId,
+
+        mcqUseCaseEasyThreadId: request.data?.mcqUseCaseEasyThreadId || existingDoc.mcqUseCaseEasyThreadId,
+        mcqUseCaseMediumThreadId: request.data?.mcqUseCaseMediumThreadId || existingDoc.mcqUseCaseMediumThreadId,
+        mcqUseCaseHardThreadId: request.data?.mcqUseCaseHardThreadId || existingDoc.mcqUseCaseHardThreadId,
+
+        multipleTrueFalseEasyThreadId: request.data?.multipleTrueFalseEasyThreadId || existingDoc.multipleTrueFalseEasyThreadId,
+        multipleTrueFalseMediumThreadId: request.data?.multipleTrueFalseMediumThreadId || existingDoc.multipleTrueFalseMediumThreadId,
+        multipleTrueFalseHardThreadId: request.data?.multipleTrueFalseHardThreadId || existingDoc.multipleTrueFalseHardThreadId,
+
+        flashCardEasyThreadId: request.data?.flashCardEasyThreadId || existingDoc.flashCardEasyThreadId,
+        flashCardMediumThreadId: request.data?.flashCardMediumThreadId || existingDoc.flashCardMediumThreadId,
+        flashCardHardThreadId: request.data?.flashCardHardThreadId || existingDoc.flashCardHardThreadId,
+
+        oralQuestionThreadId: request.data?.oralQuestionThreadId || existingDoc.oralQuestionThreadId,
+        documentChatThreadId: request.data?.documentChatThreadId || existingDoc.documentChatThreadId
       } as CourseDocumentModel);
 
       return {
