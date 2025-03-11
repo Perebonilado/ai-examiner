@@ -21,9 +21,24 @@ export class CourseDocumentDbConnector {
         fields: [
           'title',
           'isDeleted',
-          'mcqDirectThreadId',
-          'mcqUseCaseThreadId',
-          'flashCardThreadId',
+
+          'mcqDirectEasyThreadId',
+          'mcqDirectMediumThreadId',
+          'mcqDirectHardThreadId',
+
+          'mcqUseCaseEasyThreadId',
+          'mcqUseCaseMediumThreadId',
+          'mcqUseCaseHardThreadId',
+
+          'multipleTrueFalseEasyThreadId',
+          'multipleTrueFalseMediumThreadId',
+          'multipleTrueFalseHardThreadId',
+
+          'flashCardEasyThreadId',
+          'flashCardHardThreadId',
+          'flashCardMediumThreadId',
+
+          'oralQuestionThreadId',
           'documentChatThreadId',
         ],
       });

@@ -53,6 +53,7 @@ import { SaveSharedQuestionDto } from 'src/dto/SaveSharedQuestionDto';
 import { QuestionType } from '../models/QuestionTypeModel';
 import { QuestionSourceRequesDto } from 'src/dto/QuestionSourceRequestDto';
 import {
+  DifficultyType,
   generateOralExaminationPrompt,
   generatePromptForQuestions,
 } from 'src/constants/QuestionGenerationPrompt';
@@ -249,9 +250,23 @@ export class QuestionsController {
           userId: userToken.sub,
           courseId: null,
           documentChatThreadId: null,
-          flashCardThreadId: null,
-          mcqDirectThreadId: null,
-          mcqUseCaseThreadId: null,
+          mcqDirectEasyThreadId: null,
+          mcqDirectMediumThreadId: null,
+          mcqDirectHardThreadId: null,
+
+          mcqUseCaseEasyThreadId: null,
+          mcqUseCaseMediumThreadId: null,
+          mcqUseCaseHardThreadId: null,
+
+          multipleTrueFalseEasyThreadId: null,
+          multipleTrueFalseMediumThreadId: null,
+          multipleTrueFalseHardThreadId: null,
+
+          flashCardEasyThreadId: null,
+          flashCardMediumThreadId: null,
+          flashCardHardThreadId: null,
+
+          oralQuestionThreadId: null,
         },
       });
 
@@ -261,6 +276,8 @@ export class QuestionsController {
           data: question.questions,
           questionTypeId: question.typeId,
           userId: userToken.sub,
+          difficulty: question.difficulty,
+          isCaseStudy: question.isCaseStudy
         },
       });
     } catch (error) {
@@ -363,6 +380,7 @@ export class QuestionsController {
     @Query('questionCount') questionCount: number,
     @Query('questionType') questionType: number,
     @Query('includeUseCases') includeUseCases: string,
+    @Query('difficulty') difficulty: DifficultyType = 'medium',
     @Body() body: GenerateCourseDocumentQuestionDto,
   ) {
     try {
@@ -406,17 +424,59 @@ export class QuestionsController {
         );
 
         if (questionTypeName.title.toLowerCase() === 'multiple choice') {
-          includeUseCases === 'true'
-            ? (threadIdKey = 'mcqUseCaseThreadId')
-            : (threadIdKey = 'mcqDirectThreadId');
+          if (includeUseCases === 'true') {
+            switch (difficulty) {
+              case 'easy': {
+                threadIdKey = 'mcqUseCaseEasyThreadId';
+              }
+              case 'medium': {
+                threadIdKey = 'mcqUseCaseMediumThreadId';
+              }
+              default: {
+                threadIdKey = 'mcqUseCaseHardThreadId';
+              }
+            }
+          } else {
+            switch (difficulty) {
+              case 'easy': {
+                threadIdKey = 'mcqDirectEasyThreadId';
+              }
+              case 'medium': {
+                threadIdKey = 'mcqDirectMediumThreadId';
+              }
+              default: {
+                threadIdKey = 'mcqDirectHardThreadId';
+              }
+            }
+          }
         } else if (
           questionTypeName.title.toLowerCase() === 'multiple true-false'
         ) {
-          threadIdKey = 'multipleTrueFalseThreadId';
+          switch (difficulty) {
+            case 'easy': {
+              threadIdKey = 'multipleTrueFalseEasyThreadId';
+            }
+            case 'medium': {
+              threadIdKey = 'multipleTrueFalseMediumThreadId';
+            }
+            default: {
+              threadIdKey = 'multipleTrueFalseHardThreadId';
+            }
+          }
         } else if (questionTypeName.title.toLowerCase().includes('oral')) {
           threadIdKey = 'oralQuestionThreadId';
         } else {
-          threadIdKey = 'flashCardThreadId';
+          switch (difficulty) {
+            case 'easy': {
+              threadIdKey = 'flashCardEasyThreadId';
+            }
+            case 'medium': {
+              threadIdKey = 'flashCardMediumThreadId';
+            }
+            default: {
+              threadIdKey = 'flashCardHardThreadId';
+            }
+          }
         }
 
         // check if thread exists
@@ -502,6 +562,7 @@ export class QuestionsController {
               focusAreas: body.selectedQuestionTopics || undefined,
               includeCaseStudies: includeUseCases === 'true' ? true : false,
               questionType: questionTypeName.title as QuestionType,
+              difficulty
             }),
           );
 
@@ -537,6 +598,8 @@ export class QuestionsController {
             data: generatedQuestions,
             userId: userToken.sub,
             questionTypeId: questionType,
+            difficulty: difficulty,
+            isCaseStudy: includeUseCases === 'true'
           },
         });
 

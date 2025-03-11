@@ -10,7 +10,10 @@ interface PromptConfig {
   focusAreas?: string[];
   includeCaseStudies: boolean;
   questionType: QuestionType;
+  difficulty: DifficultyType
 }
+
+export type DifficultyType = 'easy' | 'medium' | 'hard';
 
 // Constants for shared prompts
 const DIFFICULTY_PROMPT = `ENSURE THAT EVERY QUESTION IS VERY DIFFICULT TO ANSWER. THE KIND OF DIFFICULTY THAT A COLLEGE PROFESSOR WOULD FIND CHALLENGING. THE QUESTIONS SHOULD REQUIRE THE USER TO HAVE A LONG TRAIN OF THOUGHTS BEFORE FIGURING OUT THE ANSWER FROM THE OPTIONS.`;
@@ -121,7 +124,7 @@ For each question:
 4. ${getAnswerFormatInstructions(questionType)}
 5. Add a hint that aids recall without revealing the answer
 6. Include a detailed explanation. ${getExplanationInstructions(questionType)}
-7. Ensure the questions and options are ${questionType === 'Flash Cards' ? 'clear, concise, and promote effective memorization' : 'difficult and thought provoking'};`;
+7. Ensure the questions and options are ${questionType === 'Flash Cards' ? 'clear, concise, and promote effective memorization' : 'thought provoking'};`;
 
 const getAnswerFormatInstructions = (questionType: QuestionType): string => {
   switch (questionType) {
@@ -157,7 +160,10 @@ ${CORRECT_ANSWER_DISTRIBUTION}
 THIS INSTRUCTION IS CRITICAL FOR ALL QUESTIONS - STRICTLY ADHERE TO CREATING SCENARIO-BASED QUESTIONS THAT APPLY DOCUMENT CONCEPTS.
 `;
 
-const getDirectQuestionPrompt = (questionType: QuestionType): string => `
+const getDirectQuestionPrompt = (
+  questionType: QuestionType,
+  difficulty: DifficultyType,
+): string => `
 CRITICAL INSTRUCTIONS:  
 - Generate ONLY direct, concept-driven questions that demand advanced reasoning, deep understanding, and synthesis of knowledge.  
 - Questions should **not** rely on simple recall but instead require:  
@@ -168,33 +174,68 @@ CRITICAL INSTRUCTIONS:
   • Evaluating how a concept **changes under different conditions**.  
 - Ensure that questions force users to engage in prolonged critical thinking, **even if the answer is brief**.  
 
-### Key Enhancements for Difficulty  
-- Introduce **counterintuitive** answer choices that challenge common misconceptions.  
-- Force respondents to **compare and contrast** subtly different concepts.  
-- Use **incomplete information**, requiring inference and extrapolation.  
-- Frame questions to reveal **hidden relationships** between concepts.  
-- Encourage **long-form mental reasoning**, even if the question appears simple.  
-
 ### Format Examples  
 ${getQuestionFormats(questionType)}
 
+${getDirectQuestionDifficulty(difficulty)}  
+`;
+
+const getDirectQuestionDifficulty = (difficulty: DifficultyType) => {
+  if (difficulty === 'hard')
+    return `
+  \n \n 
 ### Example  
 Instead of:  
 ❌ "What is Newton’s First Law?"  
 It will generate:  
-✅ "If Newton’s First Law holds universally, why do objects in motion appear to slow down? Identify the implicit factors that alter its observed effects."  
+✅ "If Newton’s First Law holds universally, why do objects in motion appear to slow down? Identify the implicit factors that alter its observed effects
+
+\n
+\n
+    - Introduce **counterintuitive** answer choices that challenge common misconceptions.  
+    - Force respondents to **compare and contrast** subtly different concepts.  
+    - Use **incomplete information**, requiring inference and extrapolation.  
+    - Frame questions to reveal **hidden relationships** between concepts.  
+    - Encourage **long-form mental reasoning**, even if the question appears simple.
+
+."  
 
 STRICT REQUIREMENT:  
 - DO NOT simplify the questions.  
 - DO NOT make answers obvious.  
-- Questions should require **active intellectual effort** to solve.  
-`;
+- Questions should require **active intellectual effort** to solve.`;
+
+  if (difficulty === 'medium')
+    return `
+   \n \n  
+### Example  
+Instead of:  
+❌ "What happens to a moving object if nothing pushes or pulls on it?"  
+It will generate:  
+✅ "According to Newton’s First Law, what happens to a moving object if no external force acts on it?"  
+
+STRICT REQUIREMENT:  
+- DO NOT make the questions extremenly hard. Medium difficulty level that a college student would find a bit challenging.  
+- DO NOT make answers obvious.  
+- Questions should require **active intellectual effort** to solve.`;
+
+  return `
+   \n  \n 
+  ### Example  
+Instead of:  
+❌ "What does Newton’s First Law say about moving things?"  
+It will generate:  
+✅ "What is Newton’s First Law?"  
+
+STRICT REQUIREMENT:  
+- Questions should be easy and straight forward. Keep questions and options concise. 
+  `;
+};
 
 const getFlashCardPrompt = (): string => `
-IMPORTANT: For flashcard questions, generate questions that, while eliciting a concise answer, demand advanced, multi-layered reasoning and deep conceptual analysis. Each question should appear straightforward but be underpinned by complex, nuanced insights that challenge even experienced professors. The answer itself should be a simple key term or definition, yet arriving at that answer must require careful, multi-step thought.
+IMPORTANT: For flashcard questions,the answer itself should be a simple key term or definition. Questions should be straight forward, neither long nor overly complex.
 
 - Frame each flashcard question to test advanced recall of key terms, definitions, intricate processes, historical events, and interrelated concepts.
-- Craft questions that require integrating contextual details and subtle nuances to force the respondent to consider multiple facets of the concept before deducing the simple answer.
 - Use varied and challenging question formats, such as:
   • "Considering the multifaceted implications of [context], what is the precise definition of [term/concept]?"
   • "Given the complex interplay of factors in [advanced scenario], what is the primary function of [structure/organ]?"
@@ -219,7 +260,7 @@ IMPORTANT: For flashcard questions, generate questions that, while eliciting a c
   • "Enumerate the inputs and outputs of [process] considering its dynamic interplay."
   • "Outline the sequence of events in [process] when examined through advanced reasoning."
   • "What is the most critical factor in [phenomenon] when subjected to in-depth scholarly analysis?"
-- Ensure that although the answer is concise and straightforward, the question itself demands deep, multi-step reasoning.
+- Ensure that although the answer is concise and straightforward.
 - Place the correct answer as the first option, and leave all other options empty [VERY IMPORTANT AND CRITICAL].
 ${CRITICAL_DIVERSITY_INSTRUCTIONS}
 `;
@@ -291,9 +332,27 @@ Note how:
 THIS INSTRUCTION IS CRITICAL FOR MULTIPLE TRUE-FALSE QUESTIONS:
 1. ABSOLUTELY NO PATTERNS IN TRUE/FALSE DISTRIBUTION
 2. EACH QUESTION'S TRUE/FALSE PATTERN MUST BE INDEPENDENT AND RANDOM
-3. CREATE HIGHLY CHALLENGING QUESTIONS WITH OPTIONS THAT TEST DEEP UNDERSTANDING
-4. ENSURE FALSE STATEMENTS ARE CREATED BY MAKING SUBTLE, MEANINGFUL CHANGES TO TRUE STATEMENTS FROM THE DOCUMENT
-5. DO NOT INCLUDE OPTION IDs (A, B, C, D) IN THE OPTION VALUES - KEEP THEM SEPARATE IN THE ID FIELD`;
+3. ENSURE FALSE STATEMENTS ARE CREATED BY MAKING SUBTLE, MEANINGFUL CHANGES TO TRUE STATEMENTS FROM THE DOCUMENT
+4. DO NOT INCLUDE OPTION IDs (A, B, C, D) IN THE OPTION VALUES - KEEP THEM SEPARATE IN THE ID FIELD`;
+
+const getDifficultyPrompt = (difficulty: DifficultyType = 'medium') => {
+  if (difficulty === 'hard') {
+    return `
+    \n ### Key Enhancements for Difficulty
+    [EXTREMEMLY IMPORTANT FOR DIFFICULTY LEVEL] -ENSURE THAT EVERY QUESTION IS VERY DIFFICULT TO ANSWER. THE KIND OF DIFFICULTY THAT A COLLEGE PROFESSOR WOULD FIND CHALLENGING. THE QUESTIONS SHOULD REQUIRE THE USER TO HAVE A LONG TRAIN OF THOUGHTS BEFORE FIGURING OUT THE ANSWER FROM THE OPTIONS.  ADHERE TO THIS VERY STRICTLY ELSE YOU WOULD CAUSE THE STUDENT TO HAVE PROBLEMS. 
+    `;
+  }
+
+  if (difficulty === 'medium') {
+    return `
+    \n ### Key Enhancements for Difficulty
+    [EXTREMEMLY IMPORTANT FOR DIFFICULTY LEVEL] - ENSURE THAT EVERY QUESTION HAS A MEDIUM DIFFICULTY LEVEL. THE KIND OF DIFFICULTY LEVEL THAT A COLLEGE STUDENT WOULD FIND A BIT TASKING. THE QUESTIONS SHOULD REQUIRE THE USER TO THINK, BUT STILL BE STRAIGHTFORWARD ENOUGH TO NOT SPEND TOO MUCH TIME TO DECIPHER THE ANSWER FROM THE OPTIONS. OPTIONS SHOULD BE PRETTY CLEAR AND CONCISE. IMAGINE THESE QUESTIONS BEING USED TO PREP AFTER STUDYING THE CONTENT TWICE.  ADHERE TO THIS VERY STRICTLY ELSE YOU WOULD CAUSE THE STUDENT TO HAVE PROBLEMS`;
+  }
+
+  return `
+  \n ### Key Enhancements for Difficulty
+  [EXTREMEMLY IMPORTANT FOR DIFFICULTY LEVEL] - ENSURE THAT EVERY QUESTION IS VERY EASY AND VERY STRAIGHTFORWARD. DO YOUR BEST TO KEEP THE QUESTIONS AND OPTIONS SHORT. THE QUESTIONS SHOULD NOT REQUIRE A LONG TRAIN OF THOUGHTS. IT SHOULD HAVE THE KIND OF DIFFICULTY LEVEL THAT A HIGH SCHOOL STUDENT MIGHT FIND CHALLENGING. THE QUESTIONS SHOULD BE CONSIDERABLY EASY TO BREEZE THROUGH WITH A SURFACE LEVEL UNDERSTAND OF THE CONTENT. IMAGINE THESE QUESTIONS BEING USED TO PREP AFTER STUDYING THE CONTENT ONCE.  ADHERE TO THIS VERY STRICTLY ELSE YOU WOULD CAUSE THE STUDENT TO HAVE PROBLEMS`;
+};
 
 const getQuestionStyle = (questionType: QuestionType) => {
   if (questionType === 'Flash Cards') return 'flashcard-style';
@@ -309,10 +368,11 @@ const getBasePrompt = (
   questionCount: number,
   focusAreas?: string[],
   questionType?: QuestionType,
+  difficultyLevel?: DifficultyType,
 ): string => `
 Analyze the document thoroughly. Generate ${questionCount} unique and new ${getQuestionStyle(
   questionType,
-)} questions based on key concepts. ${questionType === 'Oral (Viva)' ? VIVADIFFICULTYPROMPT : DIFFICULTY_PROMPT}
+)} questions based on key concepts. ${questionType === 'Oral (Viva)' ? VIVADIFFICULTYPROMPT : getDifficultyPrompt(difficultyLevel)}
 
 ${
   focusAreas?.length
@@ -399,9 +459,10 @@ export const generatePromptForQuestions = ({
   focusAreas,
   includeCaseStudies = false,
   questionType = 'Multiple Choice',
+  difficulty
 }: PromptConfig): string => {
   const basePrompt = getBasePrompt(questionCount, focusAreas, questionType);
-  const specificPrompt = getSpecificPrompt(questionType, includeCaseStudies);
+  const specificPrompt = getSpecificPrompt(questionType, includeCaseStudies, difficulty);
   const jsonFormat = getJsonFormat(questionType);
 
   return `
@@ -472,6 +533,7 @@ At the end of the assessment, let the user know that their response will be grad
 const getSpecificPrompt = (
   questionType: QuestionType,
   includeCaseStudies: boolean,
+  difficulty: DifficultyType
 ): string => {
   if (questionType === 'Flash Cards') return getFlashCardPrompt();
   if (questionType === 'Multiple True-False')
@@ -479,10 +541,12 @@ const getSpecificPrompt = (
   if (questionType === 'Oral (Viva)') return getOralQuestionPrompt();
   return includeCaseStudies
     ? getCaseStudyPrompt()
-    : getDirectQuestionPrompt(questionType);
+    : getDirectQuestionPrompt(questionType, difficulty);
 };
 
-export const getOralExaminationTranscriptAnalysisPrompt = (transcript: string): string => {
+export const getOralExaminationTranscriptAnalysisPrompt = (
+  transcript: string,
+): string => {
   return `
   # Oral Examination Analysis Task
 
@@ -540,5 +604,5 @@ export const getOralExaminationTranscriptAnalysisPrompt = (transcript: string): 
 
   ## Transcript to Analyze:
   ${transcript}
-  `
+  `;
 };

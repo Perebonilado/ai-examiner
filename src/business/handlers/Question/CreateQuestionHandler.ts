@@ -27,7 +27,9 @@ export class CreateQuestionHandler extends AbstractRequestHandlerTemplate<
         data: JSON.stringify(payload.data),
         userId: payload.userId,
         courseDocumentId: payload.courseDocumentId,
-        questionTypeId: payload.questionTypeId
+        questionTypeId: payload.questionTypeId,
+        difficulty: payload.difficulty,
+        isCaseStudy: payload.isCaseStudy,
       } as QuestionModel);
 
       return {
