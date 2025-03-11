@@ -52,33 +52,98 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
   })
   userId: string;
 
+  // mcq direct
   @Column({
     type: DataType.STRING,
-    field: 'mcq_direct_thread_id',
+    field: 'mcq_direct_hard_thread_id',
     allowNull: true,
   })
-  mcqDirectThreadId: string;
+  mcqDirectHardThreadId: string;
 
   @Column({
     type: DataType.STRING,
-    field: 'mcq_use_case_thread_id',
+    field: 'mcq_direct_medium_thread_id',
     allowNull: true,
   })
-  mcqUseCaseThreadId: string;
+  mcqDirectMediumThreadId: string;
 
   @Column({
     type: DataType.STRING,
-    field: 'flash_card_thread_id',
+    field: 'mcq_direct_easy_thread_id',
     allowNull: true,
   })
-  flashCardThreadId: string;
+  mcqDirectEasyThreadId: string;
+
+  // mcq use case
 
   @Column({
     type: DataType.STRING,
-    field: 'multiple_true_false_thread_id',
+    field: 'mcq_use_case_hard_thread_id',
     allowNull: true,
   })
-  multipleTrueFalseThreadId: string;
+  mcqUseCaseHardThreadId: string;
+
+  @Column({
+    type: DataType.STRING,
+    field: 'mcq_use_case_medium_thread_id',
+    allowNull: true,
+  })
+  mcqUseCaseMediumThreadId: string;
+
+  @Column({
+    type: DataType.STRING,
+    field: 'mcq_use_case_easy_thread_id',
+    allowNull: true,
+  })
+  mcqUseCaseEasyThreadId: string;
+
+  // flashcards
+
+  @Column({
+    type: DataType.STRING,
+    field: 'flash_card_hard_thread_id',
+    allowNull: true,
+  })
+  flashCardHardThreadId: string;
+
+  @Column({
+    type: DataType.STRING,
+    field: 'flash_card_medium_thread_id',
+    allowNull: true,
+  })
+  flashCardMediumThreadId: string;
+
+  @Column({
+    type: DataType.STRING,
+    field: 'flash_card_easy_thread_id',
+    allowNull: true,
+  })
+  flashCardEasyThreadId: string;
+
+  // multiple true false
+
+  @Column({
+    type: DataType.STRING,
+    field: 'multiple_true_false_hard_thread_id',
+    allowNull: true,
+  })
+  multipleTrueFalseHardThreadId: string;
+
+  @Column({
+    type: DataType.STRING,
+    field: 'multiple_true_false_medium_thread_id',
+    allowNull: true,
+  })
+  multipleTrueFalseMediumThreadId: string;
+
+  @Column({
+    type: DataType.STRING,
+    field: 'multiple_true_false_easy_thread_id',
+    allowNull: true,
+  })
+  multipleTrueFalseEasyThreadId: string;
+
+  //==============
 
   @Column({
     type: DataType.STRING,

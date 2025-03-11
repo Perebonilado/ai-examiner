@@ -12,6 +12,7 @@ import * as moment from 'moment';
 import { UserModel } from './UserModel';
 import { CourseDocumentModel } from './CourseDocumentModel';
 import { OralQuestionAnalysisModel } from './OralQuestionAnalysisModel';
+import { DifficultyType } from 'src/constants/QuestionGenerationPrompt';
 
 @Table({ tableName: 'question' })
 export class QuestionModel extends Model<QuestionModel> {
@@ -41,6 +42,20 @@ export class QuestionModel extends Model<QuestionModel> {
     allowNull: true,
   })
   createdOn: Date;
+
+  @Column({
+    type: DataType.STRING,
+    field: 'difficulty',
+    allowNull: false,
+  })
+  difficulty: DifficultyType;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    field: 'is_case_study',
+    allowNull: false,
+  })
+  isCaseStudy: boolean;
 
   @ForeignKey(() => UserModel)
   @Column({

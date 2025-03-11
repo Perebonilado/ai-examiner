@@ -37,7 +37,10 @@ import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocumen
 import { UpdateCourseDocumentDto } from 'src/dto/UpdateCourseDocumentDto';
 import { ThreadTypeModel } from '../models/ThreadTypeModel';
 import { QuestionType } from '../models/QuestionTypeModel';
-import { generatePromptForQuestions } from 'src/constants/QuestionGenerationPrompt';
+import {
+  DifficultyType,
+  generatePromptForQuestions,
+} from 'src/constants/QuestionGenerationPrompt';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -124,6 +127,7 @@ export class CourseDocumentController {
     @Query('questionCount') questionCount: number,
     @Query('questionType') questionType: number,
     @Query('includeUseCases') includeUseCases: string,
+    @Query('difficulty') difficulty: DifficultyType = 'medium',
     @Body()
     body: Omit<CreateCourseDocumentDto, 'userId' | 'threadId' | 'courseId'>,
     @Req() request: Request,
@@ -179,26 +183,76 @@ export class CourseDocumentController {
       );
 
       const threadIdToAttach: Record<ThreadTypeModel, string> = {
-        mcqDirectThreadId: '',
-        mcqUseCaseThreadId: '',
-        flashCardThreadId: '',
         documentChatThreadId: '',
-        multipleTrueFalseThreadId: '',
+        flashCardEasyThreadId: '',
+        flashCardHardThreadId: '',
+        flashCardMediumThreadId: '',
+        mcqDirectEasyThreadId: '',
+        mcqDirectHardThreadId: '',
+        mcqDirectMediumThreadId: '',
+        mcqUseCaseEasyThreadId: '',
+        mcqUseCaseHardThreadId: '',
+        mcqUseCaseMediumThreadId: '',
+        multipleTrueFalseEasyThreadId: '',
+        multipleTrueFalseHardThreadId: '',
+        multipleTrueFalseMediumThreadId: '',
         oralQuestionThreadId: '',
       };
 
       if (questionTypeName.title.toLowerCase() === 'multiple choice') {
-        includeUseCases === 'true'
-          ? (threadIdToAttach.mcqUseCaseThreadId = updatedThread.id)
-          : (threadIdToAttach.mcqDirectThreadId = updatedThread.id);
+        if (includeUseCases === 'true') {
+          switch (difficulty) {
+            case 'easy': {
+              threadIdToAttach.mcqUseCaseEasyThreadId = updatedThread.id;
+            }
+            case 'medium': {
+              threadIdToAttach.mcqUseCaseMediumThreadId = updatedThread.id;
+            }
+            default: {
+              threadIdToAttach.mcqUseCaseHardThreadId = updatedThread.id;
+            }
+          }
+        } else {
+          switch (difficulty) {
+            case 'easy': {
+              threadIdToAttach.mcqDirectEasyThreadId = updatedThread.id;
+            }
+            case 'medium': {
+              threadIdToAttach.mcqDirectMediumThreadId = updatedThread.id;
+            }
+            default: {
+              threadIdToAttach.mcqDirectHardThreadId = updatedThread.id;
+            }
+          }
+        }
       } else if (
         questionTypeName.title.toLowerCase() === 'multiple true-false'
       ) {
-        threadIdToAttach.multipleTrueFalseThreadId = updatedThread.id;
+        switch (difficulty) {
+          case 'easy': {
+            threadIdToAttach.multipleTrueFalseEasyThreadId = updatedThread.id;
+          }
+          case 'medium': {
+            threadIdToAttach.multipleTrueFalseMediumThreadId = updatedThread.id;
+          }
+          default: {
+            threadIdToAttach.multipleTrueFalseHardThreadId = updatedThread.id;
+          }
+        }
       } else if (questionTypeName.title.toLowerCase().includes('oral')) {
         threadIdToAttach.oralQuestionThreadId = updatedThread.id;
       } else {
-        threadIdToAttach.flashCardThreadId = updatedThread.id;
+        switch (difficulty) {
+          case 'easy': {
+            threadIdToAttach.flashCardEasyThreadId = updatedThread.id;
+          }
+          case 'medium': {
+            threadIdToAttach.flashCardMediumThreadId = updatedThread.id;
+          }
+          default: {
+            threadIdToAttach.flashCardHardThreadId = updatedThread.id;
+          }
+        }
       }
 
       const createdDocument = await this.createCourseDocumentHander.handle({
@@ -274,6 +328,7 @@ export class CourseDocumentController {
             focusAreas: body.selectedQuestionTopics || undefined,
             includeCaseStudies: includeUseCases === 'true' ? true : false,
             questionType: questionTypeName.title as QuestionType,
+            difficulty
           }),
         );
 
@@ -309,6 +364,8 @@ export class CourseDocumentController {
           data: generatedQuestions,
           userId: userToken.sub,
           questionTypeId: questionType,
+          difficulty,
+          isCaseStudy: includeUseCases === 'true'
         },
       });
 
@@ -344,7 +401,6 @@ export class CourseDocumentController {
         },
       };
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,
