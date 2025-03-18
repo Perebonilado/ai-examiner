@@ -172,6 +172,8 @@ export class FileUploadController {
           fileId: uploadedOpenAiFile.id,
           topics,
         },
+        message: 'File uploaded successfully',
+        status: HttpStatus.CREATED,
       };
     } catch (error) {
       throw new HttpException(
