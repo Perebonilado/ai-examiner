@@ -162,7 +162,7 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
   @Column({
     type: DataType.STRING,
     field: 'open_ai_file_id',
-    allowNull: false,
+    allowNull: true,
   })
   openAiFileId: string;
 

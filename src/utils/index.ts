@@ -66,7 +66,7 @@ export const extractJSONDataFromMessages = (
     return extractJSONArray(data) as any;
   }
 
-  return []
+  return [];
 };
 
 export const convertSmallerDemoninationtoLarger = (
@@ -112,6 +112,21 @@ export const getPaystackHash = (data: string): string => {
     .digest('hex');
 
   return hash;
+};
+
+export const extractPagesTextsFromPDF = async (
+  buffer: Buffer,
+  options: PDFExtractOptions = {},
+) => {
+  try {
+    const pdfExtract = new PDFExtract();
+    const data = await pdfExtract.extractBuffer(buffer, options);
+    return data.pages.map((page) =>
+      page.content.map((item) => item.str).join(' '),
+    );
+  } catch (error) {
+    throw new Error(error);
+  }
 };
 
 export const extractTextFromPDF = async (
@@ -187,3 +202,18 @@ export const convertOldPptToText = async (file: Buffer) => {
     await rm(tempDir, { recursive: true, force: true });
   }
 };
+
+export function chunkText(text: string, maxWords: number = 250, overlap: number = 50): string[] {
+  const words = text.split(/\s+/); // Split by whitespace
+  const chunks: string[] = [];
+  let start = 0;
+
+  while (start < words.length) {
+    const end = Math.min(start + maxWords, words.length);
+    const chunk = words.slice(start, end).join(" ");
+    chunks.push(chunk);
+    start += maxWords - overlap; // Move forward but keep overlap
+  }
+
+  return chunks;
+}
