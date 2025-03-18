@@ -7,4 +7,5 @@ export interface GenerateQuestionDto {
     questionType: number;
     includeUseCases: boolean;
     difficulty: DifficultyType;
+    title?: string;
   }

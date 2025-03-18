@@ -71,7 +71,10 @@ import { MultipleTrueFalseSchema } from 'src/schemas/MultipleTrueFasleSchema';
 import { FlashCardsSchema } from 'src/schemas/FlashCardSchema';
 import { VivaSchema } from 'src/schemas/VivaSchema';
 import { z } from 'zod';
-import { generatePromptForQuestionsV2, getAnswerVariationRule } from 'src/constants/QuestionGenerationPromptV2';
+import {
+  generatePromptForQuestionsV2,
+  getAnswerVariationRule,
+} from 'src/constants/QuestionGenerationPromptV2';
 
 @Controller('questions')
 export class QuestionsController {
@@ -110,6 +113,7 @@ export class QuestionsController {
     @Inject(UserQueryService) private userQueryService: UserQueryService,
     @Inject(OralQuestionAnalysisQueryService)
     private oralQuestionAnalysisQueryService: OralQuestionAnalysisQueryService,
+    @Inject(PineconeChunkService)
     private pineconeChunkService: PineconeChunkService,
   ) {}
 
@@ -698,6 +702,14 @@ export class QuestionsController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
+
+      if (body.title) {
+        await this.updateCourseDocumentHandler.handle({
+          data: { id: documentId, title: body.title },
+          userId: userToken.sub,
+        });
+      }
+
       const openai = createOpenAI({
         compatibility: 'strict',
         apiKey: EnvironmentVariables.config.openAiApiKey,
@@ -802,22 +814,24 @@ export class QuestionsController {
           temperature: 0.8,
           topP: 0.7,
           schema: z.object({
-            questions: z.array(
-              this.getZodQuestionValidator(
-                questionTypeName.title.toLowerCase(),
+            questions: z
+              .array(
+                this.getZodQuestionValidator(
+                  questionTypeName.title.toLowerCase(),
+                ),
+              )
+              .describe(
+                getAnswerVariationRule(questionTypeName.title as QuestionType),
               ),
-            ).describe(getAnswerVariationRule(questionTypeName.title as QuestionType)),
           }),
-          prompt: generatePromptForQuestionsV2(
-            {
-              difficulty: body.difficulty,
-              includeCaseStudies: false,
-              questionCount: batchSize,
-              questionType: questionTypeName.title as QuestionType,
-              sourceText: chunkBatches[index],
-              previousQuestions
-            },
-          ),
+          prompt: generatePromptForQuestionsV2({
+            difficulty: body.difficulty,
+            includeCaseStudies: false,
+            questionCount: batchSize,
+            questionType: questionTypeName.title as QuestionType,
+            sourceText: chunkBatches[index],
+            previousQuestions,
+          }),
         }),
       );
 
