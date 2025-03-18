@@ -9,6 +9,7 @@ export interface Config {
   jwtSecret: string;
   assistantIdFreePlan: string;
   assistantIdPaidPlan: string;
+  topicExtractionAssistantId: string;
   googleClientId: string;
   googleClientSecret: string;
   googleCallbackUrl: string;
@@ -50,6 +51,7 @@ export default (): Config => ({
   floDeskApiKey: process.env.FLO_DESK_API_KEY,
   assistantIdFreePlan: process.env.OPEN_AI_ASSITANT_ID_FREE_PLAN,
   assistantIdPaidPlan: process.env.OPEN_AI_ASSITANT_ID_PAID_PLAN,
+  topicExtractionAssistantId: process.env.OPEN_AI_TOPIC_EXTRACTION_ASSISTANT,
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
   googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL,

@@ -8,11 +8,19 @@ export class PineconeChunkService extends PineconeClient {
     super();
   }
 
-  public async upsertChunks(chunks: string[], documentId: string) {
+  public async upsertChunks(
+    chunks: string[],
+    documentId: string,
+    startIdx = 0,
+  ) {
     try {
       const chunksToUpload: IntegratedRecord<RecordMetadata>[] = chunks.map(
         (chunk, idx) => {
-          return { _id: `${documentId}#chunk${idx}`, text: chunk, documentId };
+          return {
+            _id: `${documentId}#chunk${idx+startIdx}`,
+            text: chunk,
+            documentId,
+          };
         },
       );
       await this.index
@@ -35,7 +43,7 @@ export class PineconeChunkService extends PineconeClient {
         .namespace(this.documentsNameSpace)
         .searchRecords({
           query: {
-            topK: 10,
+            topK: 2,
             inputs: {
               text: query,
             },
@@ -43,12 +51,11 @@ export class PineconeChunkService extends PineconeClient {
           },
         });
 
-      return queryResponse.result.hits
-        .map((hit) => {
-          return hit.fields['text'];
-        })
-        .join('\n');
+      return queryResponse.result.hits.map((hit) => {
+        return hit.fields['text'] as string;
+      });
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         'Failed to perform semantic query',
         HttpStatus.BAD_REQUEST,

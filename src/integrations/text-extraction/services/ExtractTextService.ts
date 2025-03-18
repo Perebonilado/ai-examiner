@@ -8,6 +8,8 @@ import { MistralOcrService } from 'src/integrations/mistral-ai/services/MistralO
 
 @Injectable()
 export class ExtractTextService {
+  public readonly MAX_CHUNKS = 90;
+
   constructor(
     @Inject(ILovePdfService) private IlovePdfService: ILovePdfService,
     @Inject(MistralOcrService) private mistralOcrService: MistralOcrService,
@@ -50,7 +52,12 @@ export class ExtractTextService {
       try {
         const chunks = await extractPagesTextsFromPDF(file.buffer);
 
-        if (chunks.flatMap((c)=>c).join('').trim().length > 0) {
+        if (
+          chunks
+            .flatMap((c) => c)
+            .join('')
+            .trim().length > 0
+        ) {
           return chunks;
         }
 
@@ -80,12 +87,8 @@ export class ExtractTextService {
 
   private async extractChunksFromTXT(file: Express.Multer.File) {
     try {
-      // Detect encoding and decode text properly (defaulting to UTF-8)
       const textContent = decode(file.buffer, 'utf-8');
-
-      // Split into chunks (e.g., by paragraphs or every N lines)
       const chunks = textContent.split(/\n\s*\n/).map((chunk) => chunk.trim());
-
       return chunks.filter((chunk) => chunk.length > 0);
     } catch (error) {
       throw new Error(`Failed to extract text from TXT file: ${error.message}`);
@@ -114,5 +117,28 @@ export class ExtractTextService {
         `Failed to extract text from PPTX file: ${error.message}`,
       );
     }
+  }
+
+  public async writeChunksToTxtFile(chunks: string[]) {
+    try {
+    } catch (error) {
+      throw new Error('Failed to write chunks to txt file');
+    }
+  }
+
+  private mergeChunks(chunks: string[]): string[] {
+    if (chunks.length <= this.MAX_CHUNKS) {
+      return chunks;
+    }
+
+    const mergedChunks: string[] = [];
+    const mergeFactor = Math.ceil(chunks.length / this.MAX_CHUNKS);
+
+    for (let i = 0; i < chunks.length; i += mergeFactor) {
+      const merged = chunks.slice(i, i + mergeFactor).join(' '); // Merge chunks together
+      mergedChunks.push(merged);
+    }
+
+    return mergedChunks.slice(0, this.MAX_CHUNKS); // Ensure it doesn't exceed 90
   }
 }

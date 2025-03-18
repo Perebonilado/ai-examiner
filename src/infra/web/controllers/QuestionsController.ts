@@ -61,6 +61,17 @@ import { VapiCallingService } from 'src/integrations/vapi/services/VapiCallingSe
 import { UserQueryService } from 'src/query/services/UserQueryService';
 import { QuestionProgressStatusType } from '../models/QuestionProgressStatusType';
 import { OralQuestionAnalysisQueryService } from 'src/query/services/OralQuestionAnalysisQueryService';
+import { GenerateQuestionDto } from 'src/dto/GenerateQuestionDto';
+import { createOpenAI } from '@ai-sdk/openai';
+import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
+import { generateObject } from 'ai';
+import { McqSchema } from 'src/schemas/McqSchema';
+import { MCQModel } from 'src/integrations/open-ai/models/MCQModel';
+import { MultipleTrueFalseSchema } from 'src/schemas/MultipleTrueFasleSchema';
+import { FlashCardsSchema } from 'src/schemas/FlashCardSchema';
+import { VivaSchema } from 'src/schemas/VivaSchema';
+import { z } from 'zod';
+import { generatePromptForQuestionsV2, getAnswerVariationRule } from 'src/constants/QuestionGenerationPromptV2';
 
 @Controller('questions')
 export class QuestionsController {
@@ -99,6 +110,7 @@ export class QuestionsController {
     @Inject(UserQueryService) private userQueryService: UserQueryService,
     @Inject(OralQuestionAnalysisQueryService)
     private oralQuestionAnalysisQueryService: OralQuestionAnalysisQueryService,
+    private pineconeChunkService: PineconeChunkService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -277,7 +289,7 @@ export class QuestionsController {
           questionTypeId: question.typeId,
           userId: userToken.sub,
           difficulty: question.difficulty,
-          isCaseStudy: question.isCaseStudy
+          isCaseStudy: question.isCaseStudy,
         },
       });
     } catch (error) {
@@ -562,7 +574,7 @@ export class QuestionsController {
               focusAreas: body.selectedQuestionTopics || undefined,
               includeCaseStudies: includeUseCases === 'true' ? true : false,
               questionType: questionTypeName.title as QuestionType,
-              difficulty
+              difficulty,
             }),
           );
 
@@ -599,7 +611,7 @@ export class QuestionsController {
             userId: userToken.sub,
             questionTypeId: questionType,
             difficulty: difficulty,
-            isCaseStudy: includeUseCases === 'true'
+            isCaseStudy: includeUseCases === 'true',
           },
         });
 
@@ -669,6 +681,178 @@ export class QuestionsController {
           HttpStatus.NOT_FOUND,
         );
       }
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to generate questions for document',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/:documentId/generate-questions/v2')
+  public async generateQuestionsV2(
+    @Body() body: GenerateQuestionDto,
+    @Param('documentId') documentId: string,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      const openai = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
+      });
+      const prevQuestionLimit = 10;
+      const previousQuestions =
+        await this.questionQueryService.findPreviousQuestionsByConfig(
+          documentId,
+          {
+            difficulty: body.difficulty,
+            includeCaseStudies: body.includeUseCases,
+          },
+          String(body.questionType),
+          prevQuestionLimit,
+        );
+      let topicsToUse: string[] = [];
+
+      if (body.selectedQuestionTopics && body.selectedQuestionTopics.length) {
+        topicsToUse = body.selectedQuestionTopics;
+      } else {
+        const savedTopics =
+          await this.documentTopicQueryService.findAllByDocumentTopicsByDocumentIdAndUserId(
+            documentId,
+            userToken.sub,
+          );
+        topicsToUse = savedTopics.map((t) => t.title);
+      }
+
+      const retrievedChunks: string[][] = await Promise.all(
+        topicsToUse.slice(0, 4).map((topic) => {
+          return this.pineconeChunkService.semanticChunkSearch(
+            topic,
+            documentId,
+          );
+        }),
+      );
+
+      const chunks = retrievedChunks.flatMap((c) => c);
+
+      if (chunks.length === 0) {
+        throw new HttpException(
+          'No relevant content chunks found for the specified topics',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const totalQuestions = body.questionCount;
+      const maxBatchSize = 5; // Max questions per API call
+
+      // Determine the number of batches needed
+      // We'll use either the number needed based on max batch size or the number of chunks,
+      // whichever is smaller (to ensure each batch has at least one chunk)
+      const batchCount = Math.min(
+        Math.ceil(totalQuestions / maxBatchSize),
+        chunks.length,
+      );
+
+      // Calculate questions per batch (distribute evenly)
+      const questionsPerBatch = Array(batchCount).fill(
+        Math.floor(totalQuestions / batchCount),
+      );
+
+      // Distribute remaining questions (if any)
+      let remainingQuestions = totalQuestions % batchCount;
+      for (let i = 0; i < remainingQuestions; i++) {
+        questionsPerBatch[i]++;
+      }
+
+      // Calculate how many chunks each batch should get
+      const chunksPerBatch = Math.floor(chunks.length / batchCount);
+      const extraChunks = chunks.length % batchCount;
+
+      const chunkBatches: string[] = Array.from(
+        { length: batchCount },
+        () => '',
+      );
+
+      // Distribute chunks evenly
+      let chunkIndex = 0;
+      for (let i = 0; i < batchCount; i++) {
+        // Calculate how many chunks this batch should get
+        const chunkCount = chunksPerBatch + (i < extraChunks ? 1 : 0);
+
+        // Add chunks to this batch
+        for (let j = 0; j < chunkCount; j++) {
+          chunkBatches[i] += (chunkBatches[i] ? ', ' : '') + chunks[chunkIndex];
+          chunkIndex++;
+        }
+      }
+
+      const questionTypeName = await this.lookUpQueryService.findLookUpById(
+        Number(body.questionType),
+      );
+
+      const questionPromises = questionsPerBatch.map((batchSize, index) =>
+        generateObject({
+          model: openai.responses('gpt-4o-mini'),
+          maxRetries: 3,
+          mode: 'json',
+          schemaName: 'Questions',
+          schemaDescription: 'Questions from study document',
+          temperature: 0.8,
+          topP: 0.7,
+          schema: z.object({
+            questions: z.array(
+              this.getZodQuestionValidator(
+                questionTypeName.title.toLowerCase(),
+              ),
+            ).describe(getAnswerVariationRule(questionTypeName.title as QuestionType)),
+          }),
+          prompt: generatePromptForQuestionsV2(
+            {
+              difficulty: body.difficulty,
+              includeCaseStudies: false,
+              questionCount: batchSize,
+              questionType: questionTypeName.title as QuestionType,
+              sourceText: chunkBatches[index],
+              previousQuestions
+            },
+          ),
+        }),
+      );
+
+      // Wait for all requests to complete
+      const results = await Promise.all(questionPromises);
+      const generatedQuestions: MCQModel[] = [];
+
+      results.forEach((r) => {
+        if (r.object.questions) {
+          const mapped = r.object.questions.map((q) => ({
+            ...q,
+            id: generateUUID(), // Assign a unique ID
+          })) as MCQModel[];
+          generatedQuestions.push(...mapped);
+        }
+      });
+
+      // Save generated questions
+      const createdQuestions = await this.createQuestionHandler.handle({
+        payload: {
+          courseDocumentId: documentId,
+          data: generatedQuestions,
+          userId: userToken.sub,
+          questionTypeId: questionTypeName.id,
+          difficulty: body.difficulty,
+          isCaseStudy: body.includeUseCases,
+        },
+      });
+
+      return {
+        id: createdQuestions.data.id,
+        type: replaceAllSpacesInStringWithHyphen(
+          questionTypeName.title.toLowerCase(),
+        ),
+      };
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to generate questions for document',
@@ -814,6 +998,23 @@ export class QuestionsController {
         error?.response ?? 'Failed to save score',
         HttpStatus.BAD_REQUEST,
       );
+    }
+  }
+
+  private getZodQuestionValidator(questionTypeTitle: string) {
+    switch (questionTypeTitle.toLowerCase()) {
+      case 'multiple choice': {
+        return McqSchema;
+      }
+      case 'multiple true-false': {
+        return MultipleTrueFalseSchema;
+      }
+      case 'flash cards': {
+        return FlashCardsSchema;
+      }
+      default: {
+        return VivaSchema;
+      }
     }
   }
 }

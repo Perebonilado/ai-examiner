@@ -11,6 +11,7 @@ import { Op } from 'sequelize';
 import { UserModel } from 'src/infra/db/models/UserModel';
 import { DocumentTopicQueryService } from './DocumentTopicQueryService';
 import { OralQuestionAnalysisQueryService } from './OralQuestionAnalysisQueryService';
+import { PromptConfigV2 } from 'src/constants/QuestionGenerationPromptV2';
 
 @Injectable()
 export class QuestionQueryService {
@@ -198,6 +199,35 @@ export class QuestionQueryService {
       throw new QueryError(
         'Failed to get number of questions generated for the user for current month',
       ).InnerError(error);
+    }
+  }
+
+  public async findPreviousQuestionsByConfig(
+    documentId: string,
+    {
+      difficulty,
+      includeCaseStudies,
+    }: Omit<PromptConfigV2, 'questionCount' | 'focusAreas' | 'questionType' | 'sourceText' | 'previousQuestions'>,
+    questionType: string,
+    limit: number,
+  ) {
+    try {
+      const previousQuestions = await QuestionModel.findAll({
+        where: {
+          courseDocumentId: documentId,
+          difficulty,
+          isCaseStudy: includeCaseStudies,
+          questionTypeId: questionType,
+        },
+        limit,
+      });
+
+      const questions = previousQuestions.map(
+        (q) => JSON.parse(q.data).question as string,
+      );
+      return questions;
+    } catch (error) {
+      throw new QueryError('Failed to find prev questions').InnerError(error);
     }
   }
 }

@@ -16,12 +16,13 @@ import {
 import { ILovePdfService } from 'src/integrations/i-love-pdf/services/ILovePdfService';
 import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
 import { EmbeddingModel } from '../models/EmbeddingModel';
+import { MistralOcrService } from 'src/integrations/mistral-ai/services/MistralOcrService';
 
 @Injectable()
 export class ExaminerService {
   constructor(
     @Inject(ILovePdfService) private IlovePdfService: ILovePdfService,
-    @Inject(PineconeChunkService) private pineconeChunksService: PineconeChunkService
+    @Inject(MistralOcrService) private mistralOcrService: MistralOcrService
   ) {
     this.intializeOpenAiClient();
   }
@@ -216,15 +217,9 @@ export class ExaminerService {
             });
           }
         } else {
-          const fileArrayBuffer =
-            await this.IlovePdfService.processFileBasedOnTool(file, 'pdfocr');
-          fileContent = fileContent = await extractTextFromPDF(
-            fileArrayBuffer,
-            {
-              firstPage: pdfPageRange?.start,
-              lastPage: pdfPageRange?.end,
-            },
-          );
+          // const fileArrayBuffer =
+          //   await this.IlovePdfService.processFileBasedOnTool(file, 'pdfocr');
+         fileContent = (await this.mistralOcrService.processPdf(file)).join('\n')
         }
       } else {
         fileContent = file.buffer;
