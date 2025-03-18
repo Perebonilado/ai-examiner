@@ -61,6 +61,21 @@ import { VapiCallingService } from 'src/integrations/vapi/services/VapiCallingSe
 import { UserQueryService } from 'src/query/services/UserQueryService';
 import { QuestionProgressStatusType } from '../models/QuestionProgressStatusType';
 import { OralQuestionAnalysisQueryService } from 'src/query/services/OralQuestionAnalysisQueryService';
+import { GenerateQuestionDto } from 'src/dto/GenerateQuestionDto';
+import { createOpenAI } from '@ai-sdk/openai';
+import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
+import { generateObject, generateText } from 'ai';
+import { McqSchema } from 'src/schemas/McqSchema';
+import { MCQModel } from 'src/integrations/open-ai/models/MCQModel';
+import { MultipleTrueFalseSchema } from 'src/schemas/MultipleTrueFasleSchema';
+import { FlashCardsSchema } from 'src/schemas/FlashCardSchema';
+import { VivaSchema } from 'src/schemas/VivaSchema';
+import { z } from 'zod';
+import {
+  generatePromptForQuestionsV2,
+  getAnswerVariationRule,
+} from 'src/constants/QuestionGenerationPromptV2';
+import { generateSourceInfoPromptV2 } from 'src/constants/V2Prompts';
 
 @Controller('questions')
 export class QuestionsController {
@@ -99,6 +114,8 @@ export class QuestionsController {
     @Inject(UserQueryService) private userQueryService: UserQueryService,
     @Inject(OralQuestionAnalysisQueryService)
     private oralQuestionAnalysisQueryService: OralQuestionAnalysisQueryService,
+    @Inject(PineconeChunkService)
+    private pineconeChunkService: PineconeChunkService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -277,7 +294,7 @@ export class QuestionsController {
           questionTypeId: question.typeId,
           userId: userToken.sub,
           difficulty: question.difficulty,
-          isCaseStudy: question.isCaseStudy
+          isCaseStudy: question.isCaseStudy,
         },
       });
     } catch (error) {
@@ -362,6 +379,46 @@ export class QuestionsController {
 
       return {
         data: sourceData,
+      };
+    } catch (error) {
+      throw new HttpException(
+        'Failed to get question source',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/source/:id/v2')
+  public async getQuestionSourceV2(
+    @Body() body: QuestionSourceRequesDto,
+    @Param('id') id: string,
+    @Req() request: Request,
+  ) {
+    try {
+      const relevantChunks =
+        await this.pineconeChunkService.semanticChunkSearch(
+          body.question,
+          id,
+          5,
+        );
+
+      const openai = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
+      });
+
+      const { text } = await generateText({
+        model: openai.responses('gpt-4o-mini'),
+        maxRetries: 3,
+        prompt: generateSourceInfoPromptV2(
+          body.question,
+          relevantChunks.join('\n'),
+        ),
+      });
+
+      return {
+        data: text,
       };
     } catch (error) {
       throw new HttpException(
@@ -562,7 +619,7 @@ export class QuestionsController {
               focusAreas: body.selectedQuestionTopics || undefined,
               includeCaseStudies: includeUseCases === 'true' ? true : false,
               questionType: questionTypeName.title as QuestionType,
-              difficulty
+              difficulty,
             }),
           );
 
@@ -599,7 +656,7 @@ export class QuestionsController {
             userId: userToken.sub,
             questionTypeId: questionType,
             difficulty: difficulty,
-            isCaseStudy: includeUseCases === 'true'
+            isCaseStudy: includeUseCases === 'true',
           },
         });
 
@@ -669,6 +726,206 @@ export class QuestionsController {
           HttpStatus.NOT_FOUND,
         );
       }
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to generate questions for document',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/:documentId/generate-questions/v2')
+  public async generateQuestionsV2(
+    @Body() body: GenerateQuestionDto,
+    @Param('documentId') documentId: string,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+
+      const openai = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
+      });
+      const prevQuestionLimit = 10;
+      const previousQuestions =
+        await this.questionQueryService.findPreviousQuestionsByConfig(
+          documentId,
+          {
+            difficulty: body.difficulty,
+            includeCaseStudies: body.includeUseCases,
+          },
+          String(body.questionType),
+          prevQuestionLimit,
+        );
+      let topicsToUse: string[] = [];
+
+      if (body.selectedQuestionTopics && body.selectedQuestionTopics.length) {
+        topicsToUse = body.selectedQuestionTopics;
+      } else {
+        const savedTopics =
+          await this.documentTopicQueryService.findAllByDocumentTopicsByDocumentIdAndUserId(
+            documentId,
+            userToken.sub,
+          );
+        topicsToUse = savedTopics.map((t) => t.title);
+      }
+
+      const retrievedChunks: string[][] = await Promise.all(
+        topicsToUse.slice(0, 4).map((topic) => {
+          return this.pineconeChunkService.semanticChunkSearch(
+            topic,
+            documentId,
+          );
+        }),
+      );
+
+      const shouldUseFileSearch = retrievedChunks.flatMap((c) => c).length < 1;
+
+      if (shouldUseFileSearch) {
+        return await this.generateQuestionsForDocumentUsingFileSearch(
+          documentId,
+          userToken,
+          body.questionCount,
+          body.questionType,
+          body.includeUseCases === true ? 'true' : 'false',
+          body.difficulty,
+          {
+            saveSelectedTopics: false,
+            selectedQuestionTopics: body.selectedQuestionTopics,
+            topics: body.topics,
+          },
+        );
+      }
+
+      if (body.title) {
+        await this.updateCourseDocumentHandler.handle({
+          data: { id: documentId, title: body.title },
+          userId: userToken.sub,
+        });
+      }
+
+      const chunks = retrievedChunks.flatMap((c) => c);
+
+      if (chunks.length === 0) {
+        throw new HttpException(
+          'No relevant content chunks found for the specified topics',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const totalQuestions = body.questionCount;
+      const maxBatchSize = 5; // Max questions per API call
+
+      // Determine the number of batches needed
+      // We'll use either the number needed based on max batch size or the number of chunks,
+      // whichever is smaller (to ensure each batch has at least one chunk)
+      const batchCount = Math.min(
+        Math.ceil(totalQuestions / maxBatchSize),
+        chunks.length,
+      );
+
+      // Calculate questions per batch (distribute evenly)
+      const questionsPerBatch = Array(batchCount).fill(
+        Math.floor(totalQuestions / batchCount),
+      );
+
+      // Distribute remaining questions (if any)
+      let remainingQuestions = totalQuestions % batchCount;
+      for (let i = 0; i < remainingQuestions; i++) {
+        questionsPerBatch[i]++;
+      }
+
+      // Calculate how many chunks each batch should get
+      const chunksPerBatch = Math.floor(chunks.length / batchCount);
+      const extraChunks = chunks.length % batchCount;
+
+      const chunkBatches: string[] = Array.from(
+        { length: batchCount },
+        () => '',
+      );
+
+      // Distribute chunks evenly
+      let chunkIndex = 0;
+      for (let i = 0; i < batchCount; i++) {
+        // Calculate how many chunks this batch should get
+        const chunkCount = chunksPerBatch + (i < extraChunks ? 1 : 0);
+
+        // Add chunks to this batch
+        for (let j = 0; j < chunkCount; j++) {
+          chunkBatches[i] += (chunkBatches[i] ? ', ' : '') + chunks[chunkIndex];
+          chunkIndex++;
+        }
+      }
+
+      const questionTypeName = await this.lookUpQueryService.findLookUpById(
+        Number(body.questionType),
+      );
+
+      const questionPromises = questionsPerBatch.map((batchSize, index) =>
+        generateObject({
+          model: openai.responses('gpt-4o-mini'),
+          maxRetries: 3,
+          mode: 'json',
+          schemaName: 'Questions',
+          schemaDescription: 'Questions from study document',
+          temperature: 0.8,
+          topP: 0.7,
+          schema: z.object({
+            questions: z
+              .array(
+                this.getZodQuestionValidator(
+                  questionTypeName.title.toLowerCase(),
+                ),
+              )
+              .describe(
+                getAnswerVariationRule(questionTypeName.title as QuestionType),
+              ),
+          }),
+          prompt: generatePromptForQuestionsV2({
+            difficulty: body.difficulty,
+            includeCaseStudies: body.includeUseCases,
+            questionCount: batchSize,
+            questionType: questionTypeName.title as QuestionType,
+            sourceText: chunkBatches[index],
+            previousQuestions,
+          }),
+        }),
+      );
+
+      // Wait for all requests to complete
+      const results = await Promise.all(questionPromises);
+      const generatedQuestions: MCQModel[] = [];
+
+      results.forEach((r) => {
+        if (r.object.questions) {
+          const mapped = r.object.questions.map((q) => ({
+            ...q,
+            id: generateUUID(), // Assign a unique ID
+          })) as MCQModel[];
+          generatedQuestions.push(...mapped);
+        }
+      });
+
+      // Save generated questions
+      const createdQuestions = await this.createQuestionHandler.handle({
+        payload: {
+          courseDocumentId: documentId,
+          data: generatedQuestions,
+          userId: userToken.sub,
+          questionTypeId: questionTypeName.id,
+          difficulty: body.difficulty,
+          isCaseStudy: body.includeUseCases,
+        },
+      });
+
+      return {
+        id: createdQuestions.data.id,
+        type: replaceAllSpacesInStringWithHyphen(
+          questionTypeName.title.toLowerCase(),
+        ),
+      };
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to generate questions for document',
@@ -812,6 +1069,267 @@ export class QuestionsController {
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to save score',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  private getZodQuestionValidator(questionTypeTitle: string) {
+    switch (questionTypeTitle.toLowerCase()) {
+      case 'multiple choice': {
+        return McqSchema;
+      }
+      case 'multiple true-false': {
+        return MultipleTrueFalseSchema;
+      }
+      case 'flash cards': {
+        return FlashCardsSchema;
+      }
+      default: {
+        return VivaSchema;
+      }
+    }
+  }
+
+  public async generateQuestionsForDocumentUsingFileSearch(
+    id: string,
+    userToken: VerifiedTokenModel,
+    questionCount: number,
+    questionType: number,
+    includeUseCases: string,
+    difficulty: DifficultyType,
+    body: GenerateCourseDocumentQuestionDto,
+  ) {
+    try {
+      const subscriptionInfo = await this.subscriptionQueryService.findByUserId(
+        userToken.sub,
+      );
+      let isUserOnFreePlan = true;
+
+      if (subscriptionInfo?.subscriptionCode) {
+        const subscriptionDetails =
+          await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+            subscriptionInfo.subscriptionCode,
+          );
+
+        if (
+          !inactiveSubscriptionStatuses.includes(
+            subscriptionDetails.subscrptionInformation.status,
+          )
+        ) {
+          isUserOnFreePlan = false;
+        }
+      }
+
+      const assistantId = isUserOnFreePlan
+        ? EnvironmentVariables.config.assistantIdFreePlan
+        : EnvironmentVariables.config.assistantIdPaidPlan;
+
+      const document =
+        await this.courseDocumentQueryService.findCourseDocumentById(
+          id,
+          userToken.sub,
+        );
+      if (!document) {
+        throw new HttpException(
+          'Document does not exist',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      let threadIdKey: ThreadTypeModel;
+      const questionTypeName = await this.lookUpQueryService.findLookUpById(
+        Number(questionType),
+      );
+      const questionTitle = questionTypeName.title.toLowerCase();
+
+      if (questionTitle === 'multiple choice') {
+        threadIdKey =
+          includeUseCases === 'true'
+            ? difficulty === 'easy'
+              ? 'mcqUseCaseEasyThreadId'
+              : difficulty === 'medium'
+                ? 'mcqUseCaseMediumThreadId'
+                : 'mcqUseCaseHardThreadId'
+            : difficulty === 'easy'
+              ? 'mcqDirectEasyThreadId'
+              : difficulty === 'medium'
+                ? 'mcqDirectMediumThreadId'
+                : 'mcqDirectHardThreadId';
+      } else if (questionTitle === 'multiple true-false') {
+        threadIdKey =
+          difficulty === 'easy'
+            ? 'multipleTrueFalseEasyThreadId'
+            : difficulty === 'medium'
+              ? 'multipleTrueFalseMediumThreadId'
+              : 'multipleTrueFalseHardThreadId';
+      } else if (questionTitle.includes('oral')) {
+        threadIdKey = 'oralQuestionThreadId';
+      } else {
+        threadIdKey =
+          difficulty === 'easy'
+            ? 'flashCardEasyThreadId'
+            : difficulty === 'medium'
+              ? 'flashCardMediumThreadId'
+              : 'flashCardHardThreadId';
+      }
+
+      let threadId = document[threadIdKey];
+      if (!threadId?.length) {
+        const vectorStore = await this.examinerService.createVectorStore(
+          document.title,
+        );
+        const updatedVectorStoreId =
+          await this.examinerService.attachFileToVectorStore(
+            document.openAiFileId,
+            vectorStore.id,
+          );
+        const thread = await this.examinerService.createThread();
+        const updatedThread =
+          await this.examinerService.attachVectorStoreToThread(
+            thread.id,
+            updatedVectorStoreId,
+          );
+        threadId = updatedThread.id;
+
+        await this.updateCourseDocumentHandler.handle({
+          userId: userToken.sub,
+          data: { id: document.id, [threadIdKey]: updatedThread.id },
+        });
+      }
+
+      const existingThread = await this.examinerService.findThread(threadId);
+      const vectorStore = await this.examinerService.retrieveVectorStore(
+        existingThread.tool_resources.file_search.vector_store_ids[0],
+      );
+
+      if (vectorStore.status === 'expired') {
+        const newVectorStore = await this.examinerService.createVectorStore(
+          document.title,
+        );
+        const updatedVectorStoreId =
+          await this.examinerService.attachFileToVectorStore(
+            document.openAiFileId,
+            newVectorStore.id,
+          );
+        await this.examinerService.attachVectorStoreToThread(
+          existingThread.id,
+          updatedVectorStoreId,
+        );
+      }
+
+      const desiredQuestionCount =
+        questionTitle === 'oral (viva)' ? 2 : questionCount || 5;
+      let generatedQuestions = [];
+      const MAX_RETRIES = 10;
+      let retryCount = 0;
+
+      while (
+        generatedQuestions.length < desiredQuestionCount &&
+        retryCount < MAX_RETRIES
+      ) {
+        const remainingCount = desiredQuestionCount - generatedQuestions.length;
+
+        await this.examinerService.createThreadMessage(
+          existingThread.id,
+          generatePromptForQuestions({
+            questionCount: remainingCount,
+            focusAreas: body.selectedQuestionTopics || undefined,
+            includeCaseStudies: includeUseCases === 'true',
+            questionType: questionTitle as QuestionType,
+            difficulty,
+          }),
+        );
+
+        const run = await this.examinerService.createRun(
+          assistantId,
+          existingThread.id,
+        );
+        const messages = await this.examinerService.retrieveThreadMessages(
+          existingThread.id,
+          run.id,
+        );
+        const newQuestions = extractJSONDataFromMessages(messages);
+
+        if (newQuestions instanceof Array && newQuestions.length) {
+          generatedQuestions = [...generatedQuestions, ...newQuestions];
+        }
+
+        retryCount++;
+      }
+
+      if (!generatedQuestions.length) {
+        throw new HttpException(
+          `Insufficient content in document to generate questions`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const createdQuestions = await this.createQuestionHandler.handle({
+        payload: {
+          courseDocumentId: document.id,
+          data: generatedQuestions,
+          userId: userToken.sub,
+          questionTypeId: questionType,
+          difficulty,
+          isCaseStudy: includeUseCases === 'true',
+        },
+      });
+
+      if (body.topics && body.topics.length) {
+        const mappedTopics = body.topics.map((topic) => ({
+          title: topic,
+          documentId: id,
+          userId: userToken.sub,
+        }));
+
+        const createdDocumentTopics =
+          await this.createDocumentTopicHandler.handle({
+            payload: mappedTopics,
+          });
+
+        const questionTopicsToCreate = createdDocumentTopics.data.data
+          .filter((dt) => body.selectedQuestionTopics.includes(dt.title))
+          .map((dt) => ({
+            documentTopicTitle: dt.title,
+            documentTopicId: dt.id,
+            questionId: createdQuestions.data.id,
+          }));
+
+        await this.createQuestionTopicHandler.handle({
+          payload: questionTopicsToCreate,
+        });
+      } else if (
+        body.selectedQuestionTopics?.length &&
+        body.saveSelectedTopics
+      ) {
+        const questionTopicsToCreate = await Promise.all(
+          body.selectedQuestionTopics.map(async (t) => {
+            const topic =
+              await this.documentTopicQueryService.findDocumentTopicsByTitleAndDocumentId(
+                t,
+                document.id,
+              );
+            return {
+              documentTopicTitle: topic.title,
+              documentTopicId: topic.id,
+              questionId: createdQuestions.data.id,
+            };
+          }),
+        );
+
+        await this.createQuestionTopicHandler.handle({
+          payload: questionTopicsToCreate,
+        });
+      }
+
+      return {
+        id: createdQuestions.data.id,
+        type: replaceAllSpacesInStringWithHyphen(questionTitle),
+      };
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to generate questions for document',
         HttpStatus.BAD_REQUEST,
       );
     }
