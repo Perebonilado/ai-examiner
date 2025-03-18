@@ -7,17 +7,22 @@ import { unlink } from 'fs/promises';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import {
   convertOldPptToText,
+  extractPagesTextsFromPDF,
   extractTextFromBuffer,
   extractTextFromPDF,
   generateUUID,
   writeFileToStream,
 } from 'src/utils';
 import { ILovePdfService } from 'src/integrations/i-love-pdf/services/ILovePdfService';
+import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
+import { EmbeddingModel } from '../models/EmbeddingModel';
+import { MistralOcrService } from 'src/integrations/mistral-ai/services/MistralOcrService';
 
 @Injectable()
 export class ExaminerService {
   constructor(
     @Inject(ILovePdfService) private IlovePdfService: ILovePdfService,
+    @Inject(MistralOcrService) private mistralOcrService: MistralOcrService
   ) {
     this.intializeOpenAiClient();
   }
@@ -212,15 +217,9 @@ export class ExaminerService {
             });
           }
         } else {
-          const fileArrayBuffer =
-            await this.IlovePdfService.processFileBasedOnTool(file, 'pdfocr');
-          fileContent = fileContent = await extractTextFromPDF(
-            fileArrayBuffer,
-            {
-              firstPage: pdfPageRange?.start,
-              lastPage: pdfPageRange?.end,
-            },
-          );
+          // const fileArrayBuffer =
+          //   await this.IlovePdfService.processFileBasedOnTool(file, 'pdfocr');
+         fileContent = (await this.mistralOcrService.processPdf(file)).join('\n')
         }
       } else {
         fileContent = file.buffer;
@@ -341,4 +340,14 @@ export class ExaminerService {
       throw new HttpException('Falied to find thread', HttpStatus.BAD_GATEWAY);
     }
   }
+
+  public async generateEmbeddings(chunks: string[]): Promise<EmbeddingModel> {
+    const response = await this.openAiClient.embeddings.create({
+      model: 'text-embedding-ada-002',
+      input: chunks,
+    });
+
+    return response.data.map((embedding)=>embedding.embedding)
+  }
+  
 }

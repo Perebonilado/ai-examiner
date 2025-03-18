@@ -16,7 +16,7 @@ export interface CreateCourseDocumentDto {
   multipleTrueFalseEasyThreadId?: string;
   documentChatThreadId?: string;
   oralQuestionThreadId?: string
-  fileId: string;
+  fileId?: string;
   topics?: string[] | null;
   selectedQuestionTopics?: string[] | null;
 }

@@ -9,6 +9,9 @@ import { FloDeskMailerModule } from './flo-desk-mailer/FloDeskMailerModule';
 import { IpInfoModule } from './ip-info/IpInfoModule';
 import { ILovePDFModule } from './i-love-pdf/ILovePDFModule';
 import { VapiModule } from './vapi/VapiModule';
+import { MistralAIModule } from './mistral-ai/MistralAIModule';
+import { PineconeModule } from './pinecone/PineconeModule';
+import { TextExtractionModule } from './text-extraction/TextExtractionModule';
 
 @Module({
   imports: [
@@ -22,6 +25,9 @@ import { VapiModule } from './vapi/VapiModule';
     IpInfoModule,
     ILovePDFModule,
     VapiModule,
+    MistralAIModule,
+    PineconeModule,
+    TextExtractionModule
   ],
   exports: [
     OpenAiModule,
@@ -34,6 +40,9 @@ import { VapiModule } from './vapi/VapiModule';
     IpInfoModule,
     ILovePDFModule,
     VapiModule,
+    MistralAIModule,
+    PineconeModule,
+    TextExtractionModule
   ],
 })
 export class IntegrationsModule {}
