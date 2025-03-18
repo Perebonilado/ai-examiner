@@ -17,7 +17,7 @@ export class PineconeChunkService extends PineconeClient {
       const chunksToUpload: IntegratedRecord<RecordMetadata>[] = chunks.map(
         (chunk, idx) => {
           return {
-            _id: `${documentId}#chunk${idx+startIdx}`,
+            _id: `${documentId}#chunk${idx + startIdx}`,
             text: chunk,
             documentId,
           };
@@ -37,13 +37,17 @@ export class PineconeChunkService extends PineconeClient {
     }
   }
 
-  public async semanticChunkSearch(query: string, documentId: string) {
+  public async semanticChunkSearch(
+    query: string,
+    documentId: string,
+    topK = 2,
+  ) {
     try {
       const queryResponse = await this.index
         .namespace(this.documentsNameSpace)
         .searchRecords({
           query: {
-            topK: 2,
+            topK: topK,
             inputs: {
               text: query,
             },

@@ -64,7 +64,7 @@ import { OralQuestionAnalysisQueryService } from 'src/query/services/OralQuestio
 import { GenerateQuestionDto } from 'src/dto/GenerateQuestionDto';
 import { createOpenAI } from '@ai-sdk/openai';
 import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
-import { generateObject } from 'ai';
+import { generateObject, generateText } from 'ai';
 import { McqSchema } from 'src/schemas/McqSchema';
 import { MCQModel } from 'src/integrations/open-ai/models/MCQModel';
 import { MultipleTrueFalseSchema } from 'src/schemas/MultipleTrueFasleSchema';
@@ -75,6 +75,7 @@ import {
   generatePromptForQuestionsV2,
   getAnswerVariationRule,
 } from 'src/constants/QuestionGenerationPromptV2';
+import { generateSourceInfoPromptV2 } from 'src/constants/V2Prompts';
 
 @Controller('questions')
 export class QuestionsController {
@@ -378,6 +379,46 @@ export class QuestionsController {
 
       return {
         data: sourceData,
+      };
+    } catch (error) {
+      throw new HttpException(
+        'Failed to get question source',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/source/:id/v2')
+  public async getQuestionSourceV2(
+    @Body() body: QuestionSourceRequesDto,
+    @Param('id') id: string,
+    @Req() request: Request,
+  ) {
+    try {
+      const relevantChunks =
+        await this.pineconeChunkService.semanticChunkSearch(
+          body.question,
+          id,
+          5,
+        );
+
+      const openai = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
+      });
+
+      const { text } = await generateText({
+        model: openai.responses('gpt-4o-mini'),
+        maxRetries: 3,
+        prompt: generateSourceInfoPromptV2(
+          body.question,
+          relevantChunks.join('\n'),
+        ),
+      });
+
+      return {
+        data: text,
       };
     } catch (error) {
       throw new HttpException(
