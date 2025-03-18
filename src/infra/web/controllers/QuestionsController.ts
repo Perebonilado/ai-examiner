@@ -744,13 +744,6 @@ export class QuestionsController {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
 
-      if (body.title) {
-        await this.updateCourseDocumentHandler.handle({
-          data: { id: documentId, title: body.title },
-          userId: userToken.sub,
-        });
-      }
-
       const openai = createOpenAI({
         compatibility: 'strict',
         apiKey: EnvironmentVariables.config.openAiApiKey,
@@ -787,6 +780,31 @@ export class QuestionsController {
           );
         }),
       );
+
+      const shouldUseFileSearch = retrievedChunks.flatMap((c) => c).length < 1;
+
+      if (shouldUseFileSearch) {
+        return await this.generateQuestionsForDocumentUsingFileSearch(
+          documentId,
+          userToken,
+          body.questionCount,
+          body.questionType,
+          body.includeUseCases === true ? 'true' : 'false',
+          body.difficulty,
+          {
+            saveSelectedTopics: false,
+            selectedQuestionTopics: body.selectedQuestionTopics,
+            topics: body.topics,
+          },
+        );
+      }
+
+      if (body.title) {
+        await this.updateCourseDocumentHandler.handle({
+          data: { id: documentId, title: body.title },
+          userId: userToken.sub,
+        });
+      }
 
       const chunks = retrievedChunks.flatMap((c) => c);
 
@@ -867,7 +885,7 @@ export class QuestionsController {
           }),
           prompt: generatePromptForQuestionsV2({
             difficulty: body.difficulty,
-            includeCaseStudies: false,
+            includeCaseStudies: body.includeUseCases,
             questionCount: batchSize,
             questionType: questionTypeName.title as QuestionType,
             sourceText: chunkBatches[index],
@@ -1070,6 +1088,250 @@ export class QuestionsController {
       default: {
         return VivaSchema;
       }
+    }
+  }
+
+  public async generateQuestionsForDocumentUsingFileSearch(
+    id: string,
+    userToken: VerifiedTokenModel,
+    questionCount: number,
+    questionType: number,
+    includeUseCases: string,
+    difficulty: DifficultyType,
+    body: GenerateCourseDocumentQuestionDto,
+  ) {
+    try {
+      const subscriptionInfo = await this.subscriptionQueryService.findByUserId(
+        userToken.sub,
+      );
+      let isUserOnFreePlan = true;
+
+      if (subscriptionInfo?.subscriptionCode) {
+        const subscriptionDetails =
+          await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+            subscriptionInfo.subscriptionCode,
+          );
+
+        if (
+          !inactiveSubscriptionStatuses.includes(
+            subscriptionDetails.subscrptionInformation.status,
+          )
+        ) {
+          isUserOnFreePlan = false;
+        }
+      }
+
+      const assistantId = isUserOnFreePlan
+        ? EnvironmentVariables.config.assistantIdFreePlan
+        : EnvironmentVariables.config.assistantIdPaidPlan;
+
+      const document =
+        await this.courseDocumentQueryService.findCourseDocumentById(
+          id,
+          userToken.sub,
+        );
+      if (!document) {
+        throw new HttpException(
+          'Document does not exist',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      let threadIdKey: ThreadTypeModel;
+      const questionTypeName = await this.lookUpQueryService.findLookUpById(
+        Number(questionType),
+      );
+      const questionTitle = questionTypeName.title.toLowerCase();
+
+      if (questionTitle === 'multiple choice') {
+        threadIdKey =
+          includeUseCases === 'true'
+            ? difficulty === 'easy'
+              ? 'mcqUseCaseEasyThreadId'
+              : difficulty === 'medium'
+                ? 'mcqUseCaseMediumThreadId'
+                : 'mcqUseCaseHardThreadId'
+            : difficulty === 'easy'
+              ? 'mcqDirectEasyThreadId'
+              : difficulty === 'medium'
+                ? 'mcqDirectMediumThreadId'
+                : 'mcqDirectHardThreadId';
+      } else if (questionTitle === 'multiple true-false') {
+        threadIdKey =
+          difficulty === 'easy'
+            ? 'multipleTrueFalseEasyThreadId'
+            : difficulty === 'medium'
+              ? 'multipleTrueFalseMediumThreadId'
+              : 'multipleTrueFalseHardThreadId';
+      } else if (questionTitle.includes('oral')) {
+        threadIdKey = 'oralQuestionThreadId';
+      } else {
+        threadIdKey =
+          difficulty === 'easy'
+            ? 'flashCardEasyThreadId'
+            : difficulty === 'medium'
+              ? 'flashCardMediumThreadId'
+              : 'flashCardHardThreadId';
+      }
+
+      let threadId = document[threadIdKey];
+      if (!threadId?.length) {
+        const vectorStore = await this.examinerService.createVectorStore(
+          document.title,
+        );
+        const updatedVectorStoreId =
+          await this.examinerService.attachFileToVectorStore(
+            document.openAiFileId,
+            vectorStore.id,
+          );
+        const thread = await this.examinerService.createThread();
+        const updatedThread =
+          await this.examinerService.attachVectorStoreToThread(
+            thread.id,
+            updatedVectorStoreId,
+          );
+        threadId = updatedThread.id;
+
+        await this.updateCourseDocumentHandler.handle({
+          userId: userToken.sub,
+          data: { id: document.id, [threadIdKey]: updatedThread.id },
+        });
+      }
+
+      const existingThread = await this.examinerService.findThread(threadId);
+      const vectorStore = await this.examinerService.retrieveVectorStore(
+        existingThread.tool_resources.file_search.vector_store_ids[0],
+      );
+
+      if (vectorStore.status === 'expired') {
+        const newVectorStore = await this.examinerService.createVectorStore(
+          document.title,
+        );
+        const updatedVectorStoreId =
+          await this.examinerService.attachFileToVectorStore(
+            document.openAiFileId,
+            newVectorStore.id,
+          );
+        await this.examinerService.attachVectorStoreToThread(
+          existingThread.id,
+          updatedVectorStoreId,
+        );
+      }
+
+      const desiredQuestionCount =
+        questionTitle === 'oral (viva)' ? 2 : questionCount || 5;
+      let generatedQuestions = [];
+      const MAX_RETRIES = 10;
+      let retryCount = 0;
+
+      while (
+        generatedQuestions.length < desiredQuestionCount &&
+        retryCount < MAX_RETRIES
+      ) {
+        const remainingCount = desiredQuestionCount - generatedQuestions.length;
+
+        await this.examinerService.createThreadMessage(
+          existingThread.id,
+          generatePromptForQuestions({
+            questionCount: remainingCount,
+            focusAreas: body.selectedQuestionTopics || undefined,
+            includeCaseStudies: includeUseCases === 'true',
+            questionType: questionTitle as QuestionType,
+            difficulty,
+          }),
+        );
+
+        const run = await this.examinerService.createRun(
+          assistantId,
+          existingThread.id,
+        );
+        const messages = await this.examinerService.retrieveThreadMessages(
+          existingThread.id,
+          run.id,
+        );
+        const newQuestions = extractJSONDataFromMessages(messages);
+
+        if (newQuestions instanceof Array && newQuestions.length) {
+          generatedQuestions = [...generatedQuestions, ...newQuestions];
+        }
+
+        retryCount++;
+      }
+
+      if (!generatedQuestions.length) {
+        throw new HttpException(
+          `Insufficient content in document to generate questions`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const createdQuestions = await this.createQuestionHandler.handle({
+        payload: {
+          courseDocumentId: document.id,
+          data: generatedQuestions,
+          userId: userToken.sub,
+          questionTypeId: questionType,
+          difficulty,
+          isCaseStudy: includeUseCases === 'true',
+        },
+      });
+
+      if (body.topics && body.topics.length) {
+        const mappedTopics = body.topics.map((topic) => ({
+          title: topic,
+          documentId: id,
+          userId: userToken.sub,
+        }));
+
+        const createdDocumentTopics =
+          await this.createDocumentTopicHandler.handle({
+            payload: mappedTopics,
+          });
+
+        const questionTopicsToCreate = createdDocumentTopics.data.data
+          .filter((dt) => body.selectedQuestionTopics.includes(dt.title))
+          .map((dt) => ({
+            documentTopicTitle: dt.title,
+            documentTopicId: dt.id,
+            questionId: createdQuestions.data.id,
+          }));
+
+        await this.createQuestionTopicHandler.handle({
+          payload: questionTopicsToCreate,
+        });
+      } else if (
+        body.selectedQuestionTopics?.length &&
+        body.saveSelectedTopics
+      ) {
+        const questionTopicsToCreate = await Promise.all(
+          body.selectedQuestionTopics.map(async (t) => {
+            const topic =
+              await this.documentTopicQueryService.findDocumentTopicsByTitleAndDocumentId(
+                t,
+                document.id,
+              );
+            return {
+              documentTopicTitle: topic.title,
+              documentTopicId: topic.id,
+              questionId: createdQuestions.data.id,
+            };
+          }),
+        );
+
+        await this.createQuestionTopicHandler.handle({
+          payload: questionTopicsToCreate,
+        });
+      }
+
+      return {
+        id: createdQuestions.data.id,
+        type: replaceAllSpacesInStringWithHyphen(questionTitle),
+      };
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to generate questions for document',
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 }
