@@ -198,7 +198,8 @@ const getDirectQuestionDifficulty = (difficulty: DifficultyType) => {
 - Ask about subtle distinctions between related concepts
 - Include distractors that are very plausible and require deep understanding to eliminate
 
-### Example  
+\n \n
+### Example [THIS IS ONLY AN EXAMPLE AND YOU MUST ONLY USE IT AS A GUIDE IN GENERATING THE APPROPRIATE STYLE OF QUESTIONS. DO NOT GENERATE QUESTIONS FROM THIS, ONLY USE IT AS A GUIDE]
 Instead of:  
 ❌ "What is Newton's First Law?"  
 It will generate:  
@@ -220,7 +221,8 @@ It will generate:
 - Require some analysis but not extensive multi-step reasoning
 - Include plausible but incorrect options that test for common misconceptions
 
-### Example  
+\n\n
+### Example [THIS IS ONLY AN EXAMPLE AND YOU MUST ONLY USE IT AS A GUIDE IN GENERATING THE APPROPRIATE STYLE OF QUESTIONS. DO NOT GENERATE QUESTIONS FROM THIS, ONLY USE IT AS A GUIDE]
 Instead of:  
 ❌ "What happens to a moving object if nothing pushes or pulls on it?"  
 It will generate:  
@@ -240,7 +242,8 @@ STRICT REQUIREMENT:
 - Test ONLY the most fundamental terms and concepts
 - Make the correct answer OBVIOUS to anyone who has read the material once
 
-### Examples  
+\n\n
+### Examples  [THIS IS ONLY AN EXAMPLE AND YOU MUST ONLY USE IT AS A GUIDE IN GENERATING THE APPROPRIATE STYLE OF QUESTIONS. DO NOT GENERATE QUESTIONS FROM THIS, ONLY USE IT AS A GUIDE]
 CORRECT EASY QUESTIONS:
 ✅ "What is DNA?"
 ✅ "When was World War II?"
@@ -248,6 +251,7 @@ CORRECT EASY QUESTIONS:
 ✅ "What does CPU stand for?"
 ✅ "What is the definition of mitosis?"
 
+\n
 INCORRECT (TOO COMPLEX) QUESTIONS:
 ❌ "What does Newton's First Law state about objects in motion?"
 ❌ "How are proteins synthesized in the cell?"
@@ -280,6 +284,8 @@ Example proper flashcard formats:
 - "What is the capital of France?" → "Paris"
 - "What hormone regulates blood glucose levels?" → "Insulin"
 
+\n
+[THIS IS ONLY AN EXAMPLE AND YOU MUST ONLY USE IT AS A GUIDE IN GENERATING THE APPROPRIATE STYLE OF QUESTIONS. DO NOT GENERATE QUESTIONS FROM THIS, ONLY USE IT AS A GUIDE]
 DO NOT create complex questions like:
 ❌ "Considering the multifaceted implications of cellular metabolism, what is the precise definition of glycolysis?"
 ✅ Instead use: "What is glycolysis?"
@@ -487,13 +493,14 @@ const getBasePrompt = (
   questionType?: QuestionType,
   difficultyLevel?: DifficultyType,
 ): string => `
-Analyze the source text below very thoroughly. Generate ${questionCount} unique and new ${getQuestionStyle(
+Analyze the source text, BETWEEN SOURCE TEXT START AND SOURCE TEXT END, below very thoroughly. Generate ${questionCount} unique and new ${getQuestionStyle(
   questionType,
-)} questions based on key concepts. ${questionType === 'Oral (Viva)' ? VIVADIFFICULTYPROMPT : getDifficultyPrompt(difficultyLevel)}
+)} questions based on key concepts. ${questionType === 'Oral (Viva)' ? VIVADIFFICULTYPROMPT : getDifficultyPrompt(difficultyLevel)}. QUESTIONS CONTENT SHOULD ONLY BE BASED ON THE SOURCE TEXT!!!
 
 \n\n
-**SOURCE TEXT**
+**SOURCE TEXT START**
 ${sourceText}
+**SOURCE TEXT END**
 \n\n
 
 ${
