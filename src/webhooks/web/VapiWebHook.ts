@@ -36,12 +36,14 @@ export class VapiWebhook {
         const { customerEmail } = body.message.assistant
           .metadata as unknown as any;
         const user = await this.userQueryService.findOne(customerEmail);
-        await this.updateCallCreditHandler.handle({
-          action: 'subtract_remaining_time',
-          timeToUpdate: body.message.durationMs,
-          userId: user.id,
-        });
-        await this.createOralQuestionAnalysisHandler.handle({ data: body });
+        await Promise.all([
+          this.updateCallCreditHandler.handle({
+            action: 'subtract_remaining_time',
+            timeToUpdate: body.message.durationMs,
+            userId: user.id,
+          }),
+          this.createOralQuestionAnalysisHandler.handle({ data: body }),
+        ]);
       }
     } catch (error) {
       throw new HttpException(
