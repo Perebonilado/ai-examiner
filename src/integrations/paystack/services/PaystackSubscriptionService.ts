@@ -46,6 +46,7 @@ export class PaystackSubscriptionService {
       plan: payload.plan,
       metadata: {
         cancel_action: `${EnvironmentVariables.config.frontendBaseUrl}/pricing`,
+        purchase_type: 'subscription'
       },
     } as Record<string, any>;
 
