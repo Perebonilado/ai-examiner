@@ -27,6 +27,8 @@ import { PerformanceTrackingRepository } from 'src/business/repository/Performan
 import { PerformanceTrackingSequelizeRepository } from './repository/PerformanceTrackingSequelizeRepository';
 import { OralQuestionAnalysisRepository } from 'src/business/repository/OralQuestionAnalysisRepository';
 import { OralQuestionAnalysisSequelizeRepository } from './repository/OralQuestionAnalysisSequelizeRepository';
+import { CallCreditsRepository } from 'src/business/repository/CallCreditsRepository';
+import { CallCreditsSequelizeRepository } from './repository/CallCreditsSequelizeRepository';
 
 @Module({
   imports: [InfraDbModule, QueryModule],
@@ -83,6 +85,10 @@ import { OralQuestionAnalysisSequelizeRepository } from './repository/OralQuesti
       provide: OralQuestionAnalysisRepository,
       useClass: OralQuestionAnalysisSequelizeRepository,
     },
+    {
+      provide: CallCreditsRepository,
+      useClass: CallCreditsSequelizeRepository,
+    },
   ],
   exports: [
     UserRepository,
@@ -98,6 +104,7 @@ import { OralQuestionAnalysisSequelizeRepository } from './repository/OralQuesti
     QuestionProgressRepository,
     PerformanceTrackingRepository,
     OralQuestionAnalysisRepository,
+    CallCreditsRepository,
   ],
 })
 export class InfraRepositoryModule {}
