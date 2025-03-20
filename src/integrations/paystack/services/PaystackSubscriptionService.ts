@@ -101,6 +101,7 @@ export class PaystackSubscriptionService {
           channels: ['bank_transfer', 'bank', 'ussd'],
           metadata: {
             plan_code: planCode,
+            purchase_type: 'subscription',
             cancel_action: `${EnvironmentVariables.config.frontendBaseUrl}/pricing`,
           },
           callback_url: `${EnvironmentVariables.config.frontendBaseUrl}/new-document`,

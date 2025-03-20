@@ -15,7 +15,7 @@ export class PaystackCallCreditsService {
     payload: CreateCallCreditsPaymentModel,
   ) {
     try {
-      const { amount, currency, email } = payload;
+      const { amount, currency, email, timePurchasedMs } = payload;
       let paymantChannels = ['bank_transfer', 'card', 'bank', 'ussd'];
 
       if (currency === 'USD') {
@@ -36,7 +36,8 @@ export class PaystackCallCreditsService {
           channels: paymantChannels,
           metadata: {
             cancel_action: `${EnvironmentVariables.config.frontendBaseUrl}`,
-            purchase_type: 'call_credits'
+            purchase_type: 'call_credits',
+            time_purchased_ms: timePurchasedMs,
           },
           callback_url: `${EnvironmentVariables.config.frontendBaseUrl}/new-document`,
         },
