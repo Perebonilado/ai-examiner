@@ -25,6 +25,8 @@ import { UpdateCourseDocumentHandler } from './handlers/CourseDocument/UpdateCou
 import { CreatePerformanceTrackingHandler } from './handlers/PerformanceTracking/CreatePerformanceTrackingHandler';
 import { DeleteUserDataHandler } from './handlers/User/DeleteUserDataHandler';
 import { CreateOralQuestionAnalysisHandler } from './handlers/OralQuestionAnalysis/CreateOralQuestionAnalysisHandler';
+import { CreateCallCreditsHandler } from './handlers/CallCredits/CreateCallCreditsHandler';
+import { UpdateCallCreditsHandler } from './handlers/CallCredits/UpdateCallCreditsHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -52,6 +54,8 @@ import { CreateOralQuestionAnalysisHandler } from './handlers/OralQuestionAnalys
     CreatePerformanceTrackingHandler,
     DeleteUserDataHandler,
     CreateOralQuestionAnalysisHandler,
+    CreateCallCreditsHandler,
+    UpdateCallCreditsHandler
   ],
   exports: [
     CreateUserHandler,
@@ -77,6 +81,8 @@ import { CreateOralQuestionAnalysisHandler } from './handlers/OralQuestionAnalys
     CreatePerformanceTrackingHandler,
     DeleteUserDataHandler,
     CreateOralQuestionAnalysisHandler,
+    CreateCallCreditsHandler,
+    UpdateCallCreditsHandler
   ],
 })
 export class BusinessModule {}
