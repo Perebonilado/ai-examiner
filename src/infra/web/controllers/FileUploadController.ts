@@ -118,7 +118,7 @@ export class FileUploadController {
 
         await Promise.all([
           this.pineconeChunkService.upsertChunks(
-            chunks,
+            chunks.filter((c) => c.trim().length),
             createdDocument.data.id,
           ),
           this.createDocumentTopicHandler.handle({ payload: mappedTopics }),
