@@ -79,7 +79,7 @@ export class ExtractTextService {
         'officepdf',
       );
       const chunks = await extractPagesTextsFromPDF(fileArrayBuffer);
-      return chunks;
+      return chunks.filter((c) => c.trim().length);
     } catch (error) {
       throw new Error(`Failed to extract chunks from PPT: ${error.message}`);
     }
