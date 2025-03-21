@@ -79,7 +79,7 @@ export class CallCreditsController {
       }
 
       return {
-        remainingCredits: callCredits.remainingTimeMs,
+        remainingCreditsMs: callCredits.remainingTimeMs,
       };
     } catch (error) {
       throw new HttpException(
