@@ -76,6 +76,7 @@ import {
   getAnswerVariationRule,
 } from 'src/constants/QuestionGenerationPromptV2';
 import { generateSourceInfoPromptV2 } from 'src/constants/V2Prompts';
+import { CallCreditsQueryService } from 'src/query/services/CallCreditsQueryService';
 
 @Controller('questions')
 export class QuestionsController {
@@ -116,6 +117,8 @@ export class QuestionsController {
     private oralQuestionAnalysisQueryService: OralQuestionAnalysisQueryService,
     @Inject(PineconeChunkService)
     private pineconeChunkService: PineconeChunkService,
+    @Inject(CallCreditsQueryService)
+    private callCreditsQueryService: CallCreditsQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -183,10 +186,15 @@ export class QuestionsController {
       const questionsToAsk = questions.questions.map(
         (q) => q.question,
       ) as string[];
+      const callCredits = await this.callCreditsQueryService.findByUserId(
+        userToken.sub,
+      );
+
       return await this.vapiCallingService.createAssistantForClientCall({
         messageContent: generateOralExaminationPrompt(questionsToAsk),
         metadata: { customerEmail: user.email, questionId: questions.id },
         userName: user.firstName,
+        maxDurationMs: callCredits.remainingTimeMs,
       });
     } catch (error) {
       throw new HttpException(
@@ -806,7 +814,15 @@ export class QuestionsController {
         );
       }
 
-      const totalQuestions = body.questionCount;
+      const questionTypeName = await this.lookUpQueryService.findLookUpById(
+        Number(body.questionType),
+      );
+
+      const totalQuestions = questionTypeName.title
+        .toLowerCase()
+        .includes('oral')
+        ? 5
+        : body.questionCount;
       const maxBatchSize = 5; // Max questions per API call
 
       // Determine the number of batches needed
@@ -849,10 +865,6 @@ export class QuestionsController {
           chunkIndex++;
         }
       }
-
-      const questionTypeName = await this.lookUpQueryService.findLookUpById(
-        Number(body.questionType),
-      );
 
       const questionPromises = questionsPerBatch.map((batchSize, index) =>
         generateObject({
@@ -910,6 +922,28 @@ export class QuestionsController {
           isCaseStudy: body.includeUseCases,
         },
       });
+
+      if (body.selectedQuestionTopics && body.selectedQuestionTopics.length) {
+        const questionTopicsToCreate = await Promise.all(
+          topicsToUse.map(async (t) => {
+            const topic =
+              await this.documentTopicQueryService.findDocumentTopicsByTitleAndDocumentId(
+                t,
+                documentId,
+              );
+
+            return {
+              documentTopicTitle: topic.title,
+              documentTopicId: topic.id,
+              questionId: createdQuestions.data.id,
+            };
+          }),
+        );
+
+        await this.createQuestionTopicHandler.handle({
+          payload: questionTopicsToCreate,
+        });
+      }
 
       return {
         id: createdQuestions.data.id,
