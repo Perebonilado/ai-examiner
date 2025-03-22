@@ -21,7 +21,8 @@ export class VapiCallingService {
     assistantPayload: CreateVapiAssistantPayloadModel,
   ): Promise<CreateVapiAssistantModel> {
     try {
-      const { messageContent, userName, metadata } = assistantPayload;
+      const { messageContent, userName, metadata, maxDurationMs } =
+        assistantPayload;
       const assistant = await this.client.assistants.create({
         model: {
           provider: 'openai',
@@ -33,7 +34,7 @@ export class VapiCallingService {
         firstMessage: `Hello ${userName}, how are you doing today?`,
         name: userName,
         metadata: metadata as unknown as Record<string, unknown>,
-        maxDurationSeconds: 180,
+        maxDurationSeconds: maxDurationMs / 1000,
       });
 
       return {
