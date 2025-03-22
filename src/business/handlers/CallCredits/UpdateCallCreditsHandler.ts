@@ -59,25 +59,26 @@ export class UpdateCallCreditsHandler extends AbstractRequestHandlerTemplate<
 
         await this.callCreditsRepository.update(payload);
       } else {
-        let newFreeCreditsMs = freeCallCredits;
-        let newRemainingTimeMs = existingCallCredits.remainingTimeMs;
+        let newFreeCreditsMs = 0;
+        let newRemainingTimeMs = 0;
         let timeToSubtractFromPaidCredits = 0;
 
-        if (newFreeCreditsMs > 0) {
-          if (timeToUpdate > newFreeCreditsMs) {
-            timeToSubtractFromPaidCredits = timeToUpdate - newFreeCreditsMs;
-            newFreeCreditsMs = 0;
+        if (freeCallCredits > 0) {
+          if (timeToUpdate > freeCallCredits) {
+            timeToSubtractFromPaidCredits = timeToUpdate - freeCallCredits;
           } else {
-            newFreeCreditsMs = newFreeCreditsMs - timeToUpdate;
+            newFreeCreditsMs = freeCallCredits - timeToUpdate;
           }
+        } else {
+          timeToSubtractFromPaidCredits = timeToUpdate
         }
 
         if (timeToSubtractFromPaidCredits > 0) {
-          if (timeToSubtractFromPaidCredits > newRemainingTimeMs) {
+          if (timeToSubtractFromPaidCredits > existingCallCredits.remainingTimeMs) {
             newRemainingTimeMs = 0;
           } else {
             newRemainingTimeMs =
-              newRemainingTimeMs - timeToSubtractFromPaidCredits;
+            existingCallCredits.remainingTimeMs - timeToSubtractFromPaidCredits;
           }
         }
 
