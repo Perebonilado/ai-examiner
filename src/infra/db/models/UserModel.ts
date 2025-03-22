@@ -17,6 +17,7 @@ import { DocumentMessageModel } from './DocumentMessageModel';
 import { OneTimeSubscriptionModel } from './OneTimeSubscriptionModel';
 import { QuestionProgressModel } from './QuestionProgressModel';
 import { PerformanceTrackingModel } from './PerformanceTrackingModel';
+import { CallCreditsModel } from './CallCreditsModel';
 
 @Table({ tableName: 'user' })
 export class UserModel extends Model<UserModel> {
@@ -81,8 +82,8 @@ export class UserModel extends Model<UserModel> {
   @HasMany(() => QuestionModel, 'user_id')
   question: QuestionModel;
 
-  @HasMany(()=>QuestionProgressModel, 'user_id')
-  questionProgress: QuestionProgressModel
+  @HasMany(() => QuestionProgressModel, 'user_id')
+  questionProgress: QuestionProgressModel;
 
   @HasOne(() => SubscriptionModel, 'user_id')
   subscription: SubscriptionModel;
@@ -90,11 +91,14 @@ export class UserModel extends Model<UserModel> {
   @HasMany(() => DocumentMessageModel, 'user_id')
   documentMessage: DocumentMessageModel;
 
+  @HasOne(() => CallCreditsModel, 'user_id')
+  callCredits: CallCreditsModel;
+
   @HasOne(() => OneTimeSubscriptionModel, 'user_id')
   oneTimeSubscription: OneTimeSubscriptionModel;
 
-  @HasMany(()=>PerformanceTrackingModel, 'user_id')
-  performanceTracking: PerformanceTrackingModel
+  @HasMany(() => PerformanceTrackingModel, 'user_id')
+  performanceTracking: PerformanceTrackingModel;
 
   @BeforeCreate
   static addUUID(instance: UserModel) {
