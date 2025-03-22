@@ -627,12 +627,13 @@ Example Interaction:
 
 Here are the questions you are to ask the user:
 
-**QUESTIONS TO ASK**
+**QUESTIONS TO ASK START**
 ${questionsToAsk}
+**QUESTIONS TO ASK END**
 
-**IMPORTANT - READ THE QUESTIONS VERY SLOWLY. DO NOT RUSH.**  
+**IMPORTANT - READ THE QUESTIONS VERY SLOWLY. DO NOT RUSH. PACE YOURSELF**  
 
-At the end of the assessment, let the user know that their response will be graded and they will be notified accordingly.
+At the end of the assessment, let the user know that their response will be graded and they will be notified accordingly. Afterwards, use the endCall function.
 
   `;
 };
