@@ -26,7 +26,13 @@ export class UpdateCallCreditsHandler extends AbstractRequestHandlerTemplate<
     request: UpdateCallCreditsRequest,
   ): Promise<CommandResponse<UpdateCallCreditsResponse>> {
     try {
-      const { action, timeToUpdate, userId } = request;
+      const {
+        action,
+        timeToUpdate,
+        userId,
+        freeCallCredits,
+        freeCallCreditsModifiedOn,
+      } = request;
       const existingCallCredits =
         await this.callCreditsQueryService.findByUserId(userId);
 
@@ -47,18 +53,40 @@ export class UpdateCallCreditsHandler extends AbstractRequestHandlerTemplate<
           id: existingCallCredits.id,
           remainingTimeMs: newRemainingTime,
           totalTimePurchasedMs: newTotalTimePurchased,
+          freeRemainingTimeMs: freeCallCredits,
+          lastFreeTimeModifiedOn: freeCallCreditsModifiedOn,
         } as CallCreditsModel;
 
         await this.callCreditsRepository.update(payload);
       } else {
-        const subtractedTime =
-          existingCallCredits.remainingTimeMs - timeToUpdate;
-        const newRemainingTime = subtractedTime >= 0 ? subtractedTime : 0;
+        let newFreeCreditsMs = freeCallCredits;
+        let newRemainingTimeMs = existingCallCredits.remainingTimeMs;
+        let timeToSubtractFromPaidCredits = 0;
+
+        if (newFreeCreditsMs > 0) {
+          if (timeToUpdate > newFreeCreditsMs) {
+            timeToSubtractFromPaidCredits = timeToUpdate - newFreeCreditsMs;
+            newFreeCreditsMs = 0;
+          } else {
+            newFreeCreditsMs = newFreeCreditsMs - timeToUpdate;
+          }
+        }
+
+        if (timeToSubtractFromPaidCredits > 0) {
+          if (timeToSubtractFromPaidCredits > newRemainingTimeMs) {
+            newRemainingTimeMs = 0;
+          } else {
+            newRemainingTimeMs =
+              newRemainingTimeMs - timeToSubtractFromPaidCredits;
+          }
+        }
 
         const payload = {
           id: existingCallCredits.id,
-          remainingTimeMs: newRemainingTime,
+          remainingTimeMs: newRemainingTimeMs,
           totalTimePurchasedMs: existingCallCredits.totalTimePurchasedMs,
+          freeRemainingTimeMs: newFreeCreditsMs,
+          lastFreeTimeModifiedOn: existingCallCredits.lastFreeTimeModifiedOn,
         } as CallCreditsModel;
 
         await this.callCreditsRepository.update(payload);

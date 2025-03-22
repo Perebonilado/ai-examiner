@@ -16,6 +16,8 @@ import { CreateCallCreditsHandler } from 'src/business/handlers/CallCredits/Crea
 import { CallCreditsQueryService } from 'src/query/services/CallCreditsQueryService';
 import { PaystackCallCreditsService } from 'src/integrations/paystack/services/PaystackCallCreditsService';
 import { PurchaseCallCreditDto } from 'src/dto/PurchaseCallCreditDto';
+import * as moment from 'moment';
+import { UpdateCallCreditsHandler } from 'src/business/handlers/CallCredits/UpdateCallCreditsHandler';
 
 @Controller('call-credits')
 export class CallCreditsController {
@@ -26,6 +28,8 @@ export class CallCreditsController {
     private callCreditsQueryService: CallCreditsQueryService,
     @Inject(PaystackCallCreditsService)
     private paystackCallCreditService: PaystackCallCreditsService,
+    @Inject(UpdateCallCreditsHandler)
+    private updateCallCreditsHandler: UpdateCallCreditsHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -66,20 +70,39 @@ export class CallCreditsController {
         userToken.sub,
       );
 
+      const freeTimeMs = 180000; // 3mins in milliseconds
       if (!callCredits) {
-        const freeTimeMs = 180000; // 3mins in milliseconds
         const createdFreeCredits = await this.createCallCreditsHandler.handle({
           timeToAddMs: freeTimeMs,
           userId: userToken.sub,
         });
 
         return {
-          remainingCredits: createdFreeCredits.data.reaminingCredits,
+          remainingCredits: createdFreeCredits.data.reaminingCredits + createdFreeCredits.data.freeCredits,
+          free: createdFreeCredits.data.freeCredits,
+          paid: createdFreeCredits.data.reaminingCredits
         };
       }
 
+      const currentDateStartOfMonth = moment(new Date()).startOf('month');
+      const lastFreeCreditUpdateStartOfMonth = moment(
+        callCredits.lastFreeTimeModifiedOn,
+      ).startOf('month');
+
+      if (lastFreeCreditUpdateStartOfMonth.isBefore(currentDateStartOfMonth)) {
+        await this.updateCallCreditsHandler.handle({
+          action: 'add_reamining_time',
+          freeCallCredits: freeTimeMs,
+          freeCallCreditsModifiedOn: new Date(),
+          timeToUpdate: 0,
+          userId: userToken.sub,
+        });
+      }
+
       return {
-        remainingCreditsMs: callCredits.remainingTimeMs,
+        remainingCreditsMs: callCredits.remainingTimeMs + callCredits.freeRemainingTimeMs,
+        free: callCredits.freeRemainingTimeMs,
+        paid: callCredits.remainingTimeMs
       };
     } catch (error) {
       throw new HttpException(

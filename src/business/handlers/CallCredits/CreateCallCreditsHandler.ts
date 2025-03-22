@@ -26,8 +26,10 @@ export class CreateCallCreditsHandler extends AbstractRequestHandlerTemplate<
       const { timeToAddMs, userId } = request;
       const callCreditsPayload = {
         userId,
-        remainingTimeMs: timeToAddMs,
+        remainingTimeMs: 0,
         totalTimePurchasedMs: 0,
+        freeRemainingTimeMs: timeToAddMs,
+        lastFreeTimeModifiedOn: new Date()
       } as CallCreditsModel;
 
       const createdCredits =
@@ -37,6 +39,7 @@ export class CreateCallCreditsHandler extends AbstractRequestHandlerTemplate<
         data: {
           id: createdCredits.id,
           reaminingCredits: createdCredits.remainingTimeMs,
+          freeCredits: createdCredits.freeRemainingTimeMs
         },
         message: 'Call Credits Created',
         status: HttpStatus.CREATED,

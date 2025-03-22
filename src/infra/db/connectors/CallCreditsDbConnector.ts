@@ -20,7 +20,7 @@ export class CallCreditsDbConnector {
     try {
       await CallCreditsModel.update(cc, {
         where: { id: cc.id },
-        fields: ['remainingTimeMs', 'totalTimePurchasedMs'],
+        fields: ['remainingTimeMs', 'totalTimePurchasedMs', 'lastFreeTimeModifiedOn', 'freeRemainingTimeMs'],
       });
     } catch (error) {
       throw new DatabaseError('Failed to update call credits');

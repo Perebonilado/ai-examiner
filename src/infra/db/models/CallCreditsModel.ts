@@ -30,6 +30,20 @@ export class CallCreditsModel extends Model<CallCreditsModel> {
   })
   totalTimePurchasedMs: number;
 
+  @Column({
+    type: DataType.BIGINT,
+    field: 'free_remaining_time_ms',
+    allowNull: true
+  })
+  freeRemainingTimeMs: number;
+
+  @Column({
+    type: DataType.DATE,
+    field: 'last_free_time_modified_on',
+    allowNull: true
+  })
+  lastFreeTimeModifiedOn: Date;
+
   @ForeignKey(() => UserModel)
   @Column({
     type: DataType.STRING,

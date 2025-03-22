@@ -169,16 +169,7 @@ export class QuestionsController {
         await this.oralQuestionAnalysisQueryService.findByQuestionId(
           questionId,
         );
-      const numberOfVivasDoneForCurrentMonth =
-        await this.oralQuestionAnalysisQueryService.countOralQuestionsGenratedForCurrentMonth(
-          userToken.sub,
-        );
-      if (numberOfVivasDoneForCurrentMonth >= 3) {
-        throw new HttpException(
-          'Your can only do 3 viva exams per month. Please, purchase call credits to take more viva exams',
-          HttpStatus.BAD_REQUEST,
-        );
-      }
+
       if (analysisIsAvailable) {
         throw new HttpException(
           'Your test has already been analyzed, please reload the page',

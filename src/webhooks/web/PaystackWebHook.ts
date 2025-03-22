@@ -16,6 +16,7 @@ import { ChargeSuccessEventDto } from '../dto/ChargeSuccessDto';
 import { CreateOneTimeSubscriptionHandler } from 'src/business/handlers/OneTimeSubscription/CreateOneTimeSubscriptionHandler';
 import * as moment from 'moment';
 import { UpdateCallCreditsHandler } from 'src/business/handlers/CallCredits/UpdateCallCreditsHandler';
+import { CallCreditsQueryService } from 'src/query/services/CallCreditsQueryService';
 
 @Controller('webhook/paystack')
 export class PaystackWebhook {
@@ -28,6 +29,8 @@ export class PaystackWebhook {
     private createOneTimeSubscriptionHandler: CreateOneTimeSubscriptionHandler,
     @Inject(UpdateCallCreditsHandler)
     private updateCallCreditsHander: UpdateCallCreditsHandler,
+    @Inject(CallCreditsQueryService)
+    private callCreditsQueryService: CallCreditsQueryService,
   ) {}
 
   @Post('')
@@ -95,10 +98,16 @@ export class PaystackWebhook {
                 data.customer.email,
               );
 
+              const existingCallCredits =
+                await this.callCreditsQueryService.findByUserId(user.id);
+
               await this.updateCallCreditsHander.handle({
                 action: 'add_reamining_time',
                 timeToUpdate: Number(timePurchased),
                 userId: user.id,
+                freeCallCredits: existingCallCredits.freeRemainingTimeMs,
+                freeCallCreditsModifiedOn:
+                  existingCallCredits.lastFreeTimeModifiedOn,
               });
             }
           }
