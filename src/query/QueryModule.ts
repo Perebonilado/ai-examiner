@@ -17,6 +17,8 @@ import { PerformanceTrackingQueryService } from './services/PerformanceTrackingQ
 import { OralQuestionAnalysisQueryService } from './services/OralQuestionAnalysisQueryService';
 import { IntegrationsModule } from 'src/integrations/IntegrationsModule';
 import { CallCreditsQueryService } from './services/CallCreditsQueryService';
+import { FlaggedQuestionQueryService } from './services/FlaggedQuestionQueryService';
+import { FlaggedDocumentMessageQueryService } from './services/FlaggedDocumentMessageQueryService';
 
 @Module({
   imports: [IntegrationsModule],
@@ -37,7 +39,9 @@ import { CallCreditsQueryService } from './services/CallCreditsQueryService';
     QuestionProgressQueryService,
     PerformanceTrackingQueryService,
     OralQuestionAnalysisQueryService,
-    CallCreditsQueryService
+    CallCreditsQueryService,
+    FlaggedQuestionQueryService,
+    FlaggedDocumentMessageQueryService
   ],
   exports: [
     UserQueryService,
@@ -56,7 +60,8 @@ import { CallCreditsQueryService } from './services/CallCreditsQueryService';
     QuestionProgressQueryService,
     PerformanceTrackingQueryService,
     OralQuestionAnalysisQueryService,
-    CallCreditsQueryService
+    CallCreditsQueryService,
+    FlaggedDocumentMessageQueryService
   ],
 })
 export class QueryModule {}

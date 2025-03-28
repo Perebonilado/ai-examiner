@@ -15,6 +15,8 @@ import { QuestionProgressDbConnector } from './connectors/QuestionProgressDbConn
 import { PerformanceTrackingDbConnector } from './connectors/PerformanceTrackingDbConnector';
 import { OralQuestionAnalysisDbConnector } from './connectors/OralQuestionAnalysisDbConnector';
 import { CallCreditsDbConnector } from './connectors/CallCreditsDbConnector';
+import { FlaggedQuestionDbConnector } from './connectors/FlaggedQuestionDbConnector';
+import { FlaggedDocumentMessageDbConnector } from './connectors/FlaggedDocumentMessageModelDbConnector';
 
 @Module({
   imports: [QueryModule],
@@ -33,7 +35,9 @@ import { CallCreditsDbConnector } from './connectors/CallCreditsDbConnector';
     QuestionProgressDbConnector,
     PerformanceTrackingDbConnector,
     OralQuestionAnalysisDbConnector,
-    CallCreditsDbConnector
+    CallCreditsDbConnector,
+    FlaggedQuestionDbConnector,
+    FlaggedDocumentMessageDbConnector
   ],
   exports: [
     ...databaseProviders,
@@ -50,7 +54,9 @@ import { CallCreditsDbConnector } from './connectors/CallCreditsDbConnector';
     QuestionProgressDbConnector,
     PerformanceTrackingDbConnector,
     OralQuestionAnalysisDbConnector,
-    CallCreditsDbConnector
+    CallCreditsDbConnector,
+    FlaggedQuestionDbConnector,
+    FlaggedDocumentMessageDbConnector
   ],
 })
 export class InfraDbModule {}
