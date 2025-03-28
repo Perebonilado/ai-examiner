@@ -17,6 +17,8 @@ import { QuestionProgressModel } from '../models/QuestionProgressModel';
 import { PerformanceTrackingModel } from '../models/PerformanceTrackingModel';
 import { OralQuestionAnalysisModel } from '../models/OralQuestionAnalysisModel';
 import { CallCreditsModel } from '../models/CallCreditsModel';
+import { FlaggedQuestionModel } from '../models/FlaggedQuestionsModel';
+import { FlaggedDocumentMessageModel } from '../models/FlaggedDocumentMessageModel';
 
 export let sequelize: Sequelize;
 
@@ -52,7 +54,9 @@ export const databaseProviders = [
         QuestionProgressModel,
         PerformanceTrackingModel,
         OralQuestionAnalysisModel,
-        CallCreditsModel
+        CallCreditsModel,
+        FlaggedQuestionModel,
+        FlaggedDocumentMessageModel
       ]);
 
       try {

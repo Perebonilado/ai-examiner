@@ -29,6 +29,10 @@ import { OralQuestionAnalysisRepository } from 'src/business/repository/OralQues
 import { OralQuestionAnalysisSequelizeRepository } from './repository/OralQuestionAnalysisSequelizeRepository';
 import { CallCreditsRepository } from 'src/business/repository/CallCreditsRepository';
 import { CallCreditsSequelizeRepository } from './repository/CallCreditsSequelizeRepository';
+import { FlaggedQuestionRepository } from 'src/business/repository/FlaggedQuestionRepository';
+import { FlaggedQuestionSequelizeRepository } from './repository/FlaggedQuestionSequelizeRepository';
+import { FlaggedDocumentMessageRepository } from 'src/business/repository/FlaggedDocumentMessageRepository';
+import { FlaggedDocumentMessageSequelizeRepository } from './repository/FlaggedDocumentMessageSequelizeRepository';
 
 @Module({
   imports: [InfraDbModule, QueryModule],
@@ -89,6 +93,14 @@ import { CallCreditsSequelizeRepository } from './repository/CallCreditsSequeliz
       provide: CallCreditsRepository,
       useClass: CallCreditsSequelizeRepository,
     },
+    {
+      provide: FlaggedQuestionRepository,
+      useClass: FlaggedQuestionSequelizeRepository,
+    },
+    {
+      provide: FlaggedDocumentMessageRepository,
+      useClass: FlaggedDocumentMessageSequelizeRepository,
+    },
   ],
   exports: [
     UserRepository,
@@ -105,6 +117,8 @@ import { CallCreditsSequelizeRepository } from './repository/CallCreditsSequeliz
     PerformanceTrackingRepository,
     OralQuestionAnalysisRepository,
     CallCreditsRepository,
+    FlaggedQuestionRepository,
+    FlaggedDocumentMessageRepository,
   ],
 })
 export class InfraRepositoryModule {}

@@ -12,6 +12,7 @@ import { UserModel } from 'src/infra/db/models/UserModel';
 import { DocumentTopicQueryService } from './DocumentTopicQueryService';
 import { OralQuestionAnalysisQueryService } from './OralQuestionAnalysisQueryService';
 import { PromptConfigV2 } from 'src/constants/QuestionGenerationPromptV2';
+import { FlaggedQuestionQueryService } from './FlaggedQuestionQueryService';
 
 @Injectable()
 export class QuestionQueryService {
@@ -24,6 +25,8 @@ export class QuestionQueryService {
     private documentTopicQueryService: DocumentTopicQueryService,
     @Inject(OralQuestionAnalysisQueryService)
     private oralQuestionAnalysisQueryService: OralQuestionAnalysisQueryService,
+    @Inject(FlaggedQuestionQueryService)
+    private flaggedQuestionQueryService: FlaggedQuestionQueryService,
   ) {}
 
   public async findAllQuestionsByDocumentIdAndUserId(
@@ -119,6 +122,13 @@ export class QuestionQueryService {
   public async findQuestionsById(id: string, userId: string) {
     try {
       const question = await QuestionModel.findOne({ where: { id, userId } });
+      const flaggedQuestions =
+        await this.flaggedQuestionQueryService.findFlaggedQuestionsByTestId(
+          question.id,
+        );
+      const flaggedSelectedQuestionIds = flaggedQuestions?.map(
+        (fl) => fl.selectedQuestionId,
+      );
       const courseDocument = await CourseDocumentModel.findOne({
         where: { id: question.courseDocumentId, userId },
       });
@@ -159,7 +169,13 @@ export class QuestionQueryService {
         documentTitle: courseDocument.title,
         documentId: courseDocument.id,
         createdOn: question.createdOn,
-        questions: JSON.parse(question.data),
+        questions: JSON.parse(question.data)?.filter((q) => {
+          if (flaggedSelectedQuestionIds.indexOf(q.id) === -1) {
+            return true;
+          }
+
+          return false;
+        }),
         score: score ? score.score : null,
         topics: topics
           ? topics.map((t) => ({ id: t.id, title: t.documentTopicTitle }))
@@ -170,6 +186,7 @@ export class QuestionQueryService {
         analysisData,
       };
     } catch (error) {
+      console.log(error);
       throw new QueryError('Failed to find questions by id').InnerError(error);
     }
   }
@@ -207,7 +224,14 @@ export class QuestionQueryService {
     {
       difficulty,
       includeCaseStudies,
-    }: Omit<PromptConfigV2, 'questionCount' | 'focusAreas' | 'questionType' | 'sourceText' | 'previousQuestions'>,
+    }: Omit<
+      PromptConfigV2,
+      | 'questionCount'
+      | 'focusAreas'
+      | 'questionType'
+      | 'sourceText'
+      | 'previousQuestions'
+    >,
     questionType: string,
     limit: number,
   ) {
