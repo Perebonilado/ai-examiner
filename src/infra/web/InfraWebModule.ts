@@ -22,6 +22,7 @@ import { SpeechController } from './controllers/SpeechController';
 import { PerformanceTrackingController } from './controllers/PerformanceTrackingController';
 import { GoogleAuthService } from '../auth/services/GoogleAuthService';
 import { CallCreditsController } from './controllers/CallCreditsController';
+import { FlagContentController } from './controllers/FlagContentController';
 
 @Module({
   imports: [
@@ -49,7 +50,8 @@ import { CallCreditsController } from './controllers/CallCreditsController';
     QuestionProgressController,
     SpeechController,
     PerformanceTrackingController,
-    CallCreditsController
+    CallCreditsController,
+    FlagContentController
   ],
 })
 export class InfraWebModule {}
