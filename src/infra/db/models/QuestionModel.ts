@@ -13,6 +13,7 @@ import { UserModel } from './UserModel';
 import { CourseDocumentModel } from './CourseDocumentModel';
 import { OralQuestionAnalysisModel } from './OralQuestionAnalysisModel';
 import { DifficultyType } from 'src/constants/QuestionGenerationPrompt';
+import { FlaggedQuestionModel } from './FlaggedQuestionsModel';
 
 @Table({ tableName: 'question' })
 export class QuestionModel extends Model<QuestionModel> {
@@ -74,7 +75,10 @@ export class QuestionModel extends Model<QuestionModel> {
   courseDocumentId: string;
 
   @HasMany(() => OralQuestionAnalysisModel, 'question_id')
-  oralQuestionAnalysis: string;
+  oralQuestionAnalysis: OralQuestionAnalysisModel;
+
+  @HasMany(() => FlaggedQuestionModel, 'test_id')
+  flaggedQuestion: FlaggedQuestionModel;
 
   @BeforeCreate
   static addUUID(instance: QuestionModel) {

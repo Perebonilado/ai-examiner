@@ -5,12 +5,14 @@ import {
   DataType,
   BeforeCreate,
   ForeignKey,
+  HasOne,
 } from 'sequelize-typescript';
 import { generateUUID } from 'src/utils';
 import { UserModel } from './UserModel';
 import { CourseDocumentModel } from './CourseDocumentModel';
 import { MessageSenderModel } from 'src/infra/web/models/MessageSenderModel';
 import * as moment from 'moment';
+import { FlaggedDocumentMessageModel } from './FlaggedDocumentMessageModel';
 
 @Table({ tableName: 'document_message' })
 export class DocumentMessageModel extends Model<DocumentMessageModel> {
@@ -32,7 +34,7 @@ export class DocumentMessageModel extends Model<DocumentMessageModel> {
     allowNull: false,
     field: 'sender',
   })
-  sender: MessageSenderModel
+  sender: MessageSenderModel;
 
   @Column({
     type: DataType.STRING,
@@ -64,18 +66,20 @@ export class DocumentMessageModel extends Model<DocumentMessageModel> {
   })
   createdOn: Date;
 
-  @ForeignKey(()=>CourseDocumentModel)
+  @ForeignKey(() => CourseDocumentModel)
   @Column({
     type: DataType.STRING,
     field: 'course_document_id',
     allowNull: false,
   })
-  courseDocumentId: string
+  courseDocumentId: string;
+
+  @HasOne(() => FlaggedDocumentMessageModel, 'document_message_id')
+  flaggedDocumentMessage: FlaggedDocumentMessageModel;
 
   @BeforeCreate
   static addUUID(instance: CourseDocumentModel) {
     instance.id = generateUUID();
     instance.createdOn = moment(new Date()).utc().toDate();
   }
-
 }

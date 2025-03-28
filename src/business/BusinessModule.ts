@@ -27,6 +27,8 @@ import { DeleteUserDataHandler } from './handlers/User/DeleteUserDataHandler';
 import { CreateOralQuestionAnalysisHandler } from './handlers/OralQuestionAnalysis/CreateOralQuestionAnalysisHandler';
 import { CreateCallCreditsHandler } from './handlers/CallCredits/CreateCallCreditsHandler';
 import { UpdateCallCreditsHandler } from './handlers/CallCredits/UpdateCallCreditsHandler';
+import { CreateFlaggedQuestionHandler } from './handlers/FlaggedQuestion/CreateFlaggedQuestionHandler';
+import { CreateFlaggedMessageHandler } from './handlers/FlaggedDocumentMessage/CreateFlaggedDocumentMessageHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -55,7 +57,9 @@ import { UpdateCallCreditsHandler } from './handlers/CallCredits/UpdateCallCredi
     DeleteUserDataHandler,
     CreateOralQuestionAnalysisHandler,
     CreateCallCreditsHandler,
-    UpdateCallCreditsHandler
+    UpdateCallCreditsHandler,
+    CreateFlaggedQuestionHandler,
+    CreateFlaggedMessageHandler
   ],
   exports: [
     CreateUserHandler,
@@ -82,7 +86,9 @@ import { UpdateCallCreditsHandler } from './handlers/CallCredits/UpdateCallCredi
     DeleteUserDataHandler,
     CreateOralQuestionAnalysisHandler,
     CreateCallCreditsHandler,
-    UpdateCallCreditsHandler
+    UpdateCallCreditsHandler,
+    CreateFlaggedQuestionHandler,
+    CreateFlaggedMessageHandler
   ],
 })
 export class BusinessModule {}
