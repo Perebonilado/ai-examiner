@@ -13,6 +13,7 @@ export interface PromptConfigV2 {
   includeCaseStudies: boolean;
   questionType: QuestionType;
   difficulty: DifficultyType;
+  preferredLanguage: string;
 }
 
 export type DifficultyType = 'easy' | 'medium' | 'hard';
@@ -634,39 +635,49 @@ CRITICAL - PREVENT ANSWER PATTERNS:
 
 THIS IS ABSOLUTELY ESSENTIAL - The distribution of correct answers must be completely unpredictable. Students must not be able to detect any pattern whatsoever in the positioning of correct answers.`;
 
+const getPreferredLanguagePrompt = (pl: string) => {
+  if (pl.toLowerCase() === 'english') return '';
+
+  return `Output in ${pl} Language`;
+};
+
 // Main generator function
 export const generatePromptForQuestionsV2 = ({
-    questionCount = 5,
+  questionCount = 5,
+  sourceText,
+  focusAreas,
+  includeCaseStudies = false,
+  questionType = 'Multiple Choice',
+  difficulty,
+  previousQuestions,
+  preferredLanguage = 'English',
+}: PromptConfigV2): string => {
+  const basePrompt = getBasePrompt(
     sourceText,
+    questionCount,
     focusAreas,
-    includeCaseStudies = false,
-    questionType = 'Multiple Choice',
+    questionType,
+  );
+  const specificPrompt = getSpecificPrompt(
+    questionType,
+    includeCaseStudies,
     difficulty,
-    previousQuestions,
-  }: PromptConfigV2): string => {
-    const basePrompt = getBasePrompt(
-      sourceText,
-      questionCount,
-      focusAreas,
-      questionType,
-    );
-    const specificPrompt = getSpecificPrompt(
-      questionType,
-      includeCaseStudies,
-      difficulty,
-    );
-    const formatRules = getFormatRules(questionType);
-    const previousQuestionsToAvoid =
-      getPreviousQuestionsToAvoid(previousQuestions);
-    const patternAvoidance = getAnswerVariationRule(questionType);
-  
-    return `
+  );
+  const formatRules = getFormatRules(questionType);
+  const previousQuestionsToAvoid =
+    getPreviousQuestionsToAvoid(previousQuestions);
+  const patternAvoidance = getAnswerVariationRule(questionType);
+  const preferredLanguagePrompt = getPreferredLanguagePrompt(preferredLanguage);
+
+  return `
     ${patternAvoidance}
     ${formatRules}
   ${basePrompt}
   ${specificPrompt}
   
   ${previousQuestionsToAvoid}
+
+  ${preferredLanguagePrompt}
   `;
 };
 
