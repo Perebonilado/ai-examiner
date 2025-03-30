@@ -7,11 +7,7 @@ import {
   Get,
   UseGuards,
   Req,
-  Param,
-  Query,
-  ParseIntPipe,
   Post,
-  Delete,
   Put,
 } from '@nestjs/common';
 import * as moment from 'moment';
