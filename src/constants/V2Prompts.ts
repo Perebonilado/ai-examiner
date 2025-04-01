@@ -1,6 +1,6 @@
 
 
-export const generateSourceInfoPromptV2 = (question: string, sourceText: string) => {
+export const generateSourceInfoPromptV2 = (question: string, sourceText: string, language = 'English') => {
     return `
     Format Rules:
 - Present paragraphs exactly as they appear in the document
@@ -35,5 +35,7 @@ ${sourceText}
 Separate each paragraph with a blank line]
 
 Note: Like a search engine, the most relevant paragraph (containing the closest match to the question's main ask) should appear first.
+
+ENSURE YOU OUTPUT IN ${language} language. TRANSLATE THE SOURCE TEXT.
     `
 }

@@ -33,6 +33,8 @@ import { FlaggedQuestionRepository } from 'src/business/repository/FlaggedQuesti
 import { FlaggedQuestionSequelizeRepository } from './repository/FlaggedQuestionSequelizeRepository';
 import { FlaggedDocumentMessageRepository } from 'src/business/repository/FlaggedDocumentMessageRepository';
 import { FlaggedDocumentMessageSequelizeRepository } from './repository/FlaggedDocumentMessageSequelizeRepository';
+import { PreferredLanguageRepository } from 'src/business/repository/PreferredLanguageRepository';
+import { PreferredLanguageSequelizeRepository } from './repository/PreferredLanguageSequelizeRepository';
 
 @Module({
   imports: [InfraDbModule, QueryModule],
@@ -101,6 +103,10 @@ import { FlaggedDocumentMessageSequelizeRepository } from './repository/FlaggedD
       provide: FlaggedDocumentMessageRepository,
       useClass: FlaggedDocumentMessageSequelizeRepository,
     },
+    {
+      provide: PreferredLanguageRepository,
+      useClass: PreferredLanguageSequelizeRepository,
+    },
   ],
   exports: [
     UserRepository,
@@ -119,6 +125,7 @@ import { FlaggedDocumentMessageSequelizeRepository } from './repository/FlaggedD
     CallCreditsRepository,
     FlaggedQuestionRepository,
     FlaggedDocumentMessageRepository,
+    PreferredLanguageRepository,
   ],
 })
 export class InfraRepositoryModule {}
