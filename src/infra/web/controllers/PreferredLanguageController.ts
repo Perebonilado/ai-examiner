@@ -46,6 +46,12 @@ export class PreferredLanguageController {
         };
       }
 
+      // set the language on the first req but still allow them to reset this
+      await this.createPreferredLanguageHandler.handle({
+        language: 'English',
+        userId: userToken.sub,
+      });
+
       return {
         language: 'English',
         preferredLanguageSet: false,
