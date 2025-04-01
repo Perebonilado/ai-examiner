@@ -231,6 +231,7 @@ export class QuestionQueryService {
       | 'questionType'
       | 'sourceText'
       | 'previousQuestions'
+      | 'preferredLanguage'
     >,
     questionType: string,
     limit: number,

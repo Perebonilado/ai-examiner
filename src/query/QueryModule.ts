@@ -19,6 +19,7 @@ import { IntegrationsModule } from 'src/integrations/IntegrationsModule';
 import { CallCreditsQueryService } from './services/CallCreditsQueryService';
 import { FlaggedQuestionQueryService } from './services/FlaggedQuestionQueryService';
 import { FlaggedDocumentMessageQueryService } from './services/FlaggedDocumentMessageQueryService';
+import { PreferredLanguageQueryService } from './services/PreferredLanguageQueryService';
 
 @Module({
   imports: [IntegrationsModule],
@@ -41,7 +42,8 @@ import { FlaggedDocumentMessageQueryService } from './services/FlaggedDocumentMe
     OralQuestionAnalysisQueryService,
     CallCreditsQueryService,
     FlaggedQuestionQueryService,
-    FlaggedDocumentMessageQueryService
+    FlaggedDocumentMessageQueryService,
+    PreferredLanguageQueryService 
   ],
   exports: [
     UserQueryService,
@@ -61,7 +63,8 @@ import { FlaggedDocumentMessageQueryService } from './services/FlaggedDocumentMe
     PerformanceTrackingQueryService,
     OralQuestionAnalysisQueryService,
     CallCreditsQueryService,
-    FlaggedDocumentMessageQueryService
+    FlaggedDocumentMessageQueryService,
+    PreferredLanguageQueryService 
   ],
 })
 export class QueryModule {}
