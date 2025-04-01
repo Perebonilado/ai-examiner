@@ -638,7 +638,7 @@ THIS IS ABSOLUTELY ESSENTIAL - The distribution of correct answers must be compl
 const getPreferredLanguagePrompt = (pl: string) => {
   if (pl.toLowerCase() === 'english') return '';
 
-  return `Output in ${pl} Language`;
+  return `VERY IMPORTANT. ENSURE YOU OUTPUT IN ${pl.toUpperCase()} LANGUAGE!!!`;
 };
 
 // Main generator function
