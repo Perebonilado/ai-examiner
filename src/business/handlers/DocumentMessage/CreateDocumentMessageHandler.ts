@@ -15,6 +15,7 @@ import {
   messagePromptPrefixGenerator,
 } from 'src/constants';
 import { UpdateCourseDocumentHandler } from '../CourseDocument/UpdateCourseDocumentHandler';
+import { PreferredLanguageQueryService } from 'src/query/services/PreferredLanguageQueryService';
 
 @Injectable()
 export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate<
@@ -29,6 +30,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
     private courseDocumentQueryService: CourseDocumentQueryService,
     @Inject(UpdateCourseDocumentHandler)
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
+    @Inject(PreferredLanguageQueryService) private preferredLanguageQueryService: PreferredLanguageQueryService
   ) {
     super();
   }
@@ -85,6 +87,8 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           },
         });
 
+        const preferredLanguage = await this.preferredLanguageQueryService.findByUserId(userId)
+
         await this.examinerService.createThreadMessage(
           updatedThread.id,
           generateMessagePrompt({
@@ -93,6 +97,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
             prefix: request.payload.notSureQuestion
               ? messagePromptPrefixGenerator(request.payload.notSureQuestion)
               : '',
+            language: preferredLanguage ? preferredLanguage.language : 'English'
           }),
         );
 
@@ -161,6 +166,8 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           );
         }
 
+        const preferredLanguage = await this.preferredLanguageQueryService.findByUserId(userId)
+
         await this.examinerService.createThreadMessage(
           existingThread.id,
           generateMessagePrompt({
@@ -169,6 +176,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
             prefix: request.payload.notSureQuestion
               ? messagePromptPrefixGenerator(request.payload.notSureQuestion)
               : '',
+            language: preferredLanguage ? preferredLanguage.language : 'English'
           }),
         );
 

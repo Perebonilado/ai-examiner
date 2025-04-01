@@ -77,6 +77,7 @@ import {
 } from 'src/constants/QuestionGenerationPromptV2';
 import { generateSourceInfoPromptV2 } from 'src/constants/V2Prompts';
 import { CallCreditsQueryService } from 'src/query/services/CallCreditsQueryService';
+import { PreferredLanguageQueryService } from 'src/query/services/PreferredLanguageQueryService';
 
 @Controller('questions')
 export class QuestionsController {
@@ -119,6 +120,8 @@ export class QuestionsController {
     private pineconeChunkService: PineconeChunkService,
     @Inject(CallCreditsQueryService)
     private callCreditsQueryService: CallCreditsQueryService,
+    @Inject(PreferredLanguageQueryService)
+    private preferredLanguageQueryService: PreferredLanguageQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -395,6 +398,7 @@ export class QuestionsController {
     @Req() request: Request,
   ) {
     try {
+      const userToken = request['user'] as VerifiedTokenModel;
       const relevantChunks =
         await this.pineconeChunkService.semanticChunkSearch(
           body.question,
@@ -407,12 +411,15 @@ export class QuestionsController {
         apiKey: EnvironmentVariables.config.openAiApiKey,
       });
 
+      const preferredLanguage = await this.preferredLanguageQueryService.findByUserId(userToken.sub)
+
       const { text } = await generateText({
         model: openai.responses('gpt-4o-mini'),
         maxRetries: 3,
         prompt: generateSourceInfoPromptV2(
           body.question,
           relevantChunks.join('\n'),
+          preferredLanguage ? preferredLanguage.language : 'English'
         ),
       });
 
@@ -866,6 +873,14 @@ export class QuestionsController {
         }
       }
 
+      const preferredLanguageData =
+        await this.preferredLanguageQueryService.findByUserId(userToken.sub);
+      let languageToUse = 'English';
+
+      if (preferredLanguageData) {
+        languageToUse = preferredLanguageData.language;
+      }
+
       const questionPromises = questionsPerBatch.map((batchSize, index) =>
         generateObject({
           model: openai.responses('gpt-4o-mini'),
@@ -893,6 +908,7 @@ export class QuestionsController {
             questionType: questionTypeName.title as QuestionType,
             sourceText: chunkBatches[index],
             previousQuestions,
+            preferredLanguage: languageToUse
           }),
         }),
       );

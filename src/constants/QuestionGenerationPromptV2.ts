@@ -13,6 +13,7 @@ export interface PromptConfigV2 {
   includeCaseStudies: boolean;
   questionType: QuestionType;
   difficulty: DifficultyType;
+  preferredLanguage: string;
 }
 
 export type DifficultyType = 'easy' | 'medium' | 'hard';
@@ -634,39 +635,49 @@ CRITICAL - PREVENT ANSWER PATTERNS:
 
 THIS IS ABSOLUTELY ESSENTIAL - The distribution of correct answers must be completely unpredictable. Students must not be able to detect any pattern whatsoever in the positioning of correct answers.`;
 
+const getPreferredLanguagePrompt = (pl: string) => {
+  if (pl.toLowerCase() === 'english') return '';
+
+  return `Output in ${pl} Language`;
+};
+
 // Main generator function
 export const generatePromptForQuestionsV2 = ({
-    questionCount = 5,
+  questionCount = 5,
+  sourceText,
+  focusAreas,
+  includeCaseStudies = false,
+  questionType = 'Multiple Choice',
+  difficulty,
+  previousQuestions,
+  preferredLanguage = 'English',
+}: PromptConfigV2): string => {
+  const basePrompt = getBasePrompt(
     sourceText,
+    questionCount,
     focusAreas,
-    includeCaseStudies = false,
-    questionType = 'Multiple Choice',
+    questionType,
+  );
+  const specificPrompt = getSpecificPrompt(
+    questionType,
+    includeCaseStudies,
     difficulty,
-    previousQuestions,
-  }: PromptConfigV2): string => {
-    const basePrompt = getBasePrompt(
-      sourceText,
-      questionCount,
-      focusAreas,
-      questionType,
-    );
-    const specificPrompt = getSpecificPrompt(
-      questionType,
-      includeCaseStudies,
-      difficulty,
-    );
-    const formatRules = getFormatRules(questionType);
-    const previousQuestionsToAvoid =
-      getPreviousQuestionsToAvoid(previousQuestions);
-    const patternAvoidance = getAnswerVariationRule(questionType);
-  
-    return `
+  );
+  const formatRules = getFormatRules(questionType);
+  const previousQuestionsToAvoid =
+    getPreviousQuestionsToAvoid(previousQuestions);
+  const patternAvoidance = getAnswerVariationRule(questionType);
+  const preferredLanguagePrompt = getPreferredLanguagePrompt(preferredLanguage);
+
+  return `
     ${patternAvoidance}
     ${formatRules}
   ${basePrompt}
   ${specificPrompt}
   
   ${previousQuestionsToAvoid}
+
+  ${preferredLanguagePrompt}
   `;
 };
 
@@ -809,3 +820,14 @@ export const getOralExaminationTranscriptAnalysisPrompt = (
   ${transcript}
   `;
 };
+
+export const generateTopicPromptV2 = (language = 'English') => {
+  return `
+Please review the document, and understand thoroughly what the document is about deeply and in detail. Then, determine if it is divided into detailed distinct topics, chapters or content covering various specific concepts in the document. Check if the broad concepts or chapters or topics are further broken down into specific concepts or topics. If it is, extract and return all the specific topics. If not, analyze the document, identify different specific concepts or topics, and return them. Ensure that they are detailed, touching on specific concepts and not a broad overview.
+
+Output the result in the following JSON format:
+
+["title1", "title2", ... ]
+
+Provide only the JSON array, nothing else. Be detailed and fast. ENSURE THE TOPICS ARE IN ${language} LANGUAGE. TRANSLATE IF NEED BE.`
+}

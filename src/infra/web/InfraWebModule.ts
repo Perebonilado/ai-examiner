@@ -23,6 +23,7 @@ import { PerformanceTrackingController } from './controllers/PerformanceTracking
 import { GoogleAuthService } from '../auth/services/GoogleAuthService';
 import { CallCreditsController } from './controllers/CallCreditsController';
 import { FlagContentController } from './controllers/FlagContentController';
+import { PreferredLanguageController } from './controllers/PreferredLanguageController';
 
 @Module({
   imports: [
@@ -51,7 +52,8 @@ import { FlagContentController } from './controllers/FlagContentController';
     SpeechController,
     PerformanceTrackingController,
     CallCreditsController,
-    FlagContentController
+    FlagContentController,
+    PreferredLanguageController
   ],
 })
 export class InfraWebModule {}

@@ -19,6 +19,7 @@ import { OralQuestionAnalysisModel } from '../models/OralQuestionAnalysisModel';
 import { CallCreditsModel } from '../models/CallCreditsModel';
 import { FlaggedQuestionModel } from '../models/FlaggedQuestionsModel';
 import { FlaggedDocumentMessageModel } from '../models/FlaggedDocumentMessageModel';
+import { PreferredLanguageModel } from '../models/PreferredLanguageModel';
 
 export let sequelize: Sequelize;
 
@@ -56,7 +57,8 @@ export const databaseProviders = [
         OralQuestionAnalysisModel,
         CallCreditsModel,
         FlaggedQuestionModel,
-        FlaggedDocumentMessageModel
+        FlaggedDocumentMessageModel,
+        PreferredLanguageModel
       ]);
 
       try {

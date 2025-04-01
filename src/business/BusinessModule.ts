@@ -29,6 +29,8 @@ import { CreateCallCreditsHandler } from './handlers/CallCredits/CreateCallCredi
 import { UpdateCallCreditsHandler } from './handlers/CallCredits/UpdateCallCreditsHandler';
 import { CreateFlaggedQuestionHandler } from './handlers/FlaggedQuestion/CreateFlaggedQuestionHandler';
 import { CreateFlaggedMessageHandler } from './handlers/FlaggedDocumentMessage/CreateFlaggedDocumentMessageHandler';
+import { CreatePreferredLanguageHandler } from './handlers/PreferredLanguage/CreatePreferredLanguageHandler';
+import { UpdatePreferredLanguageHandler } from './handlers/PreferredLanguage/UpdatePreferredLanguageHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -59,7 +61,9 @@ import { CreateFlaggedMessageHandler } from './handlers/FlaggedDocumentMessage/C
     CreateCallCreditsHandler,
     UpdateCallCreditsHandler,
     CreateFlaggedQuestionHandler,
-    CreateFlaggedMessageHandler
+    CreateFlaggedMessageHandler,
+    CreatePreferredLanguageHandler,
+    UpdatePreferredLanguageHandler
   ],
   exports: [
     CreateUserHandler,
@@ -88,7 +92,9 @@ import { CreateFlaggedMessageHandler } from './handlers/FlaggedDocumentMessage/C
     CreateCallCreditsHandler,
     UpdateCallCreditsHandler,
     CreateFlaggedQuestionHandler,
-    CreateFlaggedMessageHandler
+    CreateFlaggedMessageHandler,
+    CreatePreferredLanguageHandler,
+    UpdatePreferredLanguageHandler
   ],
 })
 export class BusinessModule {}
