@@ -398,6 +398,7 @@ export class QuestionsController {
     @Req() request: Request,
   ) {
     try {
+      const userToken = request['user'] as VerifiedTokenModel;
       const relevantChunks =
         await this.pineconeChunkService.semanticChunkSearch(
           body.question,
@@ -410,12 +411,15 @@ export class QuestionsController {
         apiKey: EnvironmentVariables.config.openAiApiKey,
       });
 
+      const preferredLanguage = await this.preferredLanguageQueryService.findByUserId(userToken.sub)
+
       const { text } = await generateText({
         model: openai.responses('gpt-4o-mini'),
         maxRetries: 3,
         prompt: generateSourceInfoPromptV2(
           body.question,
           relevantChunks.join('\n'),
+          preferredLanguage ? preferredLanguage.language : 'English'
         ),
       });
 

@@ -91,6 +91,7 @@ export class PreferredLanguageController {
         userId: userToken.sub,
       });
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         'Failed to update preferred language',
         HttpStatus.BAD_REQUEST,

@@ -262,10 +262,12 @@ export const generateMessagePrompt = ({
   message,
   responseFormat,
   prefix,
+  language
 }: {
   message: string;
   responseFormat: MessageReponseType;
   prefix: string;
+  language: string;
 }) => {
   return `
 ${prefix.length ? prefix : message}
@@ -277,6 +279,8 @@ Format the response as follows:
    - Do not cite sources
    - Do not add any markdowns that translate to <code></code> in html
    - Do not repeat the request message, omit this in your response
+
+Output in ${language}
 `;
 };
 

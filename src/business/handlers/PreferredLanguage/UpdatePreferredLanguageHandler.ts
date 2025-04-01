@@ -38,7 +38,10 @@ export class UpdatePreferredLanguageHandler extends AbstractRequestHandlerTempla
         const updated = await this.preferredLanguageRepository.update({
           userId: existingLanguage.userId,
           language: request.language,
+          id: existingLanguage.id,
         } as PreferredLanguageModel);
+
+        console.log(updated);
 
         return {
           data: {

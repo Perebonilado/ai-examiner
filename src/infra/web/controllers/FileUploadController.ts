@@ -24,6 +24,8 @@ import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQues
 import { extractJSONDataFromMessages, generateUUID } from 'src/utils';
 import { generateTopicPrompt } from 'src/constants';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
+import { generateTopicPromptV2 } from 'src/constants/QuestionGenerationPromptV2';
+import { PreferredLanguageQueryService } from 'src/query/services/PreferredLanguageQueryService';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -40,6 +42,8 @@ export class FileUploadController {
     private createQuestionHandler: CreateQuestionHandler,
     @Inject(CreateDocumentTopicHandler)
     private createDocumentTopicHandler: CreateDocumentTopicHandler,
+    @Inject(PreferredLanguageQueryService)
+    private preferredLanguageQueryService: PreferredLanguageQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -94,6 +98,8 @@ export class FileUploadController {
         pdfPageRange,
       );
 
+      const preferredLanguage = await this.preferredLanguageQueryService.findByUserId(userToken.sub)
+
       const [chunks, createdDocument, topics] = await Promise.all([
         this.extractTextService.getChunksBasedOnFileMimeType(file),
         this.createCourseDocumentHandler.handle({
@@ -104,7 +110,7 @@ export class FileUploadController {
             fileId: uploadedOpenAiFile.id,
           },
         }),
-        this.generateDocumentTopic(uploadedOpenAiFile.id),
+        this.generateDocumentTopic(uploadedOpenAiFile.id, preferredLanguage ? preferredLanguage.language : 'English'),
       ]);
 
       if (chunks.length < this.extractTextService.MAX_CHUNKS) {
@@ -183,7 +189,10 @@ export class FileUploadController {
     }
   }
 
-  private async generateDocumentTopic(fileId: string) {
+  private async generateDocumentTopic(
+    fileId: string,
+    preferredLanguage: string,
+  ) {
     try {
       const assistantId =
         EnvironmentVariables.config.topicExtractionAssistantId;
@@ -210,7 +219,7 @@ export class FileUploadController {
 
       await this.examinerService.createThreadMessage(
         updatedThread.id,
-        generateTopicPrompt,
+        generateTopicPromptV2(preferredLanguage),
       );
 
       const run = await this.examinerService.createRun(
