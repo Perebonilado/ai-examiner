@@ -5,6 +5,7 @@ export interface CreateVapiAssistantPayloadModel {
   messageContent: string;
   metadata: CallAssistantMetaData;
   maxDurationMs: number;
+  language?: string
 }
 
 export interface CreateVapiAssistantModel {
