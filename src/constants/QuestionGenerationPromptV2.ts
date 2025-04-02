@@ -829,5 +829,18 @@ Output the result in the following JSON format:
 
 ["title1", "title2", ... ]
 
-Provide only the JSON array, nothing else. Be detailed and fast. ENSURE THE TOPICS ARE IN ${language} LANGUAGE. TRANSLATE IF NEED BE.`
-}
+Provide only the JSON array, nothing else. Be detailed and fast. ENSURE THE TOPICS ARE IN ${language} LANGUAGE. TRANSLATE IF NEED BE.`;
+};
+
+export const translateEnglishToOtherLanguagePrompt = (
+  text: string,
+  language: string,
+) => {
+  return `
+    The below source text is in english. Translate this to ${language}.  RETURN ONLY THE TRANSLATED TEXT.
+
+    **SOURCE TEXT START**
+    ${text}
+    **SOURCE TEXT END**
+  `;
+};
