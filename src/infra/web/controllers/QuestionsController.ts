@@ -164,7 +164,7 @@ export class QuestionsController {
   @UseGuards(AuthGuard)
   @Post('/viva/start-call')
   public async initiateClientCall(
-    @Body() body: { questionId: string },
+    @Body() body: { questionId: string, language?: string },
     @Req() request: Request,
   ) {
     const { questionId } = body;
@@ -198,6 +198,7 @@ export class QuestionsController {
         metadata: { customerEmail: user.email, questionId: questions.id },
         userName: user.firstName,
         maxDurationMs: callCredits.remainingTimeMs,
+        language: body?.language || 'english'
       });
     } catch (error) {
       throw new HttpException(
@@ -411,15 +412,13 @@ export class QuestionsController {
         apiKey: EnvironmentVariables.config.openAiApiKey,
       });
 
-      const preferredLanguage = await this.preferredLanguageQueryService.findByUserId(userToken.sub)
-
       const { text } = await generateText({
         model: openai.responses('gpt-4o-mini'),
         maxRetries: 3,
         prompt: generateSourceInfoPromptV2(
           body.question,
           relevantChunks.join('\n'),
-          preferredLanguage ? preferredLanguage.language : 'English'
+          'English'
         ),
       });
 
@@ -873,13 +872,7 @@ export class QuestionsController {
         }
       }
 
-      const preferredLanguageData =
-        await this.preferredLanguageQueryService.findByUserId(userToken.sub);
-      let languageToUse = 'English';
-
-      if (preferredLanguageData) {
-        languageToUse = preferredLanguageData.language;
-      }
+      const languageToUse = 'English';
 
       const questionPromises = questionsPerBatch.map((batchSize, index) =>
         generateObject({
