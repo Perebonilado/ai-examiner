@@ -22,10 +22,12 @@ import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { extractJSONDataFromMessages, generateUUID } from 'src/utils';
-import { generateTopicPrompt } from 'src/constants';
+import { generateMessagePrompt, generateTopicPrompt } from 'src/constants';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 import { generateTopicPromptV2 } from 'src/constants/QuestionGenerationPromptV2';
 import { PreferredLanguageQueryService } from 'src/query/services/PreferredLanguageQueryService';
+import { summarizeDocumentPrompt } from 'src/constants/V2Prompts';
+import { CreateDocumentMessageHandler } from 'src/business/handlers/DocumentMessage/CreateDocumentMessageHandler';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -42,8 +44,8 @@ export class FileUploadController {
     private createQuestionHandler: CreateQuestionHandler,
     @Inject(CreateDocumentTopicHandler)
     private createDocumentTopicHandler: CreateDocumentTopicHandler,
-    @Inject(PreferredLanguageQueryService)
-    private preferredLanguageQueryService: PreferredLanguageQueryService,
+    @Inject(CreateDocumentMessageHandler)
+    private createDocumentMessageHandler: CreateDocumentMessageHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -98,9 +100,7 @@ export class FileUploadController {
         pdfPageRange,
       );
 
-      const preferredLanguage = await this.preferredLanguageQueryService.findByUserId(userToken.sub)
-
-      const [chunks, createdDocument, topics] = await Promise.all([
+      const [chunks, createdDocument, topics, summaryInfo] = await Promise.all([
         this.extractTextService.getChunksBasedOnFileMimeType(file),
         this.createCourseDocumentHandler.handle({
           payload: {
@@ -110,8 +110,24 @@ export class FileUploadController {
             fileId: uploadedOpenAiFile.id,
           },
         }),
-        this.generateDocumentTopic(uploadedOpenAiFile.id, preferredLanguage ? preferredLanguage.language : 'English'),
+        this.generateDocumentTopic(uploadedOpenAiFile.id, 'English'),
+        this.summarizeDocument(uploadedOpenAiFile.id),
       ]);
+
+      await this.createDocumentMessageHandler.handle({
+        payload: {
+          documentSummaryData: {
+            documentId: createdDocument.data.id,
+            fileId: createdDocument.data.fileId,
+            message: summaryInfo.summary,
+            threadId: summaryInfo.threadId
+          },
+          courseDocumentId: '',
+          message: '',
+          responseFormat: 'indepth',
+          userId: userToken.sub
+        },
+      })
 
       if (chunks.length < this.extractTextService.MAX_CHUNKS) {
         const mappedTopics = topics.map((topic) => {
@@ -177,6 +193,7 @@ export class FileUploadController {
           documentId: createdDocument.data.id,
           fileId: uploadedOpenAiFile.id,
           topics,
+          summary: summaryInfo.summary,
         },
         message: 'File uploaded successfully',
         status: HttpStatus.CREATED,
@@ -184,6 +201,62 @@ export class FileUploadController {
     } catch (error) {
       throw new HttpException(
         error ?? 'V2: Failed to upload file',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  private async summarizeDocument(fileId: string) {
+    try {
+      const assistantId =
+        EnvironmentVariables.config.documentSummarizationAssistantId;
+
+      const temporaryVectorStoreName = `${generateUUID()}_${new Date().getTime()}`;
+
+      const temporaryVectorStore = await this.examinerService.createVectorStore(
+        temporaryVectorStoreName,
+      );
+
+      const updatedVectorStoreId =
+        await this.examinerService.attachFileToVectorStore(
+          fileId,
+          temporaryVectorStore.id,
+        );
+
+      const thread = await this.examinerService.createThread();
+
+      const updatedThread =
+        await this.examinerService.attachVectorStoreToThread(
+          thread.id,
+          updatedVectorStoreId,
+        );
+
+      await this.examinerService.createThreadMessage(
+        updatedThread.id,
+        generateMessagePrompt({
+          message: summarizeDocumentPrompt,
+          language: 'English',
+          prefix: '',
+          responseFormat: 'summary',
+        }),
+      );
+
+      const run = await this.examinerService.createRun(
+        assistantId,
+        updatedThread.id,
+      );
+
+      const messages = await this.examinerService.retrieveThreadMessages(
+        updatedThread.id,
+        run.id,
+      );
+
+      const text = (messages.data[0].content[0] as any).text.value;
+
+      return { summary: text, threadId: updatedThread.id };
+    } catch (error) {
+      throw new HttpException(
+        'Failed to summarize doc',
         HttpStatus.BAD_REQUEST,
       );
     }
