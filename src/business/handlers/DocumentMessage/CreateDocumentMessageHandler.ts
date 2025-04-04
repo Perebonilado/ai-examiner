@@ -30,7 +30,8 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
     private courseDocumentQueryService: CourseDocumentQueryService,
     @Inject(UpdateCourseDocumentHandler)
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
-    @Inject(PreferredLanguageQueryService) private preferredLanguageQueryService: PreferredLanguageQueryService
+    @Inject(PreferredLanguageQueryService)
+    private preferredLanguageQueryService: PreferredLanguageQueryService,
   ) {
     super();
   }
@@ -44,6 +45,25 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         message: userMessage,
         userId,
       } = request.payload;
+
+      if (request.payload?.documentSummaryData) {
+        const { documentId, fileId, message, threadId } =
+          request.payload.documentSummaryData;
+        await this.documentMessageRepository.create({
+          message: message,
+          sender: 'system',
+          openAiFileId: fileId,
+          openAiThreadId: threadId,
+          userId: userId,
+          courseDocumentId: documentId,
+        } as DocumentMessageModel);
+
+        return {
+          message: 'Summary created',
+          data: { systemResponse: message },
+          status: HttpStatus.CREATED
+        };
+      }
 
       const assistantId = EnvironmentVariables.config.assistantIdPaidPlan;
 
@@ -87,7 +107,8 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           },
         });
 
-        const preferredLanguage = await this.preferredLanguageQueryService.findByUserId(userId)
+        const preferredLanguage =
+          await this.preferredLanguageQueryService.findByUserId(userId);
 
         await this.examinerService.createThreadMessage(
           updatedThread.id,
@@ -97,7 +118,9 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
             prefix: request.payload.notSureQuestion
               ? messagePromptPrefixGenerator(request.payload.notSureQuestion)
               : '',
-            language: preferredLanguage ? preferredLanguage.language : 'English'
+            language: preferredLanguage
+              ? preferredLanguage.language
+              : 'English',
           }),
         );
 
@@ -166,7 +189,8 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           );
         }
 
-        const preferredLanguage = await this.preferredLanguageQueryService.findByUserId(userId)
+        const preferredLanguage =
+          await this.preferredLanguageQueryService.findByUserId(userId);
 
         await this.examinerService.createThreadMessage(
           existingThread.id,
@@ -176,7 +200,9 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
             prefix: request.payload.notSureQuestion
               ? messagePromptPrefixGenerator(request.payload.notSureQuestion)
               : '',
-            language: preferredLanguage ? preferredLanguage.language : 'English'
+            language: preferredLanguage
+              ? preferredLanguage.language
+              : 'English',
           }),
         );
 
