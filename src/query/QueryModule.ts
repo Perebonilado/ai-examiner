@@ -20,6 +20,7 @@ import { CallCreditsQueryService } from './services/CallCreditsQueryService';
 import { FlaggedQuestionQueryService } from './services/FlaggedQuestionQueryService';
 import { FlaggedDocumentMessageQueryService } from './services/FlaggedDocumentMessageQueryService';
 import { PreferredLanguageQueryService } from './services/PreferredLanguageQueryService';
+import { EssayQuestionAnalysisQueryService } from './services/EssayQuestionAnalysisQueryService';
 
 @Module({
   imports: [IntegrationsModule],
@@ -43,7 +44,8 @@ import { PreferredLanguageQueryService } from './services/PreferredLanguageQuery
     CallCreditsQueryService,
     FlaggedQuestionQueryService,
     FlaggedDocumentMessageQueryService,
-    PreferredLanguageQueryService 
+    PreferredLanguageQueryService,
+    EssayQuestionAnalysisQueryService,
   ],
   exports: [
     UserQueryService,
@@ -64,7 +66,8 @@ import { PreferredLanguageQueryService } from './services/PreferredLanguageQuery
     OralQuestionAnalysisQueryService,
     CallCreditsQueryService,
     FlaggedDocumentMessageQueryService,
-    PreferredLanguageQueryService 
+    PreferredLanguageQueryService,
+    EssayQuestionAnalysisQueryService,
   ],
 })
 export class QueryModule {}

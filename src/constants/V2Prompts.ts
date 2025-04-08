@@ -59,3 +59,63 @@ export const summarizeDocumentPrompt = `
 
 8. The final summary should be concise, clear, and accessible to someone without specialized knowledge.
     `;
+
+export const generateEssayAnalysisPrompt = ({
+  answer,
+  question,
+  sourceText,
+}: {
+  question: string;
+  sourceText: string;
+  answer: string;
+}): string => {
+  return `
+   # Essay Examination Analysis Task
+
+   ## Instructions:
+
+   1. First, thoroughly review the reference document attached to this conversation thread. This document contains the authoritative information against which you must evaluate all student answers.
+
+   2. Come up with your own through answer to the question based on the source text. This should be very indepth.
+
+   3. Compare your response with that of the student to analyze what the student answered for accuracy and depth.
+
+   4. Come up with your evaluation based on your answer and in relation to what the student answered.
+
+   5. Apply strict scoring criteria (0-10) based on accuracy, completeness, and precision in relation to the reference text.
+
+   ## System Analysis Requirements:
+  - Address the student directly using "you" and "your" (e.g., "You demonstrated good understanding of...")
+  - Begin with positive observations about what the student did correctly
+  - Follow with specific areas for improvement, citing exact information from the reference document
+  - Include direct quotes from the reference document to support your analysis
+  - Be encouraging but honest about shortcomings
+  - Provide concrete suggestions for improvement
+  - Keep the overall tone supportive while maintaining evaluative rigor
+  - Be thorough in your analysis but avoid unnecessary length
+  
+  ## Scoring Guidelines:
+  - Apply strict standards when scoring
+  - Perfect scores (10/10) should be rare and only given for answers that align perfectly with the reference document
+  - Deduct points for any omissions, inaccuracies, or imprecise statements
+  - Consider both factual correctness and completeness in relation to the reference material
+  - A score of 7/10 should represent a good answer with minor omissions
+  - Scores below 5 indicate significant gaps or misunderstandings
+
+
+  **SOURCE TEXT START**
+
+  ${sourceText}
+
+  **SOURCE TEXT END**
+
+  ** QUESTION START **
+  ${question}
+  ** QUESTION END **
+
+  ** STUDENT'S RESPONSE START **
+  ${answer}
+  ** STUDENT RESPONSE END **
+
+  `
+};

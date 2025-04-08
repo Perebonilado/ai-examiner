@@ -1,9 +1,4 @@
-// Types
-export type QuestionType =
-  | 'Flash Cards'
-  | 'Multiple Choice'
-  | 'Multiple True-False'
-  | 'Oral (Viva)';
+import { QuestionType } from "src/infra/web/models/QuestionTypeModel";
 
 interface PromptConfig {
   questionCount: number;
