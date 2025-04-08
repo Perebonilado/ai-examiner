@@ -20,6 +20,7 @@ import { CallCreditsModel } from '../models/CallCreditsModel';
 import { FlaggedQuestionModel } from '../models/FlaggedQuestionsModel';
 import { FlaggedDocumentMessageModel } from '../models/FlaggedDocumentMessageModel';
 import { PreferredLanguageModel } from '../models/PreferredLanguageModel';
+import { EssayQuestionAnalysisModel } from '../models/EssayQuestionAnalysisModel';
 
 export let sequelize: Sequelize;
 
@@ -58,7 +59,8 @@ export const databaseProviders = [
         CallCreditsModel,
         FlaggedQuestionModel,
         FlaggedDocumentMessageModel,
-        PreferredLanguageModel
+        PreferredLanguageModel,
+        EssayQuestionAnalysisModel
       ]);
 
       try {
