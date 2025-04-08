@@ -20,12 +20,23 @@ export class LookUpController {
     @Query('type') type: string,
     @Query('showOralQuestionOption')
     showOralQuestionOption = '0',
+    @Query('showEssayQuestionOption')
+    showEssayQuestionOption = '0',
   ) {
     try {
-      const lookUps = await this.lookUpQueryService.findAllLookUpsByType(type);
+      let lookUps = await this.lookUpQueryService.findAllLookUpsByType(type);
       if (type === 'question_type' && Number(showOralQuestionOption) !== 1) {
-        return lookUps.filter((lk) => !lk.title.toLowerCase().includes('oral'));
+        lookUps = lookUps.filter(
+          (lk) => !lk.title.toLowerCase().includes('oral'),
+        );
       }
+
+      if (type === 'question_type' && Number(showEssayQuestionOption) !== 1) {
+        lookUps = lookUps.filter(
+          (lk) => !lk.title.toLowerCase().includes('essay'),
+        );
+      }
+
       return lookUps;
     } catch (error) {
       throw new HttpException('Failed to find lookups', HttpStatus.NOT_FOUND);

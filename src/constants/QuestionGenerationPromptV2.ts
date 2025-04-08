@@ -1,9 +1,4 @@
-// Types
-export type QuestionType =
-  | 'Flash Cards'
-  | 'Multiple Choice'
-  | 'Multiple True-False'
-  | 'Oral (Viva)';
+import { QuestionType } from 'src/infra/web/models/QuestionTypeModel';
 
 export interface PromptConfigV2 {
   questionCount: number;
@@ -341,6 +336,117 @@ Examples:
 
 CRITICAL: Flash cards must be EXTREMELY basic and should NEVER require any reasoning or analysis.`;
 };
+
+const getEssayQuestionPrompt = (difficulty: DifficultyType, includeCaseStudies: boolean): string => `
+INSTRUCTIONS:
+Generate well-structured, essay-style questions that require students to develop thoughtful, multi-paragraph responses. Questions should assess understanding, application, and reasoning, appropriate to the ${difficulty} difficulty level${includeCaseStudies ? ' and based on realistic case scenarios' : ''}.
+
+DIFFICULTY LEVEL: ${difficulty.toUpperCase()}
+${difficulty === 'easy' ? 
+`- Emphasize explanation and description of key ideas
+- Ask students to identify, describe, and explain basic concepts or processes
+- Require clarity in exposition over complex reasoning
+- Suitable for foundational or introductory learners` : 
+difficulty === 'medium' ? 
+`- Combine explanation with moderate analysis and application
+- Ask students to compare, apply, or explore cause-effect relationships
+- Require connection of theory to real-world or hypothetical examples
+- Suitable for intermediate learners` : 
+`- Emphasize critical evaluation, synthesis, and theory integration
+- Ask students to assess, critique, or develop original arguments
+- Require depth of reasoning and evidence-based judgment
+- Suitable for advanced or expert learners`}
+
+${includeCaseStudies ? `CASE STUDY APPROACH:
+- Infer the appropriate domain from the source (e.g., medical, legal, educational, etc.)
+- Present a realistic scenario with sufficient context
+- Design questions that ask students to explain, describe, or discuss theoretical principles in response to the situation
+- Encourage application of knowledge, professional reasoning, and analysis of implications
+- Match the complexity of the case to the selected difficulty level
+
+EXAMPLES OF DOMAIN-BASED SCENARIOS:
+- MEDICAL: A patient with specific symptoms, medical history, and treatment considerations
+- LEGAL: A dispute or ethical dilemma with legal implications
+- BUSINESS: A company facing strategic, operational, or financial challenges
+- EDUCATION: A classroom issue or curriculum design scenario
+- POLICY: A government considering responses to a social or political issue
+- ENGINEERING: A technical design or failure scenario requiring evaluation
+- SOCIAL WORK: A client or community in need of intervention
+
+` : ''}
+
+QUESTION REQUIREMENTS:
+- Prompt multi-paragraph responses that demonstrate structured thinking
+- Use verbs such as "explain," "describe," "discuss," "analyze," "evaluate," and "develop"
+- Tailor complexity to the ${difficulty} level
+${includeCaseStudies ? '- Frame questions within realistic scenarios that require explanation and applied reasoning' : '- Provide enough direction to guide depth without a case narrative'}
+- Require specific examples, evidence, or theoretical references
+
+COGNITIVE TARGETS:
+${difficulty === 'easy' ? 
+`- UNDERSTAND: Explain key ideas clearly
+- DESCRIBE: Identify and detail features of concepts
+- ILLUSTRATE: Provide relevant examples to show understanding
+- OUTLINE: Present a summary of processes or frameworks` : 
+difficulty === 'medium' ? 
+`- ANALYZE: Break down ideas and explore relationships
+- COMPARE: Explore similarities and differences
+- APPLY: Use knowledge to explore real-world relevance
+- EXPLAIN CAUSES & EFFECTS: Link actions, principles, and outcomes` : 
+`- EVALUATE: Make judgments based on arguments and evidence
+- SYNTHESIZE: Combine ideas into original perspectives
+- CRITIQUE: Assess and reflect on strengths and weaknesses
+- DEVELOP: Construct arguments or frameworks with depth and nuance`}
+${includeCaseStudies ? `
+- APPLY: Use theory to interpret or solve case problems
+- JUSTIFY: Defend decisions or interpretations with reasoning
+- DISCUSS: Consider perspectives and implications of actions` : ''}
+
+QUESTION FORMATS:
+${includeCaseStudies ? 
+(difficulty === 'easy' ? 
+`- "A patient presents with [symptoms]. Describe the likely diagnosis, explain the underlying mechanism, and outline initial treatment steps."
+- "A teacher notices students struggling with a lesson. Explain possible causes of the difficulty and describe how the issue could be addressed."` :
+difficulty === 'medium' ? 
+`- "A startup is expanding rapidly but facing operational delays. Analyze the situation, explain contributing factors, and discuss potential solutions."
+- "A new education policy is being implemented across schools. Discuss its intended outcomes, identify possible obstacles, and explain ways to address them."` :
+`- "An engineering firm must choose between two competing designs. Critically evaluate each design’s merits and risks, and justify the preferred option."
+- "A country is debating a law to regulate AI. Discuss the ethical and societal implications, evaluate opposing viewpoints, and propose a balanced approach."`) : 
+(difficulty === 'easy' ? 
+`- "Describe the role of mitochondria in cells and explain why they are called the powerhouses of the cell."
+- "Explain the importance of regular exercise and describe its effects on physical health."` : 
+difficulty === 'medium' ? 
+`- "Compare and contrast socialism and capitalism, explaining their key differences and effects on economic equality."
+- "Analyze how rainfall patterns affect crop yield, using examples from different regions."` :
+`- "Evaluate the effectiveness of international aid in conflict zones, and develop an argument for improving its impact."
+- "Discuss how globalization affects cultural identity, referencing both benefits and challenges."`)}
+
+EXAMPLE TRANSFORMATIONS:
+${includeCaseStudies ? 
+(difficulty === 'easy' ? 
+`❌ Instead of: "What are the symptoms of asthma?"
+✅ Ask: "A 12-year-old child arrives at the clinic with wheezing and shortness of breath after exercise. Describe the likely condition, explain its causes, and outline initial management."` :
+difficulty === 'medium' ? 
+`❌ Instead of: "What are the effects of pollution?"
+✅ Ask: "A city reports rising respiratory illnesses linked to air pollution. Analyze the likely causes, discuss public health implications, and explain effective intervention strategies."` :
+`❌ Instead of: "What is a data breach?"
+✅ Ask: "A company experiences a cyberattack that exposes customer data. Critically evaluate the organization’s response, discuss legal and ethical implications, and propose strategies for prevention."`) : 
+(difficulty === 'easy' ? 
+`❌ Instead of: "What is democracy?"
+✅ Ask: "Describe the key principles of democracy and explain how they influence citizen participation."` :
+difficulty === 'medium' ? 
+`❌ Instead of: "How does advertising affect behavior?"
+✅ Ask: "Analyze the impact of persuasive advertising on consumer decisions and discuss its ethical implications."` :
+`❌ Instead of: "What is artificial intelligence?"
+✅ Ask: "Evaluate the role of artificial intelligence in modern healthcare. Discuss its potential, limitations, and ethical considerations."`)}
+
+FORMATTING GUIDELINES:
+- Use clear, directive verbs suited to ${difficulty} level
+${includeCaseStudies ? '- Begin with a realistic, domain-appropriate scenario\n- Follow with a prompt that asks students to explain, describe, or discuss concepts in context' : '- Provide structured prompts that guide scope, depth, and reasoning'}
+- Ensure academic rigor while maintaining clarity and focus
+- Questions should encourage depth of response proportional to ${difficulty} difficulty
+`;
+
 
 const getOralQuestionPrompt = (): string => `
 INSTRUCTIONS:
@@ -744,6 +850,7 @@ const getSpecificPrompt = (
   if (questionType === 'Multiple True-False')
     return getMultipleTrueFalsePrompt();
   if (questionType === 'Oral (Viva)') return getOralQuestionPrompt();
+  if (questionType === 'Essay') return getEssayQuestionPrompt(difficulty, includeCaseStudies);
   return includeCaseStudies
     ? getCaseStudyPrompt()
     : getDirectQuestionPrompt(questionType, difficulty);

@@ -1,5 +1,5 @@
-import { QuestionType } from 'src/constants/QuestionGenerationPrompt';
 import { MessageReponseType } from 'src/infra/web/models/MessageResponseTypeModel';
+import { QuestionType } from 'src/infra/web/models/QuestionTypeModel';
 
 export interface CreateDocumentMessageDto {
   message: string;

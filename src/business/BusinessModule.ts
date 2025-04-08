@@ -31,6 +31,8 @@ import { CreateFlaggedQuestionHandler } from './handlers/FlaggedQuestion/CreateF
 import { CreateFlaggedMessageHandler } from './handlers/FlaggedDocumentMessage/CreateFlaggedDocumentMessageHandler';
 import { CreatePreferredLanguageHandler } from './handlers/PreferredLanguage/CreatePreferredLanguageHandler';
 import { UpdatePreferredLanguageHandler } from './handlers/PreferredLanguage/UpdatePreferredLanguageHandler';
+import { UpdateEssayQuestionAnalysisHandler } from './handlers/EssayQuestionAnalysis/UpdateEssayQuestionAnalysisHandler';
+import { CreateEssayQuestionAnalysisHandler } from './handlers/EssayQuestionAnalysis/CreateEssayQuestionAnalysisHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -63,7 +65,9 @@ import { UpdatePreferredLanguageHandler } from './handlers/PreferredLanguage/Upd
     CreateFlaggedQuestionHandler,
     CreateFlaggedMessageHandler,
     CreatePreferredLanguageHandler,
-    UpdatePreferredLanguageHandler
+    UpdatePreferredLanguageHandler,
+    UpdateEssayQuestionAnalysisHandler,
+    CreateEssayQuestionAnalysisHandler,
   ],
   exports: [
     CreateUserHandler,
@@ -94,7 +98,9 @@ import { UpdatePreferredLanguageHandler } from './handlers/PreferredLanguage/Upd
     CreateFlaggedQuestionHandler,
     CreateFlaggedMessageHandler,
     CreatePreferredLanguageHandler,
-    UpdatePreferredLanguageHandler
+    UpdatePreferredLanguageHandler,
+    UpdateEssayQuestionAnalysisHandler,
+    CreateEssayQuestionAnalysisHandler,
   ],
 })
 export class BusinessModule {}

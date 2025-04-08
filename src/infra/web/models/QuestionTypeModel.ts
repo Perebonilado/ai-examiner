@@ -3,4 +3,4 @@ export type QuestionType =
   | 'Multiple Choice'
   | 'Multiple True-False'
   | 'Oral (Viva)'
-  ;
+  | 'Essay';
