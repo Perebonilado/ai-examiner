@@ -51,7 +51,7 @@ export class OralQuestionAnalysisModel extends Model<OralQuestionAnalysisModel> 
   createdOn: Date;
 
   @BeforeCreate
-  static addUUID(instance: QuestionModel) {
+  static addUUID(instance: OralQuestionAnalysisModel) {
     instance.createdOn = moment(new Date()).utc().toDate();
   }
 }

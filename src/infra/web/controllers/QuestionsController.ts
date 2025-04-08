@@ -12,7 +12,9 @@ import {
   ParseIntPipe,
   Post,
   Delete,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import * as moment from 'moment';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { Request } from 'express';
@@ -75,9 +77,20 @@ import {
   generatePromptForQuestionsV2,
   getAnswerVariationRule,
 } from 'src/constants/QuestionGenerationPromptV2';
-import { generateSourceInfoPromptV2 } from 'src/constants/V2Prompts';
+import {
+  generateEssayAnalysisPrompt,
+  generateSourceInfoPromptV2,
+} from 'src/constants/V2Prompts';
 import { CallCreditsQueryService } from 'src/query/services/CallCreditsQueryService';
 import { PreferredLanguageQueryService } from 'src/query/services/PreferredLanguageQueryService';
+import { EssaySchema } from 'src/schemas/EssaySchema';
+import { CreateEssayQuestionAnalysisHandler } from 'src/business/handlers/EssayQuestionAnalysis/CreateEssayQuestionAnalysisHandler';
+import { UpdateEssayQuestionAnalysisHandler } from 'src/business/handlers/EssayQuestionAnalysis/UpdateEssayQuestionAnalysisHandler';
+import { AnalyzeEssayTestDto } from 'src/dto/AnalyzeEssayTestDto';
+import { UpdateEssayQuestionAnalysisRequest } from 'src/business/handlers/request/UpdateEssayQuestionAnalysisRequest';
+import { EssayAnalysisSchema } from 'src/schemas/EssayAnalysisSchema';
+import { EssayQuestionAnalysisStatus } from '../models/EssayQuestionAnalysisStatus';
+import { EssayQuestionAnalysisQueryService } from 'src/query/services/EssayQuestionAnalysisQueryService';
 
 @Controller('questions')
 export class QuestionsController {
@@ -120,8 +133,12 @@ export class QuestionsController {
     private pineconeChunkService: PineconeChunkService,
     @Inject(CallCreditsQueryService)
     private callCreditsQueryService: CallCreditsQueryService,
-    @Inject(PreferredLanguageQueryService)
-    private preferredLanguageQueryService: PreferredLanguageQueryService,
+    @Inject(CreateEssayQuestionAnalysisHandler)
+    private createEssayQuestionAnalysisHandler: CreateEssayQuestionAnalysisHandler,
+    @Inject(UpdateEssayQuestionAnalysisHandler)
+    private updateEssayQuestionAnalysisHandler: UpdateEssayQuestionAnalysisHandler,
+    @Inject(EssayQuestionAnalysisQueryService)
+    private essayQuestionAnalysisQueryService: EssayQuestionAnalysisQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -164,7 +181,7 @@ export class QuestionsController {
   @UseGuards(AuthGuard)
   @Post('/viva/start-call')
   public async initiateClientCall(
-    @Body() body: { questionId: string, language?: string },
+    @Body() body: { questionId: string; language?: string },
     @Req() request: Request,
   ) {
     const { questionId } = body;
@@ -198,7 +215,7 @@ export class QuestionsController {
         metadata: { customerEmail: user.email, questionId: questions.id },
         userName: user.firstName,
         maxDurationMs: callCredits.remainingTimeMs,
-        language: body?.language || 'english'
+        language: body?.language || 'english',
       });
     } catch (error) {
       throw new HttpException(
@@ -418,7 +435,7 @@ export class QuestionsController {
         prompt: generateSourceInfoPromptV2(
           body.question,
           relevantChunks.join('\n'),
-          'English'
+          'English',
         ),
       });
 
@@ -901,7 +918,7 @@ export class QuestionsController {
             questionType: questionTypeName.title as QuestionType,
             sourceText: chunkBatches[index],
             previousQuestions,
-            preferredLanguage: languageToUse
+            preferredLanguage: languageToUse,
           }),
         }),
       );
@@ -976,6 +993,7 @@ export class QuestionsController {
     @Query('page', ParseIntPipe) page: number,
     @Query('pageSize', ParseIntPipe) pageSize: number,
     @Query('showOralQuestions') showOralQuestions = '0',
+    @Query('showEssayQuestions') showEssayQuestions = '0',
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
@@ -1017,6 +1035,9 @@ export class QuestionsController {
           const oralQuestionId = questionTypes?.find((qt) =>
             qt.title.toLowerCase().includes('oral'),
           );
+          const essayQuestionId = questionTypes?.find((qt) =>
+            qt.title.toLowerCase().includes('essay'),
+          );
 
           if (q.questionTypeId === oralQuestionId?.id) {
             const analysis =
@@ -1024,6 +1045,14 @@ export class QuestionsController {
                 q.id,
               );
             if (analysis && analysis.analysisData?.length) {
+              status = 'submitted';
+            }
+          } else if (q.questionTypeId === essayQuestionId?.id) {
+            const analysis =
+              await this.essayQuestionAnalysisQueryService.findByQuestionId(
+                q.id,
+              );
+            if (analysis && analysis.length) {
               status = 'submitted';
             }
           } else {
@@ -1050,6 +1079,12 @@ export class QuestionsController {
       if (Number(showOralQuestions) !== 1) {
         filteredQuestions = mappedQuestions.filter((q) => {
           return !q.type.toLowerCase().includes('oral');
+        });
+      }
+
+      if (Number(showEssayQuestions) !== 1) {
+        filteredQuestions = mappedQuestions.filter((q) => {
+          return !q.type.toLowerCase().includes('essay');
         });
       }
 
@@ -1108,6 +1143,140 @@ export class QuestionsController {
     }
   }
 
+  @UseGuards(AuthGuard)
+  @Get('/essay-analysis/:questionId')
+  public async getAnalyzedQuestion(@Param('questionId') questionId: string) {
+    try {
+      const data =
+        await this.essayQuestionAnalysisQueryService.findByQuestionId(
+          questionId,
+        );
+
+      if (data) {
+        return {
+          data,
+        };
+      }
+
+      return {
+        data: null,
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Failed to get graded essay',
+        error.status ?? HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/essay-analysis')
+  public async analyzeEssayQuestion(
+    @Body() body: AnalyzeEssayTestDto,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      const stagedForAnalysis: UpdateEssayQuestionAnalysisRequest[] = [];
+      const question = await this.questionQueryService.findQuestionsById(
+        body.questionId,
+        userToken.sub,
+      );
+      for (const data of body.data) {
+        const saved = await this.createEssayQuestionAnalysisHandler.handle({
+          analysis: '',
+          question: data.question,
+          answer: data.answer,
+          questionId: body.questionId,
+          score: null,
+          status: 'in-progress',
+        });
+
+        stagedForAnalysis.push({
+          analysis: '',
+          id: saved.data.id,
+          score: null,
+          status: 'in-progress',
+          answer: data.answer,
+          question: data.question,
+        });
+      }
+
+      // analyze test
+      const openai = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
+      });
+
+      const toBeGraded = stagedForAnalysis.map(async (staged) => {
+        if (!staged.answer.trim().length) {
+          return {
+            ...staged,
+            score: 0,
+            analysis: 'no answer given',
+            status: 'complete',
+          };
+        }
+
+        const chunks = await this.pineconeChunkService.semanticChunkSearch(
+          staged.question,
+          question.documentId,
+          20,
+        );
+
+        const joinedChunk = chunks.join('\n');
+
+        const analyzed = await generateObject({
+          model: openai.responses('gpt-4o-mini'),
+          maxRetries: 3,
+          mode: 'json',
+          schemaName: 'Analysis',
+          schemaDescription: 'Analysis for student response',
+          schema: EssayAnalysisSchema,
+          prompt: generateEssayAnalysisPrompt({
+            question: staged.question,
+            sourceText: joinedChunk,
+            answer: staged.answer,
+          }),
+        });
+
+        staged.analysis = analyzed.object.analysis;
+        staged.score = analyzed.object.score;
+        staged.status = 'complete';
+
+        return staged;
+      });
+
+      const graded = await Promise.all(toBeGraded);
+
+      // update the stuff
+
+      await Promise.all(
+        graded.map(async (gr) => {
+          return this.updateEssayQuestionAnalysisHandler.handle({
+            analysis: gr.analysis,
+            answer: gr.answer,
+            id: gr.id,
+            question: gr.question,
+            score: gr.score,
+            status: gr.status as EssayQuestionAnalysisStatus,
+          });
+        }),
+      );
+
+      return {
+        status: HttpStatus.CREATED,
+        message: 'Grading done',
+        data: null,
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Failed to analyze essay test',
+        error.status ?? HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   private getZodQuestionValidator(questionTypeTitle: string) {
     switch (questionTypeTitle.toLowerCase()) {
       case 'multiple choice': {
@@ -1118,6 +1287,9 @@ export class QuestionsController {
       }
       case 'flash cards': {
         return FlashCardsSchema;
+      }
+      case 'essay': {
+        return EssaySchema;
       }
       default: {
         return VivaSchema;
