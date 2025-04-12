@@ -9,9 +9,10 @@ import {
   HttpStatus,
   Query,
   Req,
+  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
@@ -24,10 +25,20 @@ import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQues
 import { extractJSONDataFromMessages, generateUUID } from 'src/utils';
 import { generateMessagePrompt, generateTopicPrompt } from 'src/constants';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
-import { generateTopicPromptV2 } from 'src/constants/QuestionGenerationPromptV2';
+import {
+  generateTopicPromptV2,
+  generateTopicPromptV2_2,
+} from 'src/constants/QuestionGenerationPromptV2';
 import { PreferredLanguageQueryService } from 'src/query/services/PreferredLanguageQueryService';
-import { summarizeDocumentPrompt } from 'src/constants/V2Prompts';
+import {
+  generateDocumentSummaryPromptV2,
+  summarizeDocumentPrompt,
+} from 'src/constants/V2Prompts';
 import { CreateDocumentMessageHandler } from 'src/business/handlers/DocumentMessage/CreateDocumentMessageHandler';
+import { createOpenAI, openai, OpenAIProvider } from '@ai-sdk/openai';
+import { generateObject, generateText } from 'ai';
+import { TopicsSchema } from 'src/schemas/TopicsSchema';
+import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/UpdateCourseDocumentHandler';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -46,6 +57,8 @@ export class FileUploadController {
     private createDocumentTopicHandler: CreateDocumentTopicHandler,
     @Inject(CreateDocumentMessageHandler)
     private createDocumentMessageHandler: CreateDocumentMessageHandler,
+    @Inject(UpdateCourseDocumentHandler)
+    private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -89,55 +102,51 @@ export class FileUploadController {
     @Query('start') start: string,
     @Query('end') end: string,
     @Req() request: Request,
+    @Res() res: Response,
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
       const pdfPageRange =
         pages === 'custom' ? { start: Number(start), end: Number(end) } : {};
 
-      const uploadedOpenAiFile = await this.examinerService.uploadFile(
-        file,
-        pdfPageRange,
-      );
+      const openaiClient = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
+      });
 
-      const [chunks, createdDocument, topics, summaryInfo] = await Promise.all([
-        this.extractTextService.getChunksBasedOnFileMimeType(file),
+      const chunks =
+        await this.extractTextService.getChunksBasedOnFileMimeType(file);
+
+      const maxNumPagesForSummaryAndTopicGeneration = 250;
+
+      const [createdDocument, topics, summaryInfo] = await Promise.all([
         this.createCourseDocumentHandler.handle({
           payload: {
             title: file.originalname,
             userId: userToken.sub,
             courseId: '',
-            fileId: uploadedOpenAiFile.id,
+            fileId: '',
           },
         }),
-        this.generateDocumentTopic(uploadedOpenAiFile.id, 'English'),
-        this.summarizeDocument(uploadedOpenAiFile.id),
+        this.generateDocumentTopicsV2(
+          openaiClient,
+          chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
+        ),
+        this.summarizeDocumentV2(
+          openaiClient,
+          chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
+        ),
       ]);
 
-      await this.createDocumentMessageHandler.handle({
-        payload: {
-          documentSummaryData: {
-            documentId: createdDocument.data.id,
-            fileId: createdDocument.data.fileId,
-            message: summaryInfo.summary,
-            threadId: summaryInfo.threadId
-          },
-          courseDocumentId: '',
-          message: '',
-          responseFormat: 'indepth',
-          userId: userToken.sub
-        },
-      })
+      const mappedTopics = topics.map((topic) => {
+        return {
+          title: topic,
+          documentId: createdDocument.data.id,
+          userId: userToken.sub,
+        };
+      });
 
       if (chunks.length < this.extractTextService.MAX_CHUNKS) {
-        const mappedTopics = topics.map((topic) => {
-          return {
-            title: topic,
-            documentId: createdDocument.data.id,
-            userId: userToken.sub,
-          };
-        });
-
         await Promise.all([
           this.pineconeChunkService.upsertChunks(
             chunks.filter((c) => c.trim().length),
@@ -174,13 +183,6 @@ export class FileUploadController {
             currentStartIndex,
           );
         });
-        const mappedTopics = topics.map((topic) => {
-          return {
-            title: topic,
-            documentId: createdDocument.data.id,
-            userId: userToken.sub,
-          };
-        });
 
         await Promise.all([
           upsertPromises,
@@ -188,20 +190,78 @@ export class FileUploadController {
         ]);
       }
 
-      return {
+      // return a response here
+      res.status(HttpStatus.CREATED).json({
         data: {
           documentId: createdDocument.data.id,
-          fileId: uploadedOpenAiFile.id,
+          fileId: 'not yet set',
           topics,
-          summary: summaryInfo.summary,
+          summary: summaryInfo,
         },
         message: 'File uploaded successfully',
         status: HttpStatus.CREATED,
-      };
+      });
+
+      setImmediate(async () => {
+        const uploadedOpenAiFile = await this.examinerService.uploadFile(
+          file,
+          pdfPageRange,
+        );
+
+        await this.updateCourseDocumentHandler.handle({
+          data: {
+            openAiFileId: uploadedOpenAiFile.id,
+            id: createdDocument.data.id,
+          },
+          userId: userToken.sub,
+        });
+      });
     } catch (error) {
       throw new HttpException(
         error ?? 'V2: Failed to upload file',
         HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  private async summarizeDocumentV2(
+    client: OpenAIProvider,
+    sourceText: string,
+  ) {
+    try {
+      const { text: summary } = await generateText({
+        model: client('gpt-4o-mini'),
+        prompt: generateDocumentSummaryPromptV2(sourceText),
+      });
+
+      return summary;
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Failed to summarize doc',
+        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  private async generateDocumentTopicsV2(
+    client: OpenAIProvider,
+    sourceText: string,
+  ) {
+    try {
+      const response = await generateObject({
+        model: client.responses('gpt-4o-mini'),
+        maxRetries: 3,
+        mode: 'json',
+        schemaName: 'Topics',
+        schema: TopicsSchema,
+        prompt: generateTopicPromptV2_2(sourceText),
+      });
+
+      return response.object.topics as string[];
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Failed to generate topics',
+        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

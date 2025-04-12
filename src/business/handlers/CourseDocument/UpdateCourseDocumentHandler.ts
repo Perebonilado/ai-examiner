@@ -43,6 +43,7 @@ export class UpdateCourseDocumentHandler extends AbstractRequestHandlerTemplate<
         id: request.data.id,
         title: request.data?.title || existingDoc.title,
         isDeleted: request.data?.isDeleted || existingDoc.isDeleted,
+        openAiFileId: request.data?.openAiFileId || existingDoc.openAiFileId,
 
         mcqDirectEasyThreadId: request.data?.mcqDirectEasyThreadId || existingDoc.mcqDirectEasyThreadId,
         mcqDirectMediumThreadId: request.data?.mcqDirectMediumThreadId || existingDoc.mcqDirectMediumThreadId,
