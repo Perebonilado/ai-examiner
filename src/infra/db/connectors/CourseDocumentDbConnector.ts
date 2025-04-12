@@ -21,6 +21,7 @@ export class CourseDocumentDbConnector {
         fields: [
           'title',
           'isDeleted',
+          'openAiFileId',
 
           'mcqDirectEasyThreadId',
           'mcqDirectMediumThreadId',
