@@ -60,6 +60,35 @@ export const summarizeDocumentPrompt = `
 8. The final summary should be concise, clear, and accessible to someone without specialized knowledge.
     `;
 
+export const generateDocumentSummaryPromptV2 = (sourceText: string) => {
+  return `
+# Summary Instructions.
+
+IMPORTANT: FIRST ANALYZE THE SOURCE TEXT AS ALL SUMMARY INFORMATION MUST BE DRAWN FROM THIS.
+
+1. Begin with a concise 1–2 sentence overview that captures the main idea and importance of the document.
+
+2. Use simple, everyday language. If any technical or medical terms must be included, briefly explain them in parentheses.
+
+3. Focus only on the most important points, removing repetition or less relevant details.
+
+4. Simplify complex ideas while preserving the original meaning.
+
+5. Highlight any key statistics or figures, but only the most impactful ones.
+
+6. Organize the summary logically, using bullet points or short sections if helpful.
+
+7. Make the summary easy to scan, with clear headings or bold keywords where appropriate.
+
+8. The final summary should be concise, clear, and accessible to someone without specialized knowledge.
+
+**SOURCE TEXT START**
+${sourceText}
+**SOURCE TEXT END**
+ 
+  `
+}
+
 export const generateEssayAnalysisPrompt = ({
   answer,
   question,

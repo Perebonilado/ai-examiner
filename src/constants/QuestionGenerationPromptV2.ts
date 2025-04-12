@@ -939,6 +939,16 @@ Output the result in the following JSON format:
 Provide only the JSON array, nothing else. Be detailed and fast. ENSURE THE TOPICS ARE IN ${language} LANGUAGE. TRANSLATE IF NEED BE.`;
 };
 
+export const generateTopicPromptV2_2 = (sourceText: string) => {
+  return `
+  Please review the source text below, and understand thoroughly what the document is about deeply and in detail. Then, determine if it is divided into detailed distinct topics, chapters or content covering various specific concepts in the source text. Check if the broad concepts or chapters or topics are further broken down into specific concepts or topics. If it is, extract and return all the specific topics. If not, analyze the source text, identify different specific concepts or topics, and return them. Ensure that they are detailed, touching on specific concepts and not a broad overview.
+
+  **SOUCE TEXT START**
+  ${sourceText}
+  **SOURCE TEXT END**
+  `
+}
+
 export const translateEnglishToOtherLanguagePrompt = (
   text: string,
   language: string,

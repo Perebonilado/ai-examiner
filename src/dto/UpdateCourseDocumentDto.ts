@@ -2,6 +2,7 @@ export interface UpdateCourseDocumentDto {
   id: string;
   title?: string;
   isDeleted?: boolean;
+  openAiFileId?: string;
   mcqDirectHardThreadId?: string;
   mcqDirectMediumThreadId?: string;
   mcqDirectEasyThreadId?: string;

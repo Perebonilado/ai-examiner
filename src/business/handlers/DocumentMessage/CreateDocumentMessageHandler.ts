@@ -107,9 +107,6 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           },
         });
 
-        const preferredLanguage =
-          await this.preferredLanguageQueryService.findByUserId(userId);
-
         await this.examinerService.createThreadMessage(
           updatedThread.id,
           generateMessagePrompt({
@@ -118,9 +115,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
             prefix: request.payload.notSureQuestion
               ? messagePromptPrefixGenerator(request.payload.notSureQuestion)
               : '',
-            language: preferredLanguage
-              ? preferredLanguage.language
-              : 'English',
+            language: 'English',
           }),
         );
 
