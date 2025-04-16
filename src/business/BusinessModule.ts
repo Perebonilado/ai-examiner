@@ -33,6 +33,7 @@ import { CreatePreferredLanguageHandler } from './handlers/PreferredLanguage/Cre
 import { UpdatePreferredLanguageHandler } from './handlers/PreferredLanguage/UpdatePreferredLanguageHandler';
 import { UpdateEssayQuestionAnalysisHandler } from './handlers/EssayQuestionAnalysis/UpdateEssayQuestionAnalysisHandler';
 import { CreateEssayQuestionAnalysisHandler } from './handlers/EssayQuestionAnalysis/CreateEssayQuestionAnalysisHandler';
+import { CreateDocumentSummaryHandler } from './handlers/DocumentSummary/CreateDocumentSummaryHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -68,6 +69,7 @@ import { CreateEssayQuestionAnalysisHandler } from './handlers/EssayQuestionAnal
     UpdatePreferredLanguageHandler,
     UpdateEssayQuestionAnalysisHandler,
     CreateEssayQuestionAnalysisHandler,
+    CreateDocumentSummaryHandler
   ],
   exports: [
     CreateUserHandler,
@@ -101,6 +103,7 @@ import { CreateEssayQuestionAnalysisHandler } from './handlers/EssayQuestionAnal
     UpdatePreferredLanguageHandler,
     UpdateEssayQuestionAnalysisHandler,
     CreateEssayQuestionAnalysisHandler,
+    CreateDocumentSummaryHandler
   ],
 })
 export class BusinessModule {}

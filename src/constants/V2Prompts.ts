@@ -86,8 +86,45 @@ IMPORTANT: FIRST ANALYZE THE SOURCE TEXT AS ALL SUMMARY INFORMATION MUST BE DRAW
 ${sourceText}
 **SOURCE TEXT END**
  
-  `
-}
+  `;
+};
+
+export const generateDocumentMessagePromptV2 = (
+  question: string,
+  sourceText: string,
+) => {
+  return `
+  # Response Instructions
+
+  IMPORTANT: Your primary job is to help the student understand clearly and thoroughly.
+
+  1. First, carefully analyze the SOURCE TEXT provided below. It is your main source of truth when answering the student’s question.
+  2. If the answer cannot be found in the SOURCE TEXT, you may refer to previous messages—especially if the question is a follow-up.
+  3. Always answer the student’s question directly first.
+  4. Explain everything in very simple, clear language. Break down any complex ideas or terminology into basic concepts.
+     - Use real-world examples or analogies where helpful.
+     - Assume the student is hearing this concept for the first time.
+  5. Make your tone friendly, encouraging, and as human as possible. Speak as if you are guiding someone one-on-one.
+  6. End your response with a helpful follow-up:
+     - Ask a question to guide them to the next step.
+     - Invite them to ask another question or clarify anything they’re unsure about.
+     - Or suggest something related they might want to explore next.
+
+  DO NOT mention the instructions above in your response. ONLY return the direct response to the student.
+
+  HERE IS THE STUDENT'S QUESTION
+  ** QUESTION START **
+  ${question}
+  ** QUESTION END **
+
+  BELOW IS THE SOURCE TEXT THAT POSSIBLY CONTAINS ACCURATE INFORMATION FOR THE STUDENT'S RESPONSE
+
+  ** SOURCE TEXT START **
+  ${sourceText}
+  ** SOURCE TEXT END **
+  `;
+};
+
 
 export const generateEssayAnalysisPrompt = ({
   answer,
@@ -146,5 +183,5 @@ export const generateEssayAnalysisPrompt = ({
   ${answer}
   ** STUDENT RESPONSE END **
 
-  `
+  `;
 };
