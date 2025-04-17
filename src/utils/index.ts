@@ -76,6 +76,15 @@ export const convertSmallerDemoninationtoLarger = (
   return amount / factor;
 };
 
+export const removeSourceContextFromSystemResponse = (text: string): string => {
+  const parts = text.split('**source text start**');
+  if (parts.length < 2) return text;
+
+  const [before, rest] = parts;
+  const after = rest.split('**source text end**')[1] || '';
+  return (before + after).trim();
+}
+
 export const extractAndParseJSON = (text: string): any => {
   // Regular expression to match JSON arrays or objects
   const jsonRegex =
@@ -203,14 +212,18 @@ export const convertOldPptToText = async (file: Buffer) => {
   }
 };
 
-export function chunkText(text: string, maxWords: number = 250, overlap: number = 50): string[] {
+export function chunkText(
+  text: string,
+  maxWords: number = 250,
+  overlap: number = 50,
+): string[] {
   const words = text.split(/\s+/); // Split by whitespace
   const chunks: string[] = [];
   let start = 0;
 
   while (start < words.length) {
     const end = Math.min(start + maxWords, words.length);
-    const chunk = words.slice(start, end).join(" ");
+    const chunk = words.slice(start, end).join(' ');
     chunks.push(chunk);
     start += maxWords - overlap; // Move forward but keep overlap
   }

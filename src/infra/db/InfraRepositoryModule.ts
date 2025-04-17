@@ -37,6 +37,8 @@ import { PreferredLanguageRepository } from 'src/business/repository/PreferredLa
 import { PreferredLanguageSequelizeRepository } from './repository/PreferredLanguageSequelizeRepository';
 import { EssayQuestionAnalysisRepository } from 'src/business/repository/EssayQuestionAnalysisRepository';
 import { EssayQuestionAnalysisSequelizeRepository } from './repository/EssayQuestionAnalysisSequelizeRepository';
+import { DocumentSummaryRepository } from 'src/business/repository/DocumentSummaryRepository';
+import { DocumentSummarySequelizeRepository } from './repository/DocumentSummarySequelizeRepository';
 
 @Module({
   imports: [InfraDbModule, QueryModule],
@@ -111,8 +113,12 @@ import { EssayQuestionAnalysisSequelizeRepository } from './repository/EssayQues
     },
     {
       provide: EssayQuestionAnalysisRepository,
-      useClass: EssayQuestionAnalysisSequelizeRepository
-    }
+      useClass: EssayQuestionAnalysisSequelizeRepository,
+    },
+    {
+      provide: DocumentSummaryRepository,
+      useClass: DocumentSummarySequelizeRepository,
+    },
   ],
   exports: [
     UserRepository,
@@ -132,7 +138,8 @@ import { EssayQuestionAnalysisSequelizeRepository } from './repository/EssayQues
     FlaggedQuestionRepository,
     FlaggedDocumentMessageRepository,
     PreferredLanguageRepository,
-    EssayQuestionAnalysisRepository
+    EssayQuestionAnalysisRepository,
+    DocumentSummaryRepository
   ],
 })
 export class InfraRepositoryModule {}

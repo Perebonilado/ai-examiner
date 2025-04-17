@@ -21,6 +21,7 @@ import { FlaggedQuestionModel } from '../models/FlaggedQuestionsModel';
 import { FlaggedDocumentMessageModel } from '../models/FlaggedDocumentMessageModel';
 import { PreferredLanguageModel } from '../models/PreferredLanguageModel';
 import { EssayQuestionAnalysisModel } from '../models/EssayQuestionAnalysisModel';
+import { DocumentSummaryModel } from '../models/DocumentSummaryModel';
 
 export let sequelize: Sequelize;
 
@@ -60,7 +61,8 @@ export const databaseProviders = [
         FlaggedQuestionModel,
         FlaggedDocumentMessageModel,
         PreferredLanguageModel,
-        EssayQuestionAnalysisModel
+        EssayQuestionAnalysisModel,
+        DocumentSummaryModel
       ]);
 
       try {
