@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import QueryError from 'src/error-handlers/query/QueryError';
 import { Op } from 'sequelize';
 import { DocumentMessageModel } from 'src/infra/db/models/DocumentMessageModel';
+import { removeSourceContextFromSystemResponse } from 'src/utils';
 
 @Injectable()
 export class DocumentMessageQueryService {
@@ -21,10 +22,12 @@ export class DocumentMessageQueryService {
     courseDocumentId,
     limit = 5,
     lastMessageCreatedOn,
+    includeSourceTextInSystemResponse = false,
   }: {
     courseDocumentId: string;
     limit: number;
     lastMessageCreatedOn?: Date;
+    includeSourceTextInSystemResponse?: boolean;
   }) {
     try {
       const paginationCondition = lastMessageCreatedOn
@@ -50,13 +53,19 @@ export class DocumentMessageQueryService {
       const orderedMessages = messages.reverse();
 
       return {
-        data: orderedMessages.map((m) => ({
-          id: m.id,
-          message: m.message,
-          sender: m.sender,
-          createdOn: m.createdOn,
-          threadId: m.openAiThreadId,
-        })),
+        data: orderedMessages.map((m) => {
+          let messageToReturn = m.message;
+          if (m.sender === 'system' && !includeSourceTextInSystemResponse) {
+            messageToReturn = removeSourceContextFromSystemResponse(m.message);
+          }
+          return {
+            id: m.id,
+            message: messageToReturn,
+            sender: m.sender,
+            createdOn: m.createdOn,
+            threadId: m.openAiThreadId,
+          };
+        }),
         totalCount: totalMessagesCount,
       };
     } catch (error) {

@@ -21,6 +21,7 @@ import { FlaggedQuestionQueryService } from './services/FlaggedQuestionQueryServ
 import { FlaggedDocumentMessageQueryService } from './services/FlaggedDocumentMessageQueryService';
 import { PreferredLanguageQueryService } from './services/PreferredLanguageQueryService';
 import { EssayQuestionAnalysisQueryService } from './services/EssayQuestionAnalysisQueryService';
+import { DocumentSummaryQueryService } from './services/DocumentSummaryQueryService';
 
 @Module({
   imports: [IntegrationsModule],
@@ -46,6 +47,7 @@ import { EssayQuestionAnalysisQueryService } from './services/EssayQuestionAnaly
     FlaggedDocumentMessageQueryService,
     PreferredLanguageQueryService,
     EssayQuestionAnalysisQueryService,
+    DocumentSummaryQueryService
   ],
   exports: [
     UserQueryService,
@@ -68,6 +70,7 @@ import { EssayQuestionAnalysisQueryService } from './services/EssayQuestionAnaly
     FlaggedDocumentMessageQueryService,
     PreferredLanguageQueryService,
     EssayQuestionAnalysisQueryService,
+    DocumentSummaryQueryService
   ],
 })
 export class QueryModule {}

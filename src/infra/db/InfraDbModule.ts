@@ -19,6 +19,7 @@ import { FlaggedQuestionDbConnector } from './connectors/FlaggedQuestionDbConnec
 import { FlaggedDocumentMessageDbConnector } from './connectors/FlaggedDocumentMessageModelDbConnector';
 import { PreferredLanguageDbConnector } from './connectors/PreferredLanguageDbConnector';
 import { EssayQuestionAnalysisDbConnector } from './connectors/EssayQuestionAnalysisDbConnector';
+import { DocumentSummaryDbConnector } from './connectors/DocumentSummaryDbConnector';
 
 @Module({
   imports: [QueryModule],
@@ -41,7 +42,8 @@ import { EssayQuestionAnalysisDbConnector } from './connectors/EssayQuestionAnal
     FlaggedQuestionDbConnector,
     FlaggedDocumentMessageDbConnector,
     PreferredLanguageDbConnector,
-    EssayQuestionAnalysisDbConnector
+    EssayQuestionAnalysisDbConnector,
+    DocumentSummaryDbConnector
   ],
   exports: [
     ...databaseProviders,
@@ -62,7 +64,8 @@ import { EssayQuestionAnalysisDbConnector } from './connectors/EssayQuestionAnal
     FlaggedQuestionDbConnector,
     FlaggedDocumentMessageDbConnector,
     PreferredLanguageDbConnector,
-    EssayQuestionAnalysisDbConnector
+    EssayQuestionAnalysisDbConnector,
+    DocumentSummaryDbConnector
   ],
 })
 export class InfraDbModule {}
