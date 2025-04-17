@@ -39,6 +39,7 @@ import { createOpenAI, openai, OpenAIProvider } from '@ai-sdk/openai';
 import { generateObject, generateText } from 'ai';
 import { TopicsSchema } from 'src/schemas/TopicsSchema';
 import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/UpdateCourseDocumentHandler';
+import { CreateDocumentSummaryHandler } from 'src/business/handlers/DocumentSummary/CreateDocumentSummaryHandler';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -59,6 +60,8 @@ export class FileUploadController {
     private createDocumentMessageHandler: CreateDocumentMessageHandler,
     @Inject(UpdateCourseDocumentHandler)
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
+    @Inject(CreateDocumentSummaryHandler)
+    private createDocumentSummaryHandler: CreateDocumentSummaryHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -208,13 +211,20 @@ export class FileUploadController {
           pdfPageRange,
         );
 
-        await this.updateCourseDocumentHandler.handle({
-          data: {
-            openAiFileId: uploadedOpenAiFile.id,
-            id: createdDocument.data.id,
-          },
-          userId: userToken.sub,
-        });
+        await Promise.all([
+          this.updateCourseDocumentHandler.handle({
+            data: {
+              openAiFileId: uploadedOpenAiFile.id,
+              id: createdDocument.data.id,
+            },
+            userId: userToken.sub,
+          }),
+          this.createDocumentSummaryHandler.handle({
+            documentId: createdDocument.data.id,
+            summary: summaryInfo,
+            userId: userToken.sub,
+          }),
+        ]);
       });
     } catch (error) {
       throw new HttpException(

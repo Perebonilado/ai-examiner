@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import AbstractRequestHandlerTemplate from '../AbstractRequestHandlerTemplate';
 import { CommandResponse } from '../response/CommandResponse';
 import { HandlerError } from 'src/error-handlers/business/HandlerError';
@@ -16,6 +16,10 @@ import {
 } from 'src/constants';
 import { UpdateCourseDocumentHandler } from '../CourseDocument/UpdateCourseDocumentHandler';
 import { PreferredLanguageQueryService } from 'src/query/services/PreferredLanguageQueryService';
+import { createOpenAI } from '@ai-sdk/openai';
+import { generateText } from 'ai';
+import { generateDocumentMessagePromptV2 } from 'src/constants/V2Prompts';
+import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
 
 @Injectable()
 export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate<
@@ -32,6 +36,10 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
     @Inject(PreferredLanguageQueryService)
     private preferredLanguageQueryService: PreferredLanguageQueryService,
+    @Inject(PineconeChunkService)
+    private pineconeChunkService: PineconeChunkService,
+    @Inject(DocumentMessageQueryService)
+    private documentMessageQueryService: DocumentMessageQueryService,
   ) {
     super();
   }
@@ -46,25 +54,6 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         userId,
       } = request.payload;
 
-      if (request.payload?.documentSummaryData) {
-        const { documentId, fileId, message, threadId } =
-          request.payload.documentSummaryData;
-        await this.documentMessageRepository.create({
-          message: message,
-          sender: 'system',
-          openAiFileId: fileId,
-          openAiThreadId: threadId,
-          userId: userId,
-          courseDocumentId: documentId,
-        } as DocumentMessageModel);
-
-        return {
-          message: 'Summary created',
-          data: { systemResponse: message },
-          status: HttpStatus.CREATED
-        };
-      }
-
       const assistantId = EnvironmentVariables.config.assistantIdPaidPlan;
 
       const courseDocument =
@@ -72,6 +61,77 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           courseDocumentId,
           userId,
         );
+      
+      const useRag = courseDocument.openAiFileId === 'not yet set'
+
+      /* might have to switch to this completely once the conversational flow for it is better. Use it when the file has not been uploaded
+      to open ai
+      **/
+
+      const relevantChunks =
+        await this.pineconeChunkService.semanticChunkSearch(
+          userMessage,
+          courseDocument.id,
+          20,
+        );
+
+      if (useRag) {
+        const previousMessages =
+          await this.documentMessageQueryService.findDocumentMessagesByCourseDocumentId(
+            {
+              courseDocumentId: courseDocument.id,
+              limit: 20,
+              includeSourceTextInSystemResponse: true,
+            },
+          );
+        const mappedPrevMessages = previousMessages.data.map((message) => {
+          return {
+            role: message.sender,
+            content: message.message,
+          };
+        });
+        const { text: systemResponse, prevResponseId } =
+          await this.getSystemResponseUsingRag(
+            userMessage,
+            relevantChunks.join('\n'),
+            mappedPrevMessages,
+          );
+
+        const savedUserMessage = await this.documentMessageRepository.create({
+          message: userMessage,
+          sender: 'user',
+          openAiFileId: courseDocument.openAiFileId,
+          openAiThreadId: ' ',
+          userId: userId,
+          courseDocumentId: courseDocument.id,
+        } as DocumentMessageModel);
+
+        if (savedUserMessage) {
+          setTimeout(async () => {
+            const systemMessageWithContext = `
+              ${systemResponse}
+
+              **source text start**
+              ${relevantChunks.join('\n')}
+              **source text end**
+            `;
+            await this.documentMessageRepository.create({
+              message: systemMessageWithContext,
+              sender: 'system',
+              openAiFileId: courseDocument.openAiFileId,
+              openAiThreadId: ' ',
+              userId: userId,
+              courseDocumentId: courseDocument.id,
+            } as DocumentMessageModel);
+          }, 1000);
+        }
+
+        return {
+          data: { systemResponse },
+          message: 'Messages successfully created',
+          status: HttpStatus.CREATED,
+        };
+      }
 
       //check if there is an existing thread
 
@@ -195,9 +255,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
             prefix: request.payload.notSureQuestion
               ? messagePromptPrefixGenerator(request.payload.notSureQuestion)
               : '',
-            language: preferredLanguage
-              ? preferredLanguage.language
-              : 'English',
+            language: 'English',
           }),
         );
 
@@ -247,6 +305,40 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
       throw new HandlerError(
         'Failed to handle Document Message creation',
       ).InnerError(error);
+    }
+  }
+
+  private async getSystemResponseUsingRag(
+    message: string,
+    sourceText: string,
+    messages: { role: 'system' | 'user'; content: string }[],
+  ) {
+    try {
+      const openai = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
+      });
+
+      const { text, providerMetadata } = await generateText({
+        model: openai('gpt-4o-mini'),
+        messages: [
+          ...messages,
+          {
+            role: 'user',
+            content: generateDocumentMessagePromptV2(message, sourceText),
+          },
+        ],
+      });
+
+      const prevResponseId = providerMetadata?.openai
+        ?.responseId as unknown as string;
+
+      return { text, prevResponseId };
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Failed to get system response',
+        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

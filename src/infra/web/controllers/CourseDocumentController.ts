@@ -12,6 +12,7 @@ import {
   ParseIntPipe,
   Res,
   Put,
+  Param,
 } from '@nestjs/common';
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
@@ -41,6 +42,7 @@ import {
   DifficultyType,
   generatePromptForQuestions,
 } from 'src/constants/QuestionGenerationPrompt';
+import { DocumentSummaryQueryService } from 'src/query/services/DocumentSummaryQueryService';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -63,8 +65,8 @@ export class CourseDocumentController {
     private paystackSubscriptionService: PaystackSubscriptionService,
     @Inject(UpdateCourseDocumentHandler)
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
-    @Inject(LookUpQueryService)
-    private lookupQueryService: LookUpQueryService,
+    @Inject(DocumentSummaryQueryService)
+    private documentSummaryQueryService: DocumentSummaryQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -97,6 +99,21 @@ export class CourseDocumentController {
       throw new HttpException(
         error?.response ?? 'Failed to find Documents',
         HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/summary/:documentId')
+  public async getDocumentSummary(@Param('documentId') documentId: string) {
+    try {
+      return await this.documentSummaryQueryService.findByDocumentId(
+        documentId,
+      );
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Error getting summary',
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -328,7 +345,7 @@ export class CourseDocumentController {
             focusAreas: body.selectedQuestionTopics || undefined,
             includeCaseStudies: includeUseCases === 'true' ? true : false,
             questionType: questionTypeName.title as QuestionType,
-            difficulty
+            difficulty,
           }),
         );
 
@@ -365,7 +382,7 @@ export class CourseDocumentController {
           userId: userToken.sub,
           questionTypeId: questionType,
           difficulty,
-          isCaseStudy: includeUseCases === 'true'
+          isCaseStudy: includeUseCases === 'true',
         },
       });
 

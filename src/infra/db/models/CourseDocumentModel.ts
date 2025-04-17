@@ -6,6 +6,7 @@ import {
   BeforeCreate,
   ForeignKey,
   HasMany,
+  HasOne,
 } from 'sequelize-typescript';
 import * as moment from 'moment';
 import { generateUUID } from 'src/utils';
@@ -13,6 +14,7 @@ import { UserModel } from './UserModel';
 import { QuestionModel } from './QuestionModel';
 import { DocumentMessageModel } from './DocumentMessageModel';
 import { PerformanceTrackingModel } from './PerformanceTrackingModel';
+import { DocumentSummaryModel } from './DocumentSummaryModel';
 
 @Table({ tableName: 'course_document' })
 export class CourseDocumentModel extends Model<CourseDocumentModel> {
@@ -157,7 +159,7 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
     field: 'oral_question_thread_id',
     allowNull: true,
   })
-  oralQuestionThreadId: string
+  oralQuestionThreadId: string;
 
   @Column({
     type: DataType.STRING,
@@ -181,6 +183,9 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
 
   @HasMany(() => PerformanceTrackingModel, 'course_document_id')
   performanceTracking: PerformanceTrackingModel;
+
+  @HasOne(() => DocumentSummaryModel, 'document_id')
+  documentSummary: DocumentSummaryModel;
 
   @BeforeCreate
   static addUUID(instance: CourseDocumentModel) {
