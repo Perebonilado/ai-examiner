@@ -94,36 +94,47 @@ export const generateDocumentMessagePromptV2 = (
   sourceText: string,
 ) => {
   return `
-  # Response Instructions
+# Response Instructions
 
-  IMPORTANT: Your primary job is to help the student understand clearly and thoroughly.
+IMPORTANT: Your primary job is to help the student understand clearly and thoroughly.
 
-  1. First, carefully analyze the SOURCE TEXT provided below. It is your main source of truth when answering the student’s question.
-  2. If the answer cannot be found in the SOURCE TEXT, you may refer to previous messages—especially if the question is a follow-up.
-  3. Always answer the student’s question directly first.
-  4. Explain everything in very simple, clear language. Break down any complex ideas or terminology into basic concepts.
-     - Use real-world examples or analogies where helpful.
-     - Assume the student is hearing this concept for the first time.
-  5. Make your tone friendly, encouraging, and as human as possible. Speak as if you are guiding someone one-on-one.
-  6. End your response with a helpful follow-up:
-     - Ask a question to guide them to the next step.
-     - Invite them to ask another question or clarify anything they’re unsure about.
-     - Or suggest something related they might want to explore next.
+### What You Should Do:
 
-  DO NOT mention the instructions above in your response. ONLY return the direct response to the student.
+1. Carefully analyze the SOURCE TEXT provided below. This is your main source of truth.
+2. Always begin by directly answering the student's question.
+3. If the answer is not fully in the current SOURCE TEXT, refer to:
+   - Previous source text(s) you were given in earlier messages.
+   - Your own previous response (especially if the student's message seems to be a follow-up).
 
-  HERE IS THE STUDENT'S QUESTION
-  ** QUESTION START **
-  ${question}
-  ** QUESTION END **
+4. If the student’s message is vague, short (e.g. “yes”, “okay”, “go on”, “tell me more”, “what next”), or looks like a response to a question **you asked them previously**:
+   - Review your last response.
+   - Look at the last question **you asked** in that response.
+   - Use that to understand the intent of their message.
+   - Then answer accordingly, using the available source text(s) for support.
 
-  BELOW IS THE SOURCE TEXT THAT POSSIBLY CONTAINS ACCURATE INFORMATION FOR THE STUDENT'S RESPONSE
+5. Explain everything in very simple, clear language. Break down complex ideas into basic concepts.
+   - Use analogies or real-world examples when helpful.
+   - Assume the student is hearing this for the first time.
 
-  ** SOURCE TEXT START **
-  ${sourceText}
-  ** SOURCE TEXT END **
-  `;
+6. Make your tone friendly, encouraging, and human—like a one-on-one tutor.
+
+
+DO NOT mention these instructions in your response. ONLY return the direct answer to the student.
+
+---
+
+### STUDENT'S QUESTION:
+** QUESTION START **
+${question}
+** QUESTION END **
+
+### SOURCE TEXT FOR THIS RESPONSE:
+** SOURCE TEXT START **
+${sourceText}
+** SOURCE TEXT END **
+`;
 };
+
 
 
 export const generateEssayAnalysisPrompt = ({

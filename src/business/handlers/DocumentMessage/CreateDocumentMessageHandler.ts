@@ -61,6 +61,12 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           courseDocumentId,
           userId,
         );
+      
+      const useRag = courseDocument.openAiFileId === 'not yet set'
+
+      /* might have to switch to this completely once the conversational flow for it is better. Use it when the file has not been uploaded
+      to open ai
+      **/
 
       const relevantChunks =
         await this.pineconeChunkService.semanticChunkSearch(
@@ -69,10 +75,14 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           20,
         );
 
-      if (relevantChunks.length) {
+      if (useRag) {
         const previousMessages =
           await this.documentMessageQueryService.findDocumentMessagesByCourseDocumentId(
-            { courseDocumentId: courseDocument.id, limit: 20 },
+            {
+              courseDocumentId: courseDocument.id,
+              limit: 20,
+              includeSourceTextInSystemResponse: true,
+            },
           );
         const mappedPrevMessages = previousMessages.data.map((message) => {
           return {
@@ -80,11 +90,12 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
             content: message.message,
           };
         });
-        const systemResponse = await this.getSystemResponseUsingRag(
-          userMessage,
-          relevantChunks.join('\n'),
-          mappedPrevMessages,
-        );
+        const { text: systemResponse, prevResponseId } =
+          await this.getSystemResponseUsingRag(
+            userMessage,
+            relevantChunks.join('\n'),
+            mappedPrevMessages,
+          );
 
         const savedUserMessage = await this.documentMessageRepository.create({
           message: userMessage,
@@ -97,8 +108,15 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
 
         if (savedUserMessage) {
           setTimeout(async () => {
+            const systemMessageWithContext = `
+              ${systemResponse}
+
+              **source text start**
+              ${relevantChunks.join('\n')}
+              **source text end**
+            `;
             await this.documentMessageRepository.create({
-              message: systemResponse,
+              message: systemMessageWithContext,
               sender: 'system',
               openAiFileId: courseDocument.openAiFileId,
               openAiThreadId: ' ',
@@ -237,9 +255,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
             prefix: request.payload.notSureQuestion
               ? messagePromptPrefixGenerator(request.payload.notSureQuestion)
               : '',
-            language: preferredLanguage
-              ? preferredLanguage.language
-              : 'English',
+            language: 'English',
           }),
         );
 
@@ -303,7 +319,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         apiKey: EnvironmentVariables.config.openAiApiKey,
       });
 
-      const { text } = await generateText({
+      const { text, providerMetadata } = await generateText({
         model: openai('gpt-4o-mini'),
         messages: [
           ...messages,
@@ -314,9 +330,11 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         ],
       });
 
-      return text;
+      const prevResponseId = providerMetadata?.openai
+        ?.responseId as unknown as string;
+
+      return { text, prevResponseId };
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         error.message ?? 'Failed to get system response',
         error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
