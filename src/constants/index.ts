@@ -1,4 +1,7 @@
-import { NotSureQuestion } from 'src/dto/CreateDocumentMessageDto';
+import {
+  HighlightToPrompt,
+  NotSureQuestion,
+} from 'src/dto/CreateDocumentMessageDto';
 import { MessageReponseType } from 'src/infra/web/models/MessageResponseTypeModel';
 import { QuestionType } from 'src/infra/web/models/QuestionTypeModel';
 import {
@@ -211,48 +214,114 @@ Output the result in the following JSON format:
 
 Provide only the JSON array, nothing else. Be detailed and fast`;
 
-const optionLetters = ['a', 'b', 'c', 'd']
+const optionLetters = ['a', 'b', 'c', 'd'];
 
-export const messagePromptPrefixGenerator = (question: NotSureQuestion) => {
-  if (question.questionType === 'Multiple Choice') {
-    return `
-      TAKE A DEEP BREATH, RELAX, AND GO THROUGH THE INSTRUCTIONS BELOW VERY CAREFULLY.
+export const messagePromptPrefixGenerator = ({
+  question,
+  highlightToPrompt,
+}: {
+  question?: NotSureQuestion;
+  highlightToPrompt?: HighlightToPrompt;
+}) => {
+  if (question && question.questionType) {
+    if (question.questionType === 'Multiple Choice') {
+      return `
+        TAKE A DEEP BREATH, RELAX, AND GO THROUGH THE INSTRUCTIONS BELOW VERY CAREFULLY.
+  
+        I need help picking the right answer for the following question. I was presented with the following options and only one of the answers is correct.
+  
+        Here is the question: ${question.question}
+  
+        Here are the options - 
+        ${question.options.map((q, i) => `${optionLetters[i]}. ${q}`).join('\n')}
+  
+        \n
+        I need you to thoroughly go through each option, evaluate each very indepthly. Then, work out and reason by going through the document to deduce 
+        whether each option is correct or wrong. For each option, explain why it is wrong or correct. Explain it to me like I am 12. Meaning, in very simple terms, break it
+        down for me. You may support it with excerpts (verbatim) from the document to buttress your points. Let me know if there are things about each option that may cause me
+        to mistake it for the right answer when it is indeed wrong. 
+  
+        I need you to first tell me which option is correct, then below that, give your explanations. BUT LET ME KNOW WHICH IS CORRECT FIRST!
+  
+        IMPORTANT: DO NOT CITE SOURCE IN YOUR RESPONSE. SEPARATE EACH SECTION WITH A LINE. IN YOUR RESPONSE, WHEN EVALUATING, ENSURE TO LIST THE RIGHT OPTION FIRST IN YOUR EVALUATION BEFORE EVALUATING THE REST. 
+        FOR BETTER READABILITY, SEPARATE EACH SECTION WITH A DIVIDING LINE.
+      `;
+    }
 
-      I need help picking the right answer for the following question. I was presented with the following options and only one of the answers is correct.
+    if (question.questionType === 'Multiple True-False') {
+      return `
+        TAKE A DEEP BREATH, RELAX, AND GO THROUGH THE INSTRUCTIONS BELOW VERY CAREFULLY.
+  
+        I need help picking the right answer for the following question. I was presented with the following statements. I need you to deeply evaluate each statement and let me know
+        if each is right or wrong. I need to to reason this out before letting me know. Thoroughly go through the document and see why each statement might be right or wrong.
+        I need you to explain this to me like I am 12. I need you to break it down for me and make it very simple. Let me know if there are tricky things in each statement that
+        might cause it to look like its right when indeed it might be wrong or not the best option. Each statement might be true or false, so you need to evaluate each closely. You may support
+        you explanation with short excerpts from the document.
+  
+        I NEED YOU TO LET ME KNOW WHICH STATEMENTS ARE RIGHT AND WHICH STATEMENTS ARE WRONG FIRST. THEN BELOW THAT, GIVE YOUR EXPLANATIONS.
+  
+        IMPORTANT: DO NOT CITE SOURCE IN YOUR RESPONSE. SEPARATE EACH SECTION WITH A LINE. IN YOUR RESPONSE, WHEN EVALUATING, ENSURE TO LIST THE CORRECT STATEMENTS FIRST IN YOUR EVALUATION BEFORE EVALUATING THE WRONG ONES.
+        IN ESSENCE, AFTER EVALUATING, LIST THEM OUT FROM RIGHT TO WRONG IN TERMS OF ORDERING. FOR BETTER READABILITY, SEPARATE EACH SECTION WITH A DIVIDING LINE.
+      `;
+    }
 
-      Here is the question: ${question.question}
-
-      Here are the options - 
-      ${question.options.map((q, i) => `${optionLetters[i]}. ${q}`).join('\n')}
-
-      \n
-      I need you to thoroughly go through each option, evaluate each very indepthly. Then, work out and reason by going through the document to deduce 
-      whether each option is correct or wrong. For each option, explain why it is wrong or correct. Explain it to me like I am 12. Meaning, in very simple terms, break it
-      down for me. You may support it with excerpts (verbatim) from the document to buttress your points. Let me know if there are things about each option that may cause me
-      to mistake it for the right answer when it is indeed wrong. 
-
-      I need you to first tell me which option is correct, then below that, give your explanations. BUT LET ME KNOW WHICH IS CORRECT FIRST!
-
-      IMPORTANT: DO NOT CITE SOURCE IN YOUR RESPONSE. SEPARATE EACH SECTION WITH A LINE. IN YOUR RESPONSE, WHEN EVALUATING, ENSURE TO LIST THE RIGHT OPTION FIRST IN YOUR EVALUATION BEFORE EVALUATING THE REST. 
-      FOR BETTER READABILITY, SEPARATE EACH SECTION WITH A DIVIDING LINE.
-    `;
+    return question.question
   }
 
-  if (question.questionType === 'Multiple True-False') {
-    return `
+  if (highlightToPrompt) {
+    if (highlightToPrompt.highlight === 'define') {
+      return `
       TAKE A DEEP BREATH, RELAX, AND GO THROUGH THE INSTRUCTIONS BELOW VERY CAREFULLY.
 
-      I need help picking the right answer for the following question. I was presented with the following statements. I need you to deeply evaluate each statement and let me know
-      if each is right or wrong. I need to to reason this out before letting me know. Thoroughly go through the document and see why each statement might be right or wrong.
-      I need you to explain this to me like I am 12. I need you to break it down for me and make it very simple. Let me know if there are tricky things in each statement that
-      might cause it to look like its right when indeed it might be wrong or not the best option. Each statement might be true or false, so you need to evaluate each closely. You may support
-      you explanation with short excerpts from the document.
+      I need help defining the following in the context of the source text. My goal is to understand the meaning within the context of the source text. ENSURE THIS IS DEFINED WITHIN THE CONTEXT OF THE SOURCE TEXT, AND NOT AS A STAND ALONG CONCEPT. LOOK THROUGH THE SOURCE TEXT AND TRY TO UNDERSTAND WHAT THE CONCEPT MEANS IN THAT CONTEXT. Please, break this down for me in very simple terms.
+       
 
-      I NEED YOU TO LET ME KNOW WHICH STATEMENTS ARE RIGHT AND WHICH STATEMENTS ARE WRONG FIRST. THEN BELOW THAT, GIVE YOUR EXPLANATIONS.
+      Here is what I need help defining - ${highlightToPrompt.question}
 
-      IMPORTANT: DO NOT CITE SOURCE IN YOUR RESPONSE. SEPARATE EACH SECTION WITH A LINE. IN YOUR RESPONSE, WHEN EVALUATING, ENSURE TO LIST THE CORRECT STATEMENTS FIRST IN YOUR EVALUATION BEFORE EVALUATING THE WRONG ONES.
-      IN ESSENCE, AFTER EVALUATING, LIST THEM OUT FROM RIGHT TO WRONG IN TERMS OF ORDERING. FOR BETTER READABILITY, SEPARATE EACH SECTION WITH A DIVIDING LINE.
-    `;
+        - Make sure to give examples that show how it is used or applied in real life or within the context of the SOURCE TEXT.
+        - Break it down like you're teaching someone new to the topic.
+        - If the term has multiple meanings or might be confusing, point that out and clarify.
+
+        IMPORTANT: Explain like I'm 12 years old. Don't use technical jargon unless you also explain what it means. Keep it simple and use examples where possible.
+      `
+    }
+
+    if (highlightToPrompt.highlight === 'explain') {
+      return `
+      TAKE A DEEP BREATH, RELAX, AND GO THROUGH THE INSTRUCTIONS BELOW VERY CAREFULLY.
+
+      I need you to help me explain the concept below, really expatiate on it within the context of the SOURCE TEXT. My goal is to understand the meaning within the context of the SOURCE TEXT.
+      Please, break this down for me in very simple terms. ENSURE THIS IS EXPLAINED WITHIN THE CONTEXT OF THE SOURCE TEXT, AND NOT AS A STAND ALONG CONCEPT. LOOK THROUGH THE SOURCE TEXT AND TRY TO UNDERSTAND WHAT THE CONCEPT MEANS IN THAT CONTEXT.
+
+      Here is what I need help explaining - ${highlightToPrompt.question}
+
+        - Go into detail about what it means, why it's important.
+        - Use simple words and short examples to make the explanation clear.
+        - If it’s a process, describe the steps involved in a very clear and logical way.
+
+        IMPORTANT: Explain like I'm 12. Avoid complicated terms unless you also break them down. Feel free to use analogies or everyday examples to help me grasp it easily.
+      `
+    }
+
+    if (highlightToPrompt.highlight === 'simplify') {
+      return `
+      TAKE A DEEP BREATH, RELAX, AND GO THROUGH THE INSTRUCTIONS BELOW VERY CAREFULLY.
+
+      I need you to help me simplify the concept below, really make this as easy to understand within the context of the SOURCE TEXT. 
+      I am really struggling to understand the below concept, and I just need you to break it down for me, making it as simple as possible.
+      Simplify it to me like im 5, I really need to understand the this! ENSURE THIS IS SIMPLIFIED WITHIN THE CONTEXT OF THE SOURCE TEXT, AND NOT AS A STAND ALONG CONCEPT. LOOK THROUGH THE SOURCE TEXT AND TRY TO UNDERSTAND WHAT THE CONCEPT MEANS IN THAT CONTEXT.
+      
+      Here is what I need help simplifying - ${highlightToPrompt.question}
+
+        - Use very basic language to help me understand it easily.
+        - Give fun or relatable examples if possible.
+        - Remove any big or technical words unless you explain them in the simplest way.
+
+        IMPORTANT: Your goal is to make it super easy to understand, even for someone who has never seen this before.
+      `
+    }
+
+    return ``
   }
 
   return question.question;
@@ -262,7 +331,7 @@ export const generateMessagePrompt = ({
   message,
   responseFormat,
   prefix,
-  language
+  language,
 }: {
   message: string;
   responseFormat: MessageReponseType;
@@ -273,14 +342,12 @@ export const generateMessagePrompt = ({
 ${prefix.length ? prefix : message}
 
 Format the response as follows:
-   - Use markdown format
-   - Start each heading and bullet point on a new line, adding spaces between each line
+   - Utilize paragraphs for explanations
+   - Use only markdown bold (**) for highlighting
    - Do not include any HTML tags
    - Do not cite sources
    - Do not add any markdowns that translate to <code></code> in html
    - Do not repeat the request message, omit this in your response
-
-VERY IMPORTANT. ENSURE YOU OUTPUT IN ${language.toUpperCase()} LANGUAGE !!!
 `;
 };
 

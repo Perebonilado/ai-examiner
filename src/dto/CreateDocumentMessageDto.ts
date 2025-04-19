@@ -6,6 +6,7 @@ export interface CreateDocumentMessageDto {
   courseDocumentId: string;
   userId: string;
   responseFormat: MessageReponseType;
+  highlightToPrompt?: HighlightToPrompt;
   notSureQuestion?: NotSureQuestion;
   documentSummaryData?: {
     message: string;
@@ -19,4 +20,11 @@ export interface NotSureQuestion {
   question: string;
   options: string[];
   questionType: QuestionType;
+}
+
+export type HighlightToPromptType = 'explain' | 'simplify' | 'define';
+
+export interface HighlightToPrompt {
+  question: string;
+  highlight: HighlightToPromptType;
 }
