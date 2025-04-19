@@ -15,7 +15,6 @@ import {
   messagePromptPrefixGenerator,
 } from 'src/constants';
 import { UpdateCourseDocumentHandler } from '../CourseDocument/UpdateCourseDocumentHandler';
-import { PreferredLanguageQueryService } from 'src/query/services/PreferredLanguageQueryService';
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateText } from 'ai';
 import { generateDocumentMessagePromptV2 } from 'src/constants/V2Prompts';
@@ -34,8 +33,6 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
     private courseDocumentQueryService: CourseDocumentQueryService,
     @Inject(UpdateCourseDocumentHandler)
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
-    @Inject(PreferredLanguageQueryService)
-    private preferredLanguageQueryService: PreferredLanguageQueryService,
     @Inject(PineconeChunkService)
     private pineconeChunkService: PineconeChunkService,
     @Inject(DocumentMessageQueryService)
@@ -61,8 +58,10 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           courseDocumentId,
           userId,
         );
-      
-      const useRag = courseDocument.openAiFileId === 'not yet set'
+
+      const useRag =
+        courseDocument.openAiFileId === 'not yet set' ||
+        request.payload?.highlightToPrompt;
 
       /* might have to switch to this completely once the conversational flow for it is better. Use it when the file has not been uploaded
       to open ai
@@ -90,12 +89,13 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
             content: message.message,
           };
         });
-        const { text: systemResponse, prevResponseId } =
-          await this.getSystemResponseUsingRag(
-            userMessage,
-            relevantChunks.join('\n'),
-            mappedPrevMessages,
-          );
+        const { text: systemResponse } = await this.getSystemResponseUsingRag(
+          messagePromptPrefixGenerator({
+            highlightToPrompt: request.payload.highlightToPrompt,
+          }) || userMessage,
+          relevantChunks.join('\n'),
+          mappedPrevMessages,
+        );
 
         const savedUserMessage = await this.documentMessageRepository.create({
           message: userMessage,
@@ -173,7 +173,10 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
             message: userMessage,
             responseFormat: request.payload.responseFormat,
             prefix: request.payload.notSureQuestion
-              ? messagePromptPrefixGenerator(request.payload.notSureQuestion)
+              ? messagePromptPrefixGenerator({
+                  question: request.payload.notSureQuestion,
+                  highlightToPrompt: request.payload.highlightToPrompt,
+                })
               : '',
             language: 'English',
           }),
@@ -244,16 +247,16 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           );
         }
 
-        const preferredLanguage =
-          await this.preferredLanguageQueryService.findByUserId(userId);
-
         await this.examinerService.createThreadMessage(
           existingThread.id,
           generateMessagePrompt({
             message: userMessage,
             responseFormat: request.payload.responseFormat,
             prefix: request.payload.notSureQuestion
-              ? messagePromptPrefixGenerator(request.payload.notSureQuestion)
+              ? messagePromptPrefixGenerator({
+                  question: request.payload.notSureQuestion,
+                  highlightToPrompt: request.payload.highlightToPrompt,
+                })
               : '',
             language: 'English',
           }),
