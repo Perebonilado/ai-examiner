@@ -52,7 +52,7 @@ export class VapiCallingService {
         firstMessage: firstMessageToUse,
         name: userName,
         metadata: metadata as unknown as Record<string, unknown>,
-        maxDurationSeconds: maxDurationMs / 1000,
+        maxDurationSeconds: maxDurationMs,
       });
 
       return {
