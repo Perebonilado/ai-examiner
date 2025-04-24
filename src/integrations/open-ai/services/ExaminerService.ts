@@ -141,7 +141,7 @@ export class ExaminerService {
 
   public async createVectorStore(name: string) {
     try {
-      return await this.openAiClient.beta.vectorStores.create({
+      return await this.openAiClient.vectorStores.create({
         name,
       });
     } catch (error) {
@@ -154,7 +154,7 @@ export class ExaminerService {
 
   public async deleteVectorStore(storeId: string) {
     try {
-      return await this.openAiClient.beta.vectorStores.del(storeId);
+      return await this.openAiClient.vectorStores.del(storeId);
     } catch (error) {
       throw new HttpException(
         'Falied to delete vector store',
@@ -171,7 +171,7 @@ export class ExaminerService {
     fileId: string;
   }) {
     try {
-      return await this.openAiClient.beta.vectorStores.files.del(
+      return await this.openAiClient.vectorStores.files.del(
         vectorStoreId,
         fileId,
       );
@@ -277,7 +277,7 @@ export class ExaminerService {
     while (attempts < maxRetries) {
       try {
         const createdVectorStore =
-          await this.openAiClient.beta.vectorStores.files.createAndPoll(
+          await this.openAiClient.vectorStores.files.createAndPoll(
             vectorStoreId,
             {
               file_id: fileId,
@@ -311,7 +311,7 @@ export class ExaminerService {
   }
   public async retrieveVectorStore(storeId: string) {
     try {
-      return await this.openAiClient.beta.vectorStores.retrieve(storeId);
+      return await this.openAiClient.vectorStores.retrieve(storeId);
     } catch (error) {
       throw new HttpException(
         'Falied to retrieve vector store',

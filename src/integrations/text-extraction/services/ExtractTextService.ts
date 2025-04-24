@@ -51,7 +51,21 @@ export class ExtractTextService {
     try {
       try {
         const chunks = await extractPagesTextsFromPDF(file.buffer);
+        const isCamScannerDoc = chunks.some((chunk) => {
+          const keywords = ['cam scanner', 'camscanner'];
+          if (
+            chunk.toLowerCase().includes(keywords[0]) ||
+            chunk.toLowerCase().includes(keywords[1])
+          ) {
+            return true;
+          }
 
+          return false;
+        });
+
+        if (isCamScannerDoc) {
+          return await this.mistralOcrService.processPdf(file);
+        }
         if (
           chunks
             .flatMap((c) => c)
