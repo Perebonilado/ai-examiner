@@ -141,6 +141,12 @@ export class FileUploadController {
         ),
       ]);
 
+      const savedSummary = await this.createDocumentSummaryHandler.handle({
+        documentId: createdDocument.data.id,
+        summary: summaryInfo,
+        userId: userToken.sub,
+      })
+
       const mappedTopics = topics.map((topic) => {
         return {
           title: topic,
@@ -217,11 +223,6 @@ export class FileUploadController {
               openAiFileId: uploadedOpenAiFile.id,
               id: createdDocument.data.id,
             },
-            userId: userToken.sub,
-          }),
-          this.createDocumentSummaryHandler.handle({
-            documentId: createdDocument.data.id,
-            summary: summaryInfo,
             userId: userToken.sub,
           }),
         ]);
