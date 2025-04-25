@@ -22,7 +22,12 @@ import { ExtractTextService } from 'src/integrations/text-extraction/services/Ex
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
-import { extractJSONDataFromMessages, generateUUID } from 'src/utils';
+import {
+  extractJSONDataFromMessages,
+  generateUUID,
+  splitPdfPagesToIndividualFiles,
+  writeFileToStream,
+} from 'src/utils';
 import { generateMessagePrompt, generateTopicPrompt } from 'src/constants';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 import {
@@ -40,6 +45,11 @@ import { generateObject, generateText } from 'ai';
 import { TopicsSchema } from 'src/schemas/TopicsSchema';
 import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/UpdateCourseDocumentHandler';
 import { CreateDocumentSummaryHandler } from 'src/business/handlers/DocumentSummary/CreateDocumentSummaryHandler';
+import { createReadStream, existsSync, readFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { unlink } from 'fs/promises';
+import OpenAI from 'openai';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -145,7 +155,7 @@ export class FileUploadController {
         documentId: createdDocument.data.id,
         summary: summaryInfo,
         userId: userToken.sub,
-      })
+      });
 
       const mappedTopics = topics.map((topic) => {
         return {
@@ -231,6 +241,28 @@ export class FileUploadController {
       throw new HttpException(
         error ?? 'V2: Failed to upload file',
         HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/extract-written-text')
+  @UseInterceptors(FileInterceptor('document'))
+  public async extractWrittenText(@UploadedFile() file: Express.Multer.File) {
+    try {
+      const splitPages = await splitPdfPagesToIndividualFiles(file.buffer);
+      const extractedTexts = await Promise.all(
+        splitPages.map(async (page) => {
+          const text = await this.examinerService.handWrittenPDFOCR(page);
+          return text;
+        }),
+      );
+
+      return extractedTexts.filter((t) => t.trim().length);
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Failed to extract written text',
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }

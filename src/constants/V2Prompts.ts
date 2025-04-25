@@ -196,3 +196,12 @@ export const generateEssayAnalysisPrompt = ({
 
   `;
 };
+
+export const handWritingOCRPrompt = `
+You are a professional OCR extraction tool that reads handwritten text from a PDF file with extreme accuracy. Carefully extract and return only the handwritten text contained within the file.
+
+If no text can be read, respond with exactly:
+no text
+
+⚠️ Do not explain anything. Do not return any formatting or metadata. Do not add quotation marks. Return only the raw extracted text or no text.
+`
