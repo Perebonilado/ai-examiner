@@ -12,6 +12,7 @@ import * as libre from 'libreoffice-convert';
 import * as fs from 'fs';
 import * as pdfParse from 'pdf-parse';
 import { rm } from 'fs/promises';
+import { PDFDocument } from 'pdf-lib';
 
 const libreConvert = promisify(libre.convert);
 
@@ -83,7 +84,7 @@ export const removeSourceContextFromSystemResponse = (text: string): string => {
   const [before, rest] = parts;
   const after = rest.split('**source text end**')[1] || '';
   return (before + after).trim();
-}
+};
 
 export const extractAndParseJSON = (text: string): any => {
   // Regular expression to match JSON arrays or objects
@@ -176,7 +177,7 @@ export const getFileNameWithoutExtension = (name: string) => {
 export const writeFileToStream = async (
   tempFilePath: string,
   content: any,
-  encoding: BufferEncoding,
+  encoding?: BufferEncoding,
 ) => {
   await new Promise<void>((resolve, reject) => {
     const writeStream = createWriteStream(tempFilePath, { encoding });
@@ -230,3 +231,26 @@ export function chunkText(
 
   return chunks;
 }
+
+export const splitPdfPagesToIndividualFiles = async (
+  file: Buffer,
+): Promise<Buffer[]> => {
+  try {
+    const pdfDoc = await PDFDocument.load(file);
+    const totalPages = pdfDoc.getPageCount();
+    const outputBuffers: Buffer[] = [];
+
+    for (let i = 0; i < totalPages; i++) {
+      const newPdf = await PDFDocument.create();
+      const [copiedPage] = await newPdf.copyPages(pdfDoc, [i]);
+      newPdf.addPage(copiedPage);
+
+      const newPdfBytes = await newPdf.save();
+      outputBuffers.push(Buffer.from(newPdfBytes));
+    }
+
+    return outputBuffers;
+  } catch (error) {
+    throw new Error('Failed to split pages');
+  }
+};

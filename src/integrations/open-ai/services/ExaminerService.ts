@@ -17,12 +17,13 @@ import { ILovePdfService } from 'src/integrations/i-love-pdf/services/ILovePdfSe
 import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
 import { EmbeddingModel } from '../models/EmbeddingModel';
 import { MistralOcrService } from 'src/integrations/mistral-ai/services/MistralOcrService';
+import { handWritingOCRPrompt } from 'src/constants/V2Prompts';
 
 @Injectable()
 export class ExaminerService {
   constructor(
     @Inject(ILovePdfService) private IlovePdfService: ILovePdfService,
-    @Inject(MistralOcrService) private mistralOcrService: MistralOcrService
+    @Inject(MistralOcrService) private mistralOcrService: MistralOcrService,
   ) {
     this.intializeOpenAiClient();
   }
@@ -208,8 +209,12 @@ export class ExaminerService {
       if (mimeTypesToConvertToText.includes(file.mimetype)) {
         if (!isPDF) {
           if (file.mimetype === 'application/vnd.ms-powerpoint') {
-            const fileArrayBuffer = await this.IlovePdfService.processFileBasedOnTool(file, 'officepdf')
-            fileContent = await extractTextFromPDF(fileArrayBuffer)
+            const fileArrayBuffer =
+              await this.IlovePdfService.processFileBasedOnTool(
+                file,
+                'officepdf',
+              );
+            fileContent = await extractTextFromPDF(fileArrayBuffer);
           } else {
             fileContent = await extractTextFromBuffer({
               mimeType: file.mimetype,
@@ -219,7 +224,9 @@ export class ExaminerService {
         } else {
           // const fileArrayBuffer =
           //   await this.IlovePdfService.processFileBasedOnTool(file, 'pdfocr');
-         fileContent = (await this.mistralOcrService.processPdf(file)).join('\n')
+          fileContent = (await this.mistralOcrService.processPdf(file)).join(
+            '\n',
+          );
         }
       } else {
         fileContent = file.buffer;
@@ -265,6 +272,70 @@ export class ExaminerService {
         HttpStatus.BAD_GATEWAY,
       );
     }
+  }
+
+  public async handWrittenPDFOCR(file: Buffer): Promise<string> {
+    const tempFileName = `${generateUUID()}.pdf`;
+    const tempFilePath = join(tmpdir(), tempFileName);
+
+    let lastError: any;
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await writeFileToStream(tempFilePath, file);
+
+        const fileStream = createReadStream(tempFilePath, {
+          autoClose: true,
+        });
+
+        const uploaded = await this.openAiClient.files.create({
+          file: fileStream,
+          purpose: 'user_data',
+        });
+
+        const { output_text: text } = await this.openAiClient.responses.create({
+          model: 'gpt-4o-mini',
+          input: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'input_file',
+                  file_id: uploaded.id,
+                },
+                {
+                  type: 'input_text',
+                  text: handWritingOCRPrompt,
+                },
+              ],
+            },
+          ],
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        return text.toLowerCase() === 'no text' ? '' : text;
+      } catch (error) {
+        lastError = error;
+        console.warn(`Attempt ${attempt} failed: ${error.message}`);
+      } finally {
+        if (existsSync(tempFilePath)) {
+          try {
+            await unlink(tempFilePath);
+          } catch (unlinkError) {
+            console.warn(
+              `Failed to delete temporary file: ${tempFilePath}`,
+              unlinkError,
+            );
+          }
+        }
+      }
+    }
+
+    throw new HttpException(
+      lastError?.message ?? 'Failed to OCR file after multiple attempts',
+      lastError?.status ?? HttpStatus.BAD_REQUEST,
+    );
   }
 
   public async attachFileToVectorStore(
@@ -347,7 +418,6 @@ export class ExaminerService {
       input: chunks,
     });
 
-    return response.data.map((embedding)=>embedding.embedding)
+    return response.data.map((embedding) => embedding.embedding);
   }
-  
 }
