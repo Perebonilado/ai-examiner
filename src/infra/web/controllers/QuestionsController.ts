@@ -214,7 +214,7 @@ export class QuestionsController {
         messageContent: generateOralExaminationPrompt(questionsToAsk),
         metadata: { customerEmail: user.email, questionId: questions.id },
         userName: user.firstName,
-        maxDurationMs: callCredits.remainingTimeMs + callCredits.freeRemainingTimeMs,
+        maxDurationMs: callCredits.freeRemainingTimeMs + callCredits.remainingTimeMs,
         language: body?.language || 'english',
       });
     } catch (error) {

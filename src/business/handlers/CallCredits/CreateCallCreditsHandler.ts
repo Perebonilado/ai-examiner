@@ -38,7 +38,7 @@ export class CreateCallCreditsHandler extends AbstractRequestHandlerTemplate<
       return {
         data: {
           id: createdCredits.id,
-          reaminingCredits: createdCredits.remainingTimeMs,
+          remainingCreditsMs: createdCredits.remainingTimeMs,
           freeCredits: createdCredits.freeRemainingTimeMs
         },
         message: 'Call Credits Created',
