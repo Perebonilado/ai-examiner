@@ -1,5 +1,5 @@
 export interface CreateCallCreditsResponse {
   id: string;
-  reaminingCredits: number;
+  remainingCreditsMs: number;
   freeCredits: number;
 }
