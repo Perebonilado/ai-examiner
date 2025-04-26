@@ -78,9 +78,9 @@ export class CallCreditsController {
         });
 
         return {
-          remainingCredits: createdFreeCredits.data.reaminingCredits + createdFreeCredits.data.freeCredits,
+          remainingCreditsMs: createdFreeCredits.data.remainingCreditsMs + createdFreeCredits.data.freeCredits,
           free: createdFreeCredits.data.freeCredits,
-          paid: createdFreeCredits.data.reaminingCredits
+          paid: createdFreeCredits.data.remainingCreditsMs
         };
       }
 
