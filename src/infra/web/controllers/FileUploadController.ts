@@ -248,9 +248,16 @@ export class FileUploadController {
   @UseGuards(AuthGuard)
   @Post('/extract-written-text')
   @UseInterceptors(FileInterceptor('document'))
-  public async extractWrittenText(@UploadedFile() file: Express.Multer.File) {
+  public async extractWrittenText(
+    @UploadedFile() file: Express.Multer.File,
+    @Query('start') start: string,
+    @Query('end') end: string,
+  ) {
     try {
-      const splitPages = await splitPdfPagesToIndividualFiles(file.buffer);
+      let splitPages = await splitPdfPagesToIndividualFiles(file.buffer);
+      if (start?.trim()?.length && end?.trim()?.length) {
+        splitPages = splitPages.slice(Number(start) - 1, Number(end));
+      }
       const extractedTexts = await Promise.all(
         splitPages.map(async (page) => {
           const text = await this.examinerService.handWrittenPDFOCR(page);
