@@ -265,7 +265,7 @@ export class FileUploadController {
         }),
       );
 
-      return extractedTexts.filter((t) => t.trim().length);
+      return extractedTexts;
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Failed to extract written text',
