@@ -12,6 +12,7 @@ import { VapiModule } from './vapi/VapiModule';
 import { MistralAIModule } from './mistral-ai/MistralAIModule';
 import { PineconeModule } from './pinecone/PineconeModule';
 import { TextExtractionModule } from './text-extraction/TextExtractionModule';
+import { GoogleModule } from './google/GoogleModule';
 
 @Module({
   imports: [
@@ -27,7 +28,8 @@ import { TextExtractionModule } from './text-extraction/TextExtractionModule';
     VapiModule,
     MistralAIModule,
     PineconeModule,
-    TextExtractionModule
+    TextExtractionModule,
+    GoogleModule
   ],
   exports: [
     OpenAiModule,
@@ -42,7 +44,8 @@ import { TextExtractionModule } from './text-extraction/TextExtractionModule';
     VapiModule,
     MistralAIModule,
     PineconeModule,
-    TextExtractionModule
+    TextExtractionModule,
+    GoogleModule
   ],
 })
 export class IntegrationsModule {}

@@ -43,6 +43,12 @@ import {
   generatePromptForQuestions,
 } from 'src/constants/QuestionGenerationPrompt';
 import { DocumentSummaryQueryService } from 'src/query/services/DocumentSummaryQueryService';
+import { YoutubeService } from 'src/integrations/google/services/YoutubeService';
+import { createOpenAI } from '@ai-sdk/openai';
+import { generateObject } from 'ai';
+import { YoutubeKeywordsSchema } from 'src/schemas/YouTubeKeywordsSchema';
+import { YoutubeKeyWordPrompt } from 'src/constants/QuestionGenerationPromptV2';
+import { YouTubeVideoItem } from 'src/integrations/google/models/YoutubeSearchModel';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -67,6 +73,7 @@ export class CourseDocumentController {
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
     @Inject(DocumentSummaryQueryService)
     private documentSummaryQueryService: DocumentSummaryQueryService,
+    @Inject(YoutubeService) private youtubeService: YoutubeService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -113,6 +120,45 @@ export class CourseDocumentController {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Error getting summary',
+        error.status ?? HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/youtube-search/:documentId')
+  public async getRelevantYoutubeVideos(
+    @Param('documentId') documentId: string,
+  ) {
+    try {
+      const summary =
+        await this.documentSummaryQueryService.findByDocumentId(documentId);
+      const keywords = await this.getYoutubeKeywords(summary.summary);
+      const results = await Promise.all(
+        keywords.map((kw) => {
+          return this.youtubeService.youtubeVideoSearch({
+            maxResults: 5,
+            query: kw,
+          });
+        }),
+      );
+      const flatResults = results.map((res) => res[0]);
+
+      const seenIds = new Set<string>();
+      const uniqueResults: YouTubeVideoItem[] = [];
+      
+      for (const res of flatResults) {
+        const id = res.id.videoId;
+        if (!seenIds.has(id)) {
+          seenIds.add(id);
+          uniqueResults.push(res);
+        }
+      }
+      
+      return uniqueResults;
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Error getting relevant youtube videos',
         error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
@@ -421,6 +467,41 @@ export class CourseDocumentController {
       throw new HttpException(
         error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  private async getYoutubeKeywords(summary: string) {
+    try {
+      const openaiClient = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
+      });
+
+      const response = await generateObject({
+        model: openaiClient.responses('gpt-4o-mini'),
+        maxRetries: 3,
+        mode: 'json',
+        schemaName: 'keywords',
+        schema: YoutubeKeywordsSchema,
+        messages: [
+          { role: 'system', content: YoutubeKeyWordPrompt },
+          {
+            role: 'user',
+            content: `
+            **source text start**
+            ${summary}
+            **source text end**
+            `,
+          },
+        ],
+      });
+
+      return response.object.keywords;
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Failed to get keywords',
+        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

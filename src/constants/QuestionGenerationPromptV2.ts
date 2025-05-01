@@ -961,3 +961,7 @@ export const translateEnglishToOtherLanguagePrompt = (
     **SOURCE TEXT END**
   `;
 };
+
+export const YoutubeKeyWordPrompt = `
+You are an expert in content optimization for YouTube search. Based on the summary of a source text provided, generate a list of the 10 most relevant, beginner-friendly, and search-effective keywords or short phrases that a student can use to find introductory educational videos on the topic. Assume the student has little or no prior knowledge. Prioritize simplicity, clarity, and relevance to the core concepts in the summary. The goal is to help the student quickly find high-quality videos that explain the basics and provide a solid foundation in the subject.
+`
