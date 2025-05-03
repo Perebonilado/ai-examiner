@@ -157,6 +157,7 @@ export class CourseDocumentController {
       
       return uniqueResults;
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         error.message ?? 'Error getting relevant youtube videos',
         error.status ?? HttpStatus.BAD_REQUEST,

@@ -23,11 +23,13 @@ export class YoutubeService {
           q: query.query,
           maxResults: query.maxResults,
           key: EnvironmentVariables.config.youtubeApiKey,
+          part: 'snippet'
         },
       });
 
       return data.items;
     } catch (error) {
+        console.log(error)
       throw new HttpException(
         error.message ?? 'Failed to perform youtube search',
         error.status ?? HttpStatus.BAD_GATEWAY,
