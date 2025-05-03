@@ -22,10 +22,7 @@ import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
-import {
-  generateQuestionsPrompt,
-  inactiveSubscriptionStatuses,
-} from 'src/constants';
+import { inactiveSubscriptionStatuses } from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { extractJSONDataFromMessages } from 'src/utils';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
@@ -43,12 +40,16 @@ import {
   generatePromptForQuestions,
 } from 'src/constants/QuestionGenerationPrompt';
 import { DocumentSummaryQueryService } from 'src/query/services/DocumentSummaryQueryService';
-import { YoutubeService } from 'src/integrations/google/services/YoutubeService';
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { YoutubeKeywordsSchema } from 'src/schemas/YouTubeKeywordsSchema';
 import { YoutubeKeyWordPrompt } from 'src/constants/QuestionGenerationPromptV2';
-import { YouTubeVideoItem } from 'src/integrations/google/models/YoutubeSearchModel';
+import {
+  YoutubeSearchModel,
+  YouTubeVideoItem,
+} from 'src/integrations/google/models/YoutubeSearchModel';
+import { YoutubeSearchService } from 'src/integrations/rapid/services/YoutubeSearchService';
+import { YoutubeSearchModelRapid } from 'src/integrations/rapid/models/YoutubeSearch';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -73,7 +74,8 @@ export class CourseDocumentController {
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
     @Inject(DocumentSummaryQueryService)
     private documentSummaryQueryService: DocumentSummaryQueryService,
-    @Inject(YoutubeService) private youtubeService: YoutubeService,
+    @Inject(YoutubeSearchService)
+    private youtubeSearchService: YoutubeSearchService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -133,31 +135,30 @@ export class CourseDocumentController {
     try {
       const summary =
         await this.documentSummaryQueryService.findByDocumentId(documentId);
+      if (!summary?.summary) return [];
       const keywords = await this.getYoutubeKeywords(summary.summary);
       const results = await Promise.all(
         keywords.map((kw) => {
-          return this.youtubeService.youtubeVideoSearch({
-            maxResults: 5,
-            query: kw,
-          });
+          return this.youtubeSearchService.search({ searchQuery: kw });
         }),
       );
-      const flatResults = results.map((res) => res[0]);
+      const flatResults: YoutubeSearchModelRapid[] = results.map(
+        (res) => res[0],
+      );
 
       const seenIds = new Set<string>();
-      const uniqueResults: YouTubeVideoItem[] = [];
-      
+      const uniqueResults: YoutubeSearchModelRapid[] = [];
+
       for (const res of flatResults) {
-        const id = res.id.videoId;
+        const id = res.videoId;
         if (!seenIds.has(id)) {
           seenIds.add(id);
           uniqueResults.push(res);
         }
       }
-      
+
       return uniqueResults;
     } catch (error) {
-      console.log(error)
       throw new HttpException(
         error.message ?? 'Error getting relevant youtube videos',
         error.status ?? HttpStatus.BAD_REQUEST,

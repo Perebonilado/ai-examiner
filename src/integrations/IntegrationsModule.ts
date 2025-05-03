@@ -13,6 +13,7 @@ import { MistralAIModule } from './mistral-ai/MistralAIModule';
 import { PineconeModule } from './pinecone/PineconeModule';
 import { TextExtractionModule } from './text-extraction/TextExtractionModule';
 import { GoogleModule } from './google/GoogleModule';
+import { RapidModule } from './rapid/RapidModule';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { GoogleModule } from './google/GoogleModule';
     MistralAIModule,
     PineconeModule,
     TextExtractionModule,
-    GoogleModule
+    GoogleModule,
+    RapidModule
   ],
   exports: [
     OpenAiModule,
@@ -45,7 +47,8 @@ import { GoogleModule } from './google/GoogleModule';
     MistralAIModule,
     PineconeModule,
     TextExtractionModule,
-    GoogleModule
+    GoogleModule,
+    RapidModule
   ],
 })
 export class IntegrationsModule {}

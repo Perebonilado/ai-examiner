@@ -38,6 +38,7 @@ export interface Config {
   pineconeApiKey: string;
   mistralApiKey: string;
   youtubeApiKey: string;
+  rapidApiKey: string;
 }
 
 export default (): Config => ({
@@ -81,4 +82,5 @@ export default (): Config => ({
   pineconeApiKey: process.env.PINECONE_KEY,
   mistralApiKey: process.env.MISTRAL_API_KEY,
   youtubeApiKey: process.env.YOUTUBE_API_KEY,
+  rapidApiKey: process.env.RAPID_API_KEY,
 });
