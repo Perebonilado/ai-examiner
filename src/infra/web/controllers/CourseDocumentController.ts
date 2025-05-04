@@ -50,6 +50,8 @@ import {
 } from 'src/integrations/google/models/YoutubeSearchModel';
 import { YoutubeSearchService } from 'src/integrations/rapid/services/YoutubeSearchService';
 import { YoutubeSearchModelRapid } from 'src/integrations/rapid/models/YoutubeSearch';
+import { CreateRelatedVideoHandler } from 'src/business/handlers/RelatedVideo/CreateRelatedVideoHandler';
+import { RelatedVideoQueryService } from 'src/query/services/RelatedVideoQueryService';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -76,6 +78,10 @@ export class CourseDocumentController {
     private documentSummaryQueryService: DocumentSummaryQueryService,
     @Inject(YoutubeSearchService)
     private youtubeSearchService: YoutubeSearchService,
+    @Inject(CreateRelatedVideoHandler)
+    private createRelatedVideoHandler: CreateRelatedVideoHandler,
+    @Inject(RelatedVideoQueryService)
+    private relatedVideoQueryService: RelatedVideoQueryService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -133,6 +139,13 @@ export class CourseDocumentController {
     @Param('documentId') documentId: string,
   ) {
     try {
+      const relatedVideo =
+        await this.relatedVideoQueryService.findByDocumentId(documentId);
+
+      if (relatedVideo) {
+        return JSON.parse(relatedVideo.data) as YoutubeSearchModelRapid[];
+      }
+
       const summary =
         await this.documentSummaryQueryService.findByDocumentId(documentId);
       if (!summary?.summary) return [];
@@ -156,6 +169,12 @@ export class CourseDocumentController {
           uniqueResults.push(res);
         }
       }
+
+      await this.createRelatedVideoHandler.handle({
+        data: uniqueResults,
+        documentId: documentId,
+        source: 'rapid_api_youtube_search',
+      });
 
       return uniqueResults;
     } catch (error) {

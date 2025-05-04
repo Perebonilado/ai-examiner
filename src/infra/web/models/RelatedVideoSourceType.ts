@@ -1,0 +1,1 @@
+export type RelatedVideoSourceType = 'rapid_api_youtube_search'

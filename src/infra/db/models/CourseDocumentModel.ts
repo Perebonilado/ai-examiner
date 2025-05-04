@@ -15,6 +15,7 @@ import { QuestionModel } from './QuestionModel';
 import { DocumentMessageModel } from './DocumentMessageModel';
 import { PerformanceTrackingModel } from './PerformanceTrackingModel';
 import { DocumentSummaryModel } from './DocumentSummaryModel';
+import { RelatedVideoModel } from './RelatedVideoModel';
 
 @Table({ tableName: 'course_document' })
 export class CourseDocumentModel extends Model<CourseDocumentModel> {
@@ -183,6 +184,9 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
 
   @HasMany(() => PerformanceTrackingModel, 'course_document_id')
   performanceTracking: PerformanceTrackingModel;
+
+  @HasOne(() => RelatedVideoModel, 'document_id')
+  relatedVideo: RelatedVideoModel;
 
   @HasOne(() => DocumentSummaryModel, 'document_id')
   documentSummary: DocumentSummaryModel;

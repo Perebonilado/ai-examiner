@@ -22,6 +22,7 @@ import { FlaggedDocumentMessageQueryService } from './services/FlaggedDocumentMe
 import { PreferredLanguageQueryService } from './services/PreferredLanguageQueryService';
 import { EssayQuestionAnalysisQueryService } from './services/EssayQuestionAnalysisQueryService';
 import { DocumentSummaryQueryService } from './services/DocumentSummaryQueryService';
+import { RelatedVideoQueryService } from './services/RelatedVideoQueryService';
 
 @Module({
   imports: [IntegrationsModule],
@@ -47,7 +48,8 @@ import { DocumentSummaryQueryService } from './services/DocumentSummaryQueryServ
     FlaggedDocumentMessageQueryService,
     PreferredLanguageQueryService,
     EssayQuestionAnalysisQueryService,
-    DocumentSummaryQueryService
+    DocumentSummaryQueryService,
+    RelatedVideoQueryService
   ],
   exports: [
     UserQueryService,
@@ -70,7 +72,8 @@ import { DocumentSummaryQueryService } from './services/DocumentSummaryQueryServ
     FlaggedDocumentMessageQueryService,
     PreferredLanguageQueryService,
     EssayQuestionAnalysisQueryService,
-    DocumentSummaryQueryService
+    DocumentSummaryQueryService,
+    RelatedVideoQueryService
   ],
 })
 export class QueryModule {}
