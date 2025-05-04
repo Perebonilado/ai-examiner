@@ -22,6 +22,7 @@ import { FlaggedDocumentMessageModel } from '../models/FlaggedDocumentMessageMod
 import { PreferredLanguageModel } from '../models/PreferredLanguageModel';
 import { EssayQuestionAnalysisModel } from '../models/EssayQuestionAnalysisModel';
 import { DocumentSummaryModel } from '../models/DocumentSummaryModel';
+import { RelatedVideoModel } from '../models/RelatedVideoModel';
 
 export let sequelize: Sequelize;
 
@@ -62,7 +63,8 @@ export const databaseProviders = [
         FlaggedDocumentMessageModel,
         PreferredLanguageModel,
         EssayQuestionAnalysisModel,
-        DocumentSummaryModel
+        DocumentSummaryModel,
+        RelatedVideoModel
       ]);
 
       try {
