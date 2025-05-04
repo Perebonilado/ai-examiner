@@ -125,15 +125,29 @@ const getExplanationInstructions = (questionType: QuestionType): string => {
   }
 };
 
-const getBaseQuestionInstructions = (questionType: QuestionType): string => `
-For each question:
+const getBaseQuestionInstructions = (questionType: QuestionType): string => {
+  if (questionType === 'Flash Cards') {
+    return `
+For each flashcard:
 1. Ensure relevance to source text content
-2. Provide 4 options with unique IDs${questionType === 'Flash Cards' ? ', with the correct answer as the first option' : ''}
+2. Provide a single answer option with a unique ID
 3. ${getOptionInstructions(questionType)}
 4. ${getAnswerFormatInstructions(questionType)}
 5. Add a hint that aids recall without revealing the answer
 6. Include a detailed explanation. ${getExplanationInstructions(questionType)}
-7. Ensure the questions and options are ${questionType === 'Flash Cards' ? 'clear, concise, and promote effective memorization' : 'thought provoking'};`;
+7. Ensure the questions follow Anki-style formatting and that both the question and single answer option are clear, concise, and promote effective memorization`;
+  }
+
+  return `
+For each question:
+1. Ensure relevance to source text content
+2. Provide 4 options with unique IDs
+3. ${getOptionInstructions(questionType)}
+4. ${getAnswerFormatInstructions(questionType)}
+5. Add a hint that aids recall without revealing the answer
+6. Include a detailed explanation. ${getExplanationInstructions(questionType)}
+7. Ensure the questions and options are thought-provoking`;
+};
 
 const getAnswerFormatInstructions = (questionType: QuestionType): string => {
   switch (questionType) {
@@ -264,27 +278,30 @@ STRICT REQUIREMENTS:
 };
 
 const getFlashCardPrompt = (difficulty: DifficultyType): string => `
-IMPORTANT: For flashcard questions, adhere to these critical guidelines:
+IMPORTANT: These must be pure Anki‑style flashcards—question on one side, single concise answer on the back. Do NOT generate multiple‑choice or “which of the following” questions.
 
-1. ANSWERS MUST BE EXTREMELY CONCISE - typically single words, short phrases, or brief definitions
-2. Questions should be direct and clearly ask for a specific term, definition, or fact
-3. The primary purpose is rapid recall and memorization
-4. Place the correct answer as the first option, and leave all other options empty [CRITICAL]
- 
+1. QUESTIONS must be direct prompts for a single fact, term, date, definition, or concept.
+2. ANSWERS must be extremely concise—single words, short phrases, or brief definitions.
+3. Focus on rapid recall and memorization; avoid any extraneous wording.
+4. Do NOT include distractor options—only the question and its correct answer.
+5. Format exactly like Anki cards:  
+   Q: "…"  
+   A: "…"
+
 ${getFlashCardDifficultyLevel(difficulty)}
 
-Example proper flashcard formats:
-- "What is the term for the tendency of an object to resist changes in motion?" → "Inertia"
-- "Define photosynthesis" → "Process by which plants convert light energy into chemical energy"
-- "What year did World War II end?" → "1945" 
-- "What is the capital of France?" → "Paris"
-- "What hormone regulates blood glucose levels?" → "Insulin"
+—  
+**Good examples**  
+Q: "What year did World War II end?"  
+A: "1945"
 
-\n
-[THIS IS ONLY AN EXAMPLE AND YOU MUST ONLY USE IT AS A GUIDE IN GENERATING THE APPROPRIATE STYLE OF QUESTIONS. DO NOT GENERATE QUESTIONS FROM THIS, ONLY USE IT AS A GUIDE]
-DO NOT create complex questions like:
-❌ "Considering the multifaceted implications of cellular metabolism, what is the precise definition of glycolysis?"
-✅ Instead use: "What is glycolysis?"
+Q: "Define photosynthesis"  
+A: "Process by which plants convert light energy into chemical energy"
+
+—  
+**Bad examples** (must avoid)  
+• "Which of the following is a major risk factor for pulmonary embolism?"  
+• "Considering the multifaceted implications of cellular metabolism, what is the precise definition of glycolysis?"  
 
 ${CRITICAL_DIVERSITY_INSTRUCTIONS}
 `;
@@ -337,27 +354,34 @@ Examples:
 CRITICAL: Flash cards must be EXTREMELY basic and should NEVER require any reasoning or analysis.`;
 };
 
-const getEssayQuestionPrompt = (difficulty: DifficultyType, includeCaseStudies: boolean): string => `
+const getEssayQuestionPrompt = (
+  difficulty: DifficultyType,
+  includeCaseStudies: boolean,
+): string => `
 INSTRUCTIONS:
 Generate well-structured, essay-style questions that require students to develop thoughtful, multi-paragraph responses. Questions should assess understanding, application, and reasoning, appropriate to the ${difficulty} difficulty level${includeCaseStudies ? ' and based on realistic case scenarios' : ''}.
 
 DIFFICULTY LEVEL: ${difficulty.toUpperCase()}
-${difficulty === 'easy' ? 
-`- Emphasize explanation and description of key ideas
+${
+  difficulty === 'easy'
+    ? `- Emphasize explanation and description of key ideas
 - Ask students to identify, describe, and explain basic concepts or processes
 - Require clarity in exposition over complex reasoning
-- Suitable for foundational or introductory learners` : 
-difficulty === 'medium' ? 
-`- Combine explanation with moderate analysis and application
+- Suitable for foundational or introductory learners`
+    : difficulty === 'medium'
+      ? `- Combine explanation with moderate analysis and application
 - Ask students to compare, apply, or explore cause-effect relationships
 - Require connection of theory to real-world or hypothetical examples
-- Suitable for intermediate learners` : 
-`- Emphasize critical evaluation, synthesis, and theory integration
+- Suitable for intermediate learners`
+      : `- Emphasize critical evaluation, synthesis, and theory integration
 - Ask students to assess, critique, or develop original arguments
 - Require depth of reasoning and evidence-based judgment
-- Suitable for advanced or expert learners`}
+- Suitable for advanced or expert learners`
+}
 
-${includeCaseStudies ? `CASE STUDY APPROACH:
+${
+  includeCaseStudies
+    ? `CASE STUDY APPROACH:
 - Infer the appropriate domain from the source (e.g., medical, legal, educational, etc.)
 - Present a realistic scenario with sufficient context
 - Design questions that ask students to explain, describe, or discuss theoretical principles in response to the situation
@@ -373,7 +397,9 @@ EXAMPLES OF DOMAIN-BASED SCENARIOS:
 - ENGINEERING: A technical design or failure scenario requiring evaluation
 - SOCIAL WORK: A client or community in need of intervention
 
-` : ''}
+`
+    : ''
+}
 
 QUESTION REQUIREMENTS:
 - Prompt multi-paragraph responses that demonstrate structured thinking
@@ -383,62 +409,72 @@ ${includeCaseStudies ? '- Frame questions within realistic scenarios that requir
 - Require specific examples, evidence, or theoretical references
 
 COGNITIVE TARGETS:
-${difficulty === 'easy' ? 
-`- UNDERSTAND: Explain key ideas clearly
+${
+  difficulty === 'easy'
+    ? `- UNDERSTAND: Explain key ideas clearly
 - DESCRIBE: Identify and detail features of concepts
 - ILLUSTRATE: Provide relevant examples to show understanding
-- OUTLINE: Present a summary of processes or frameworks` : 
-difficulty === 'medium' ? 
-`- ANALYZE: Break down ideas and explore relationships
+- OUTLINE: Present a summary of processes or frameworks`
+    : difficulty === 'medium'
+      ? `- ANALYZE: Break down ideas and explore relationships
 - COMPARE: Explore similarities and differences
 - APPLY: Use knowledge to explore real-world relevance
-- EXPLAIN CAUSES & EFFECTS: Link actions, principles, and outcomes` : 
-`- EVALUATE: Make judgments based on arguments and evidence
+- EXPLAIN CAUSES & EFFECTS: Link actions, principles, and outcomes`
+      : `- EVALUATE: Make judgments based on arguments and evidence
 - SYNTHESIZE: Combine ideas into original perspectives
 - CRITIQUE: Assess and reflect on strengths and weaknesses
-- DEVELOP: Construct arguments or frameworks with depth and nuance`}
-${includeCaseStudies ? `
+- DEVELOP: Construct arguments or frameworks with depth and nuance`
+}
+${
+  includeCaseStudies
+    ? `
 - APPLY: Use theory to interpret or solve case problems
 - JUSTIFY: Defend decisions or interpretations with reasoning
-- DISCUSS: Consider perspectives and implications of actions` : ''}
+- DISCUSS: Consider perspectives and implications of actions`
+    : ''
+}
 
 QUESTION FORMATS:
-${includeCaseStudies ? 
-(difficulty === 'easy' ? 
-`- "A patient presents with [symptoms]. Describe the likely diagnosis, explain the underlying mechanism, and outline initial treatment steps."
-- "A teacher notices students struggling with a lesson. Explain possible causes of the difficulty and describe how the issue could be addressed."` :
-difficulty === 'medium' ? 
-`- "A startup is expanding rapidly but facing operational delays. Analyze the situation, explain contributing factors, and discuss potential solutions."
-- "A new education policy is being implemented across schools. Discuss its intended outcomes, identify possible obstacles, and explain ways to address them."` :
-`- "An engineering firm must choose between two competing designs. Critically evaluate each design’s merits and risks, and justify the preferred option."
-- "A country is debating a law to regulate AI. Discuss the ethical and societal implications, evaluate opposing viewpoints, and propose a balanced approach."`) : 
-(difficulty === 'easy' ? 
-`- "Describe the role of mitochondria in cells and explain why they are called the powerhouses of the cell."
-- "Explain the importance of regular exercise and describe its effects on physical health."` : 
-difficulty === 'medium' ? 
-`- "Compare and contrast socialism and capitalism, explaining their key differences and effects on economic equality."
-- "Analyze how rainfall patterns affect crop yield, using examples from different regions."` :
-`- "Evaluate the effectiveness of international aid in conflict zones, and develop an argument for improving its impact."
-- "Discuss how globalization affects cultural identity, referencing both benefits and challenges."`)}
+${
+  includeCaseStudies
+    ? difficulty === 'easy'
+      ? `- "A patient presents with [symptoms]. Describe the likely diagnosis, explain the underlying mechanism, and outline initial treatment steps."
+- "A teacher notices students struggling with a lesson. Explain possible causes of the difficulty and describe how the issue could be addressed."`
+      : difficulty === 'medium'
+        ? `- "A startup is expanding rapidly but facing operational delays. Analyze the situation, explain contributing factors, and discuss potential solutions."
+- "A new education policy is being implemented across schools. Discuss its intended outcomes, identify possible obstacles, and explain ways to address them."`
+        : `- "An engineering firm must choose between two competing designs. Critically evaluate each design’s merits and risks, and justify the preferred option."
+- "A country is debating a law to regulate AI. Discuss the ethical and societal implications, evaluate opposing viewpoints, and propose a balanced approach."`
+    : difficulty === 'easy'
+      ? `- "Describe the role of mitochondria in cells and explain why they are called the powerhouses of the cell."
+- "Explain the importance of regular exercise and describe its effects on physical health."`
+      : difficulty === 'medium'
+        ? `- "Compare and contrast socialism and capitalism, explaining their key differences and effects on economic equality."
+- "Analyze how rainfall patterns affect crop yield, using examples from different regions."`
+        : `- "Evaluate the effectiveness of international aid in conflict zones, and develop an argument for improving its impact."
+- "Discuss how globalization affects cultural identity, referencing both benefits and challenges."`
+}
 
 EXAMPLE TRANSFORMATIONS:
-${includeCaseStudies ? 
-(difficulty === 'easy' ? 
-`❌ Instead of: "What are the symptoms of asthma?"
-✅ Ask: "A 12-year-old child arrives at the clinic with wheezing and shortness of breath after exercise. Describe the likely condition, explain its causes, and outline initial management."` :
-difficulty === 'medium' ? 
-`❌ Instead of: "What are the effects of pollution?"
-✅ Ask: "A city reports rising respiratory illnesses linked to air pollution. Analyze the likely causes, discuss public health implications, and explain effective intervention strategies."` :
-`❌ Instead of: "What is a data breach?"
-✅ Ask: "A company experiences a cyberattack that exposes customer data. Critically evaluate the organization’s response, discuss legal and ethical implications, and propose strategies for prevention."`) : 
-(difficulty === 'easy' ? 
-`❌ Instead of: "What is democracy?"
-✅ Ask: "Describe the key principles of democracy and explain how they influence citizen participation."` :
-difficulty === 'medium' ? 
-`❌ Instead of: "How does advertising affect behavior?"
-✅ Ask: "Analyze the impact of persuasive advertising on consumer decisions and discuss its ethical implications."` :
-`❌ Instead of: "What is artificial intelligence?"
-✅ Ask: "Evaluate the role of artificial intelligence in modern healthcare. Discuss its potential, limitations, and ethical considerations."`)}
+${
+  includeCaseStudies
+    ? difficulty === 'easy'
+      ? `❌ Instead of: "What are the symptoms of asthma?"
+✅ Ask: "A 12-year-old child arrives at the clinic with wheezing and shortness of breath after exercise. Describe the likely condition, explain its causes, and outline initial management."`
+      : difficulty === 'medium'
+        ? `❌ Instead of: "What are the effects of pollution?"
+✅ Ask: "A city reports rising respiratory illnesses linked to air pollution. Analyze the likely causes, discuss public health implications, and explain effective intervention strategies."`
+        : `❌ Instead of: "What is a data breach?"
+✅ Ask: "A company experiences a cyberattack that exposes customer data. Critically evaluate the organization’s response, discuss legal and ethical implications, and propose strategies for prevention."`
+    : difficulty === 'easy'
+      ? `❌ Instead of: "What is democracy?"
+✅ Ask: "Describe the key principles of democracy and explain how they influence citizen participation."`
+      : difficulty === 'medium'
+        ? `❌ Instead of: "How does advertising affect behavior?"
+✅ Ask: "Analyze the impact of persuasive advertising on consumer decisions and discuss its ethical implications."`
+        : `❌ Instead of: "What is artificial intelligence?"
+✅ Ask: "Evaluate the role of artificial intelligence in modern healthcare. Discuss its potential, limitations, and ethical considerations."`
+}
 
 FORMATTING GUIDELINES:
 - Use clear, directive verbs suited to ${difficulty} level
@@ -446,7 +482,6 @@ ${includeCaseStudies ? '- Begin with a realistic, domain-appropriate scenario\n-
 - Ensure academic rigor while maintaining clarity and focus
 - Questions should encourage depth of response proportional to ${difficulty} difficulty
 `;
-
 
 const getOralQuestionPrompt = (): string => `
 INSTRUCTIONS:
@@ -850,7 +885,8 @@ const getSpecificPrompt = (
   if (questionType === 'Multiple True-False')
     return getMultipleTrueFalsePrompt();
   if (questionType === 'Oral (Viva)') return getOralQuestionPrompt();
-  if (questionType === 'Essay') return getEssayQuestionPrompt(difficulty, includeCaseStudies);
+  if (questionType === 'Essay')
+    return getEssayQuestionPrompt(difficulty, includeCaseStudies);
   return includeCaseStudies
     ? getCaseStudyPrompt()
     : getDirectQuestionPrompt(questionType, difficulty);
@@ -946,8 +982,8 @@ export const generateTopicPromptV2_2 = (sourceText: string) => {
   **SOUCE TEXT START**
   ${sourceText}
   **SOURCE TEXT END**
-  `
-}
+  `;
+};
 
 export const translateEnglishToOtherLanguagePrompt = (
   text: string,
@@ -961,3 +997,55 @@ export const translateEnglishToOtherLanguagePrompt = (
     **SOURCE TEXT END**
   `;
 };
+
+// export const YoutubeKeyWordPrompt = `You are a world‑class YouTube SEO strategist and educational content expert. A student with almost no prior knowledge needs to find the very best, most highly‑rated introductory videos on the given topic—videos so clear, authoritative and engaging that they’ll guarantee an A. 
+
+// Based on the summary of a source text provided, your task is to output **3 powerhouse search terms** that satisfy these criteria:
+
+// 1. **High Search Volume & Low‑Medium Competition**  
+//    Use your knowledge of YouTube trends, keyword research tools (e.g. VidIQ, TubeBuddy), and educational best practices to pick terms that students actually use—and that top creators rank for.  
+
+// 2. **Beginner‑Friendly & Comprehensive**  
+//    - **Keywords 1 & 2**: Broad, simple phrases that capture the entire subject area, ensuring the results include full overviews, step‑by‑step tutorials, and foundational explanations.  
+//    - **Keyword 3**: A focused phrase on a key sub‑concept or “power‑point” within the summary, designed to find deep‑dive mini‑lessons on that crucial piece.  
+
+// 3. **Authority & Engagement Signals**  
+//    Favor phrases likely to return videos with high view‑counts, strong like‑to‑view ratios, recent upload dates, and clear educational structure (chapters, visuals, examples).  
+
+// 4. **Student‑Centric Language**  
+//    Keep terms extremely simple—what would a high‑schooler or first‑year undergrad actually type when they need a crystal‑clear, top‑rated explainer?
+// `;
+
+export const YoutubeKeyWordPrompt = `You are a world‑class YouTube SEO strategist and educational content expert with specialized knowledge across academic disciplines. A student with almost no prior knowledge needs to find the very best, most highly‑rated introductory videos on the given topic—videos so clear, authoritative and engaging that they'll guarantee an A. 
+
+Based on the summary of a source text provided, your task is to output **5 powerhouse search terms** that satisfy these criteria:
+
+1. **Field-Specific Precision & Technical Accuracy**  
+   - Analyze the document's domain (medicine, business, biochemistry, etc.) and use proper terminology from that field
+   - Ensure keywords reflect the specific concepts, processes, or theories mentioned in the document
+   - Include at least one keyword containing field-specific jargon that subject matter experts would use in educational content
+
+2. **High Search Volume & Strategic Competition**  
+   Use your knowledge of YouTube trends, keyword research, and educational best practices to select terms that balance:
+   - What students actually search for when learning this specific subject
+   - What top educational channels in this field optimize for in their titles
+   - Terms with enough search volume to yield multiple quality results
+
+3. **Comprehensive Learning Journey**  
+   - **Keywords 1 & 2**: Broad, foundational phrases capturing the entire subject area for complete overviews 
+   - **Keywords 3 & 4**: Medium-specificity terms focusing on major sub-topics or concepts from the document
+   - **Keyword 5**: A highly targeted phrase addressing the most complex or crucial element from the summary
+
+4. **Authority & Educational Quality Signals**  
+   Favor phrases likely to return videos with:
+   - Content from recognized experts or institutions in the specific field
+   - Clear educational structure (chapters, demonstrations, visual aids)
+   - Problem-solving examples relevant to the specific domain
+   - Recent uploads reflecting current understanding in the field
+
+5. **Student-Centric Language Combined with Precision**  
+   Balance accessibility with accuracy by:
+   - Using terms students would actually search for while learning this specific subject
+   - Including one "explainer"-style keyword ("how to understand X") 
+   - Incorporating field-specific terminology needed for proper comprehension
+`;
