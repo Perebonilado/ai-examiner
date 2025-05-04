@@ -39,6 +39,8 @@ import { EssayQuestionAnalysisRepository } from 'src/business/repository/EssayQu
 import { EssayQuestionAnalysisSequelizeRepository } from './repository/EssayQuestionAnalysisSequelizeRepository';
 import { DocumentSummaryRepository } from 'src/business/repository/DocumentSummaryRepository';
 import { DocumentSummarySequelizeRepository } from './repository/DocumentSummarySequelizeRepository';
+import { RelatedVideoRepository } from 'src/business/repository/RelatedVideoRepository';
+import { RelatedVideoSequelizeRepository } from './repository/RelatedVideoSequelizeRepository';
 
 @Module({
   imports: [InfraDbModule, QueryModule],
@@ -119,6 +121,10 @@ import { DocumentSummarySequelizeRepository } from './repository/DocumentSummary
       provide: DocumentSummaryRepository,
       useClass: DocumentSummarySequelizeRepository,
     },
+    {
+      provide: RelatedVideoRepository,
+      useClass: RelatedVideoSequelizeRepository,
+    },
   ],
   exports: [
     UserRepository,
@@ -139,7 +145,8 @@ import { DocumentSummarySequelizeRepository } from './repository/DocumentSummary
     FlaggedDocumentMessageRepository,
     PreferredLanguageRepository,
     EssayQuestionAnalysisRepository,
-    DocumentSummaryRepository
+    DocumentSummaryRepository,
+    RelatedVideoRepository
   ],
 })
 export class InfraRepositoryModule {}
