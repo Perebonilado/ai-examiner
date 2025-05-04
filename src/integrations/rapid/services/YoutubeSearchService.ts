@@ -17,7 +17,7 @@ export class YoutubeSearchService {
     try {
       const { data } = await this.httpService.axiosRef.post<
         any,
-        AxiosResponse<YoutubeSearchModelRapid >
+        AxiosResponse<YoutubeSearchModelRapid>
       >(
         `${this.baseUrl}/search`,
         {

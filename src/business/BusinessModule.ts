@@ -34,6 +34,7 @@ import { UpdatePreferredLanguageHandler } from './handlers/PreferredLanguage/Upd
 import { UpdateEssayQuestionAnalysisHandler } from './handlers/EssayQuestionAnalysis/UpdateEssayQuestionAnalysisHandler';
 import { CreateEssayQuestionAnalysisHandler } from './handlers/EssayQuestionAnalysis/CreateEssayQuestionAnalysisHandler';
 import { CreateDocumentSummaryHandler } from './handlers/DocumentSummary/CreateDocumentSummaryHandler';
+import { CreateRelatedVideoHandler } from './handlers/RelatedVideo/CreateRelatedVideoHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -69,7 +70,8 @@ import { CreateDocumentSummaryHandler } from './handlers/DocumentSummary/CreateD
     UpdatePreferredLanguageHandler,
     UpdateEssayQuestionAnalysisHandler,
     CreateEssayQuestionAnalysisHandler,
-    CreateDocumentSummaryHandler
+    CreateDocumentSummaryHandler,
+    CreateRelatedVideoHandler
   ],
   exports: [
     CreateUserHandler,
@@ -103,7 +105,8 @@ import { CreateDocumentSummaryHandler } from './handlers/DocumentSummary/CreateD
     UpdatePreferredLanguageHandler,
     UpdateEssayQuestionAnalysisHandler,
     CreateEssayQuestionAnalysisHandler,
-    CreateDocumentSummaryHandler
+    CreateDocumentSummaryHandler,
+    CreateRelatedVideoHandler
   ],
 })
 export class BusinessModule {}
