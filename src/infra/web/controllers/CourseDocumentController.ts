@@ -22,10 +22,7 @@ import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
-import {
-  generateQuestionsPrompt,
-  inactiveSubscriptionStatuses,
-} from 'src/constants';
+import { inactiveSubscriptionStatuses } from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { extractJSONDataFromMessages } from 'src/utils';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
@@ -43,6 +40,16 @@ import {
   generatePromptForQuestions,
 } from 'src/constants/QuestionGenerationPrompt';
 import { DocumentSummaryQueryService } from 'src/query/services/DocumentSummaryQueryService';
+import { createOpenAI } from '@ai-sdk/openai';
+import { generateObject } from 'ai';
+import { YoutubeKeywordsSchema } from 'src/schemas/YouTubeKeywordsSchema';
+import { YoutubeKeyWordPrompt } from 'src/constants/QuestionGenerationPromptV2';
+import {
+  YoutubeSearchModel,
+  YouTubeVideoItem,
+} from 'src/integrations/google/models/YoutubeSearchModel';
+import { YoutubeSearchService } from 'src/integrations/rapid/services/YoutubeSearchService';
+import { YoutubeSearchModelRapid } from 'src/integrations/rapid/models/YoutubeSearch';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -67,6 +74,8 @@ export class CourseDocumentController {
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
     @Inject(DocumentSummaryQueryService)
     private documentSummaryQueryService: DocumentSummaryQueryService,
+    @Inject(YoutubeSearchService)
+    private youtubeSearchService: YoutubeSearchService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -113,6 +122,45 @@ export class CourseDocumentController {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Error getting summary',
+        error.status ?? HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/youtube-search/:documentId')
+  public async getRelevantYoutubeVideos(
+    @Param('documentId') documentId: string,
+  ) {
+    try {
+      const summary =
+        await this.documentSummaryQueryService.findByDocumentId(documentId);
+      if (!summary?.summary) return [];
+      const keywords = await this.getYoutubeKeywords(summary.summary);
+      const results = await Promise.all(
+        keywords.map((kw) => {
+          return this.youtubeSearchService.search({ searchQuery: kw });
+        }),
+      );
+      const flatResults: YoutubeSearchModelRapid[] = results.map(
+        (res) => res[0],
+      );
+
+      const seenIds = new Set<string>();
+      const uniqueResults: YoutubeSearchModelRapid[] = [];
+
+      for (const res of flatResults) {
+        const id = res.videoId;
+        if (!seenIds.has(id)) {
+          seenIds.add(id);
+          uniqueResults.push(res);
+        }
+      }
+
+      return uniqueResults;
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Error getting relevant youtube videos',
         error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
@@ -421,6 +469,41 @@ export class CourseDocumentController {
       throw new HttpException(
         error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  private async getYoutubeKeywords(summary: string) {
+    try {
+      const openaiClient = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
+      });
+
+      const response = await generateObject({
+        model: openaiClient.responses('gpt-4o-mini'),
+        maxRetries: 3,
+        mode: 'json',
+        schemaName: 'keywords',
+        schema: YoutubeKeywordsSchema,
+        messages: [
+          { role: 'system', content: YoutubeKeyWordPrompt },
+          {
+            role: 'user',
+            content: `
+            **source text start**
+            ${summary}
+            **source text end**
+            `,
+          },
+        ],
+      });
+
+      return response.object.keywords;
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Failed to get keywords',
+        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
