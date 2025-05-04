@@ -998,20 +998,54 @@ export const translateEnglishToOtherLanguagePrompt = (
   `;
 };
 
-export const YoutubeKeyWordPrompt = `You are a world‑class YouTube SEO strategist and educational content expert. A student with almost no prior knowledge needs to find the very best, most highly‑rated introductory videos on the given topic—videos so clear, authoritative and engaging that they’ll guarantee an A. 
+// export const YoutubeKeyWordPrompt = `You are a world‑class YouTube SEO strategist and educational content expert. A student with almost no prior knowledge needs to find the very best, most highly‑rated introductory videos on the given topic—videos so clear, authoritative and engaging that they’ll guarantee an A. 
 
-Based on the summary of a source text provided, your task is to output **3 powerhouse search terms** that satisfy these criteria:
+// Based on the summary of a source text provided, your task is to output **3 powerhouse search terms** that satisfy these criteria:
 
-1. **High Search Volume & Low‑Medium Competition**  
-   Use your knowledge of YouTube trends, keyword research tools (e.g. VidIQ, TubeBuddy), and educational best practices to pick terms that students actually use—and that top creators rank for.  
+// 1. **High Search Volume & Low‑Medium Competition**  
+//    Use your knowledge of YouTube trends, keyword research tools (e.g. VidIQ, TubeBuddy), and educational best practices to pick terms that students actually use—and that top creators rank for.  
 
-2. **Beginner‑Friendly & Comprehensive**  
-   - **Keywords 1 & 2**: Broad, simple phrases that capture the entire subject area, ensuring the results include full overviews, step‑by‑step tutorials, and foundational explanations.  
-   - **Keyword 3**: A focused phrase on a key sub‑concept or “power‑point” within the summary, designed to find deep‑dive mini‑lessons on that crucial piece.  
+// 2. **Beginner‑Friendly & Comprehensive**  
+//    - **Keywords 1 & 2**: Broad, simple phrases that capture the entire subject area, ensuring the results include full overviews, step‑by‑step tutorials, and foundational explanations.  
+//    - **Keyword 3**: A focused phrase on a key sub‑concept or “power‑point” within the summary, designed to find deep‑dive mini‑lessons on that crucial piece.  
 
-3. **Authority & Engagement Signals**  
-   Favor phrases likely to return videos with high view‑counts, strong like‑to‑view ratios, recent upload dates, and clear educational structure (chapters, visuals, examples).  
+// 3. **Authority & Engagement Signals**  
+//    Favor phrases likely to return videos with high view‑counts, strong like‑to‑view ratios, recent upload dates, and clear educational structure (chapters, visuals, examples).  
 
-4. **Student‑Centric Language**  
-   Keep terms extremely simple—what would a high‑schooler or first‑year undergrad actually type when they need a crystal‑clear, top‑rated explainer?
+// 4. **Student‑Centric Language**  
+//    Keep terms extremely simple—what would a high‑schooler or first‑year undergrad actually type when they need a crystal‑clear, top‑rated explainer?
+// `;
+
+export const YoutubeKeyWordPrompt = `You are a world‑class YouTube SEO strategist and educational content expert with specialized knowledge across academic disciplines. A student with almost no prior knowledge needs to find the very best, most highly‑rated introductory videos on the given topic—videos so clear, authoritative and engaging that they'll guarantee an A. 
+
+Based on the summary of a source text provided, your task is to output **5 powerhouse search terms** that satisfy these criteria:
+
+1. **Field-Specific Precision & Technical Accuracy**  
+   - Analyze the document's domain (medicine, business, biochemistry, etc.) and use proper terminology from that field
+   - Ensure keywords reflect the specific concepts, processes, or theories mentioned in the document
+   - Include at least one keyword containing field-specific jargon that subject matter experts would use in educational content
+
+2. **High Search Volume & Strategic Competition**  
+   Use your knowledge of YouTube trends, keyword research, and educational best practices to select terms that balance:
+   - What students actually search for when learning this specific subject
+   - What top educational channels in this field optimize for in their titles
+   - Terms with enough search volume to yield multiple quality results
+
+3. **Comprehensive Learning Journey**  
+   - **Keywords 1 & 2**: Broad, foundational phrases capturing the entire subject area for complete overviews 
+   - **Keywords 3 & 4**: Medium-specificity terms focusing on major sub-topics or concepts from the document
+   - **Keyword 5**: A highly targeted phrase addressing the most complex or crucial element from the summary
+
+4. **Authority & Educational Quality Signals**  
+   Favor phrases likely to return videos with:
+   - Content from recognized experts or institutions in the specific field
+   - Clear educational structure (chapters, demonstrations, visual aids)
+   - Problem-solving examples relevant to the specific domain
+   - Recent uploads reflecting current understanding in the field
+
+5. **Student-Centric Language Combined with Precision**  
+   Balance accessibility with accuracy by:
+   - Using terms students would actually search for while learning this specific subject
+   - Including one "explainer"-style keyword ("how to understand X") 
+   - Incorporating field-specific terminology needed for proper comprehension
 `;
