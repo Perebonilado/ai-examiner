@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { CreateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/CreateCourseDocumentHandler';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
@@ -24,7 +24,13 @@ import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQues
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { inactiveSubscriptionStatuses } from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
-import { extractJSONDataFromMessages } from 'src/utils';
+import {
+  createSimplifiedPdf,
+  extractJSONDataFromMessages,
+  extractPagesTextsFromPDF,
+  PDFContent,
+  splitPdfPagesToIndividualFiles,
+} from 'src/utils';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 import { CreateQuestionTopicHandler } from 'src/business/handlers/QuestionTopic/CreateQuestionTopicHandler';
 import { DocumentTopicModel } from 'src/infra/db/models/DocumentTopicModel';
@@ -43,7 +49,10 @@ import { DocumentSummaryQueryService } from 'src/query/services/DocumentSummaryQ
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { YoutubeKeywordsSchema } from 'src/schemas/YouTubeKeywordsSchema';
-import { YoutubeKeyWordPrompt } from 'src/constants/QuestionGenerationPromptV2';
+import {
+  TextSimplificationPrompt,
+  YoutubeKeyWordPrompt,
+} from 'src/constants/QuestionGenerationPromptV2';
 import {
   YoutubeSearchModel,
   YouTubeVideoItem,
@@ -52,6 +61,8 @@ import { YoutubeSearchService } from 'src/integrations/rapid/services/YoutubeSea
 import { YoutubeSearchModelRapid } from 'src/integrations/rapid/models/YoutubeSearch';
 import { CreateRelatedVideoHandler } from 'src/business/handlers/RelatedVideo/CreateRelatedVideoHandler';
 import { RelatedVideoQueryService } from 'src/query/services/RelatedVideoQueryService';
+import { GoogleDriveService } from 'src/integrations/google/services/GoogleDriveService';
+import { SimplifiedPDFArraySchema } from 'src/schemas/SimplifiedPDFSchema';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -82,6 +93,7 @@ export class CourseDocumentController {
     private createRelatedVideoHandler: CreateRelatedVideoHandler,
     @Inject(RelatedVideoQueryService)
     private relatedVideoQueryService: RelatedVideoQueryService,
+    @Inject(GoogleDriveService) private googleDriveService: GoogleDriveService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -115,6 +127,50 @@ export class CourseDocumentController {
         error?.response ?? 'Failed to find Documents',
         HttpStatus.BAD_REQUEST,
       );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/document-file/:documentId')
+  public async getDocumentFile(
+    @Param('documentId') documentId: string,
+    @Res() res: Response,
+  ) {
+    try {
+      /**
+       * Get the pdf file
+       * split by pages
+       * extract text from each page
+       * map through, pass page with content to AI to rewrite, emtpy pages return default
+       * pass array of arrays to pdf creation service
+       * return pdf
+       */
+
+      const pdf = await this.googleDriveService.getFile(documentId);
+      const pages = await extractPagesTextsFromPDF(pdf);
+      const rewordedPages = await Promise.all(
+        pages.map(async (page, index) => {
+          // open ai call to reword
+          if (page.trim().length) {
+           const res = await this.simplifyTextContent(page);
+           return res
+          }
+          return [{ text: 'Empty Page', type: 'paragraph' }] as PDFContent[];
+        }),
+      );
+     
+      const newPdf = await createSimplifiedPdf(rewordedPages);
+
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${'test.pdf'}"`,
+        'Content-Length': newPdf.length,
+      });
+
+      return res.send(newPdf);
+    } catch (error) {
+      console.log(error);
+      throw new HttpException('Failed to get file', HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -522,6 +578,41 @@ export class CourseDocumentController {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Failed to get keywords',
+        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  private async simplifyTextContent(content: string) {
+    try {
+      const openaiClient = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
+      });
+
+      const response = await generateObject({
+        model: openaiClient.responses('gpt-4o-mini'),
+        maxRetries: 3,
+        mode: 'json',
+        schemaName: 'simplified',
+        schema: SimplifiedPDFArraySchema,
+        messages: [
+          { role: 'system', content: TextSimplificationPrompt },
+          {
+            role: 'user',
+            content: `
+            **source text start**
+            ${content}
+            **source text end**
+            `,
+          },
+        ],
+      });
+
+      return response.object.simplifiedContent as PDFContent[];
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Failed to simplify content',
         error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

@@ -12,7 +12,7 @@ import * as libre from 'libreoffice-convert';
 import * as fs from 'fs';
 import * as pdfParse from 'pdf-parse';
 import { rm } from 'fs/promises';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 const libreConvert = promisify(libre.convert);
 
@@ -252,5 +252,101 @@ export const splitPdfPagesToIndividualFiles = async (
     return outputBuffers;
   } catch (error) {
     throw new Error('Failed to split pages');
+  }
+};
+
+type PDFContentType = 'headingOne' | 'headingTwo' | 'paragraph' | 'bullet';
+
+export interface PDFContent {
+  type: PDFContentType;
+  text: string;
+}
+
+const wrapText = (
+  text: string,
+  maxWidth: number,
+  font: any,
+  fontSize: number,
+): string[] => {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const width = font.widthOfTextAtSize(testLine, fontSize);
+    if (width < maxWidth) {
+      currentLine = testLine;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+
+  if (currentLine) lines.push(currentLine);
+  return lines;
+};
+
+export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<Buffer> => {
+  try {
+    const pdfDoc = await PDFDocument.create();
+    const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    for (const content of pageContent) {
+      const page = pdfDoc.addPage();
+      const { width, height } = page.getSize();
+      let cursorY = height - 50;
+
+      for (const item of content) {
+        let fontSize = 12;
+        let font = regularFont;
+        let color = rgb(0, 0, 0);
+        let indent = 0;
+        let spacingAfter = 10;
+
+        switch (item.type) {
+          case 'headingOne':
+            fontSize = 18;
+            font = boldFont;
+            color = rgb(0, 0, 0);
+            spacingAfter = 20;
+            break;
+
+          case 'headingTwo':
+            fontSize = 14;
+            font = boldFont;
+            color = rgb(0, 0, 0);
+            spacingAfter = 16;
+            break;
+
+          case 'bullet':
+            indent = 15;
+            item.text = `• ${item.text}`;
+            break;
+
+          // 'paragraph' uses defaults
+        }
+
+        const wrappedLines = wrapText(item.text, width - 100 - indent, font, fontSize);
+        for (const line of wrappedLines) {
+          page.drawText(line, {
+            x: 50 + indent,
+            y: cursorY,
+            size: fontSize,
+            font,
+            color,
+          });
+          cursorY -= fontSize + 4;
+        }
+
+        cursorY -= spacingAfter;
+      }
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    return Buffer.from(pdfBytes);
+  } catch (error) {
+    throw new Error('Failed to create simplified PDF');
   }
 };

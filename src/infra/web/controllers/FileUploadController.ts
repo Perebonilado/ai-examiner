@@ -50,6 +50,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { unlink } from 'fs/promises';
 import OpenAI from 'openai';
+import { GoogleDriveService } from 'src/integrations/google/services/GoogleDriveService';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -72,6 +73,7 @@ export class FileUploadController {
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
     @Inject(CreateDocumentSummaryHandler)
     private createDocumentSummaryHandler: CreateDocumentSummaryHandler,
+    @Inject(GoogleDriveService) private googleDriveService: GoogleDriveService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -82,28 +84,39 @@ export class FileUploadController {
     @Query('pages') pages: string,
     @Query('start') start: string,
     @Query('end') end: string,
+    @Res() res: Response
   ) {
-    try {
-      const pdfPageRange =
-        pages === 'custom' ? { start: Number(start), end: Number(end) } : {};
-      const uploadedFile = await this.examinerService.uploadFile(
-        file,
-        pdfPageRange,
-      );
+    const uploadedFile = await this.googleDriveService.uploadFile(file);
+    console.log('file id', uploadedFile.fileId)
+    const fileBuffer = await this.googleDriveService.getFile(uploadedFile.fileId);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${'test.pdf'}"`,
+      'Content-Length': fileBuffer.length,
+    });
 
-      return {
-        data: {
-          fileId: uploadedFile.id,
-        },
-        message: 'File uploaded successfully',
-        status: HttpStatus.CREATED,
-      };
-    } catch (error) {
-      throw new HttpException(
-        error || 'Failed to upload file',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    return res.send(fileBuffer);
+    // try {
+    //   const pdfPageRange =
+    //     pages === 'custom' ? { start: Number(start), end: Number(end) } : {};
+    //   const uploadedFile = await this.examinerService.uploadFile(
+    //     file,
+    //     pdfPageRange,
+    //   );
+
+    //   return {
+    //     data: {
+    //       fileId: uploadedFile.id,
+    //     },
+    //     message: 'File uploaded successfully',
+    //     status: HttpStatus.CREATED,
+    //   };
+    // } catch (error) {
+    //   throw new HttpException(
+    //     error || 'Failed to upload file',
+    //     HttpStatus.BAD_REQUEST,
+    //   );
+    // }
   }
 
   @UseGuards(AuthGuard)
