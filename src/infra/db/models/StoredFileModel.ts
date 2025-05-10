@@ -8,12 +8,10 @@ import {
 } from 'sequelize-typescript';
 import * as moment from 'moment';
 import { generateUUID } from 'src/utils';
-import { QuestionModel } from './QuestionModel';
-import { UserModel } from './UserModel';
 import { CourseDocumentModel } from './CourseDocumentModel';
 
-@Table({ tableName: 'score' })
-export class ScoreModel extends Model<ScoreModel> {
+@Table({ tableName: 'stored_files' })
+export class StoredFileModel extends Model<StoredFileModel> {
   @Column({
     type: DataType.STRING,
     primaryKey: true,
@@ -21,34 +19,18 @@ export class ScoreModel extends Model<ScoreModel> {
   id: string;
 
   @Column({
-    type: DataType.INTEGER,
-    field: 'percentage_score',
+    type: DataType.STRING,
+    field: 'file_location',
     allowNull: false,
   })
-  score: number;
+  fileLocation: string;
 
   @Column({
-    type: DataType.DATE,
-    field: 'created_on',
+    type: DataType.STRING,
+    field: 'simplified_file_location',
     allowNull: true,
   })
-  createdOn: Date;
-
-  @ForeignKey(() => QuestionModel)
-  @Column({
-    type: DataType.STRING,
-    field: 'question_id',
-    allowNull: false,
-  })
-  questionId: string;
-
-  @ForeignKey(() => UserModel)
-  @Column({
-    type: DataType.STRING,
-    field: 'user_id',
-    allowNull: false,
-  })
-  userId: string;
+  simplifiedFileLocation: string;
 
   @ForeignKey(() => CourseDocumentModel)
   @Column({
@@ -58,8 +40,15 @@ export class ScoreModel extends Model<ScoreModel> {
   })
   documentId: string;
 
+  @Column({
+    type: DataType.DATE,
+    field: 'created_on',
+    allowNull: true,
+  })
+  createdOn: Date;
+
   @BeforeCreate
-  static addUUID(instance: ScoreModel) {
+  static addUUID(instance: StoredFileModel) {
     instance.id = generateUUID();
     instance.createdOn = moment(new Date()).utc().toDate();
   }

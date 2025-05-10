@@ -51,6 +51,7 @@ import { join } from 'path';
 import { unlink } from 'fs/promises';
 import OpenAI from 'openai';
 import { GoogleDriveService } from 'src/integrations/google/services/GoogleDriveService';
+import { MistralOcrService } from 'src/integrations/mistral-ai/services/MistralOcrService';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -61,19 +62,14 @@ export class FileUploadController {
     private createCourseDocumentHandler: CreateCourseDocumentHandler,
     @Inject(PineconeChunkService)
     private pineconeChunkService: PineconeChunkService,
-    @Inject(QuestionQueryService)
-    private questionQueryService: QuestionQueryService,
-    @Inject(CreateQuestionHandler)
-    private createQuestionHandler: CreateQuestionHandler,
     @Inject(CreateDocumentTopicHandler)
     private createDocumentTopicHandler: CreateDocumentTopicHandler,
-    @Inject(CreateDocumentMessageHandler)
-    private createDocumentMessageHandler: CreateDocumentMessageHandler,
     @Inject(UpdateCourseDocumentHandler)
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
     @Inject(CreateDocumentSummaryHandler)
     private createDocumentSummaryHandler: CreateDocumentSummaryHandler,
     @Inject(GoogleDriveService) private googleDriveService: GoogleDriveService,
+    @Inject(MistralOcrService) private mistralOcrService: MistralOcrService
   ) {}
 
   @UseGuards(AuthGuard)
@@ -86,6 +82,8 @@ export class FileUploadController {
     @Query('end') end: string,
     @Res() res: Response
   ) {
+    const uploadedFileText = await this.mistralOcrService.processPdf(file)
+    console.log(uploadedFileText)
     const uploadedFile = await this.googleDriveService.uploadFile(file);
     console.log('file id', uploadedFile.fileId)
     const fileBuffer = await this.googleDriveService.getFile(uploadedFile.fileId);

@@ -41,6 +41,8 @@ import { DocumentSummaryRepository } from 'src/business/repository/DocumentSumma
 import { DocumentSummarySequelizeRepository } from './repository/DocumentSummarySequelizeRepository';
 import { RelatedVideoRepository } from 'src/business/repository/RelatedVideoRepository';
 import { RelatedVideoSequelizeRepository } from './repository/RelatedVideoSequelizeRepository';
+import { StoredFileRepository } from 'src/business/repository/StoredFileRepository';
+import { StoredFileSequelizeRepository } from './repository/StoredFileSequelizeRepository';
 
 @Module({
   imports: [InfraDbModule, QueryModule],
@@ -125,6 +127,10 @@ import { RelatedVideoSequelizeRepository } from './repository/RelatedVideoSequel
       provide: RelatedVideoRepository,
       useClass: RelatedVideoSequelizeRepository,
     },
+    {
+      provide: StoredFileRepository,
+      useClass: StoredFileSequelizeRepository,
+    },
   ],
   exports: [
     UserRepository,
@@ -146,7 +152,8 @@ import { RelatedVideoSequelizeRepository } from './repository/RelatedVideoSequel
     PreferredLanguageRepository,
     EssayQuestionAnalysisRepository,
     DocumentSummaryRepository,
-    RelatedVideoRepository
+    RelatedVideoRepository,
+    StoredFileRepository,
   ],
 })
 export class InfraRepositoryModule {}

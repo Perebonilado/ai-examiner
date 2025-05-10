@@ -35,6 +35,8 @@ import { UpdateEssayQuestionAnalysisHandler } from './handlers/EssayQuestionAnal
 import { CreateEssayQuestionAnalysisHandler } from './handlers/EssayQuestionAnalysis/CreateEssayQuestionAnalysisHandler';
 import { CreateDocumentSummaryHandler } from './handlers/DocumentSummary/CreateDocumentSummaryHandler';
 import { CreateRelatedVideoHandler } from './handlers/RelatedVideo/CreateRelatedVideoHandler';
+import { UpdateStoredFileHandler } from './handlers/StoredFile/UpdateStoredFileHandler';
+import { CreateStoredFileHandler } from './handlers/StoredFile/CreateStoredFileHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -71,7 +73,9 @@ import { CreateRelatedVideoHandler } from './handlers/RelatedVideo/CreateRelated
     UpdateEssayQuestionAnalysisHandler,
     CreateEssayQuestionAnalysisHandler,
     CreateDocumentSummaryHandler,
-    CreateRelatedVideoHandler
+    CreateRelatedVideoHandler,
+    UpdateStoredFileHandler,
+    CreateStoredFileHandler,
   ],
   exports: [
     CreateUserHandler,
@@ -106,7 +110,9 @@ import { CreateRelatedVideoHandler } from './handlers/RelatedVideo/CreateRelated
     UpdateEssayQuestionAnalysisHandler,
     CreateEssayQuestionAnalysisHandler,
     CreateDocumentSummaryHandler,
-    CreateRelatedVideoHandler
+    CreateRelatedVideoHandler,
+    UpdateStoredFileHandler,
+    CreateStoredFileHandler,
   ],
 })
 export class BusinessModule {}
