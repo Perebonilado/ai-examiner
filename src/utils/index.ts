@@ -13,6 +13,8 @@ import * as fs from 'fs';
 import * as pdfParse from 'pdf-parse';
 import { rm } from 'fs/promises';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit';
+import * as path from 'path';
 
 const libreConvert = promisify(libre.convert);
 
@@ -255,7 +257,7 @@ export const splitPdfPagesToIndividualFiles = async (
   }
 };
 
-type PDFContentType = 'headingOne' | 'headingTwo' | 'paragraph' | 'bullet';
+export type PDFContentType = 'headingOne' | 'headingTwo' | 'paragraph' | 'bullet';
 
 export interface PDFContent {
   type: PDFContentType;
@@ -290,8 +292,19 @@ const wrapText = (
 export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<Buffer> => {
   try {
     const pdfDoc = await PDFDocument.create();
-    const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    pdfDoc.registerFontkit(fontkit)
+
+    // Load Unicode-safe fonts
+    const regularFontBytes = fs.readFileSync(
+      path.join(__dirname, '../assets/fonts/NotoSans-Regular.ttf'),
+    );
+    const boldFontBytes = fs.readFileSync(
+      path.join(__dirname, '../assets/fonts/NotoSans-Bold.ttf'),
+    );
+
+    const regularFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+    const boldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
 
     for (const content of pageContent) {
       const page = pdfDoc.addPage();
@@ -309,14 +322,12 @@ export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<
           case 'headingOne':
             fontSize = 18;
             font = boldFont;
-            color = rgb(0, 0, 0);
             spacingAfter = 20;
             break;
 
           case 'headingTwo':
             fontSize = 14;
             font = boldFont;
-            color = rgb(0, 0, 0);
             spacingAfter = 16;
             break;
 
@@ -324,8 +335,6 @@ export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<
             indent = 15;
             item.text = `• ${item.text}`;
             break;
-
-          // 'paragraph' uses defaults
         }
 
         const wrappedLines = wrapText(item.text, width - 100 - indent, font, fontSize);
@@ -347,7 +356,7 @@ export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<
     const pdfBytes = await pdfDoc.save();
     return Buffer.from(pdfBytes);
   } catch (error) {
-    console.log(error)
+    console.error('PDF generation failed:', error);
     throw new Error('Failed to create simplified PDF');
   }
 };

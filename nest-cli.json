@@ -8,6 +8,10 @@
       {
         "include": "integrations/google/config/service-account-google-drive.json",
         "watchAssets": true
+      },
+      {
+        "include": "assets/fonts",
+        "watchAssets": true
       }
     ]
   }
