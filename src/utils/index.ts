@@ -347,6 +347,7 @@ export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<
     const pdfBytes = await pdfDoc.save();
     return Buffer.from(pdfBytes);
   } catch (error) {
+    console.log(error)
     throw new Error('Failed to create simplified PDF');
   }
 };

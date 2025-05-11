@@ -151,7 +151,6 @@ export class CourseDocumentController {
           this.googleDriveService.getFile(storedFile.originalFileId),
           this.googleDriveService.getFile(storedFile.modifiedFileId),
         ]);
-
         return {
           originalFile,
           modifiedFile,
@@ -172,6 +171,7 @@ export class CourseDocumentController {
         originalPDF,
         `${document.title}.pdf`,
       );
+      console.log(pages);
       const rewordedPages = await Promise.all(
         pages.map(async (page) => {
           // open ai call to reword
@@ -189,15 +189,14 @@ export class CourseDocumentController {
         mimetype: 'application/pdf',
         originalFileName: `${document.title}.pdf`,
       });
-      const [modifiedFile, originalFile, updatedModifiedFile] =
-        await Promise.all([
-          this.googleDriveService.getFile(modifiedFileUploaded.fileId),
-          this.googleDriveService.getFile(storedFile.originalFileId),
-          this.updateStoredFileHandler.handle({
-            id: storedFile.id,
-            modifiedFileId: modifiedFileUploaded.fileId,
-          }),
-        ]);
+      const [modifiedFile, originalFile, _] = await Promise.all([
+        this.googleDriveService.getFile(modifiedFileUploaded.fileId),
+        this.googleDriveService.getFile(storedFile.originalFileId),
+        this.updateStoredFileHandler.handle({
+          id: storedFile.id,
+          modifiedFileId: modifiedFileUploaded.fileId,
+        }),
+      ]);
 
       return {
         originalFile,
