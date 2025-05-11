@@ -171,7 +171,6 @@ export class CourseDocumentController {
         originalPDF,
         `${document.title}.pdf`,
       );
-      console.log(pages);
       const rewordedPages = await Promise.all(
         pages.map(async (page) => {
           // open ai call to reword
