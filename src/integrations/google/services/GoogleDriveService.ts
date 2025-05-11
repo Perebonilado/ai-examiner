@@ -24,23 +24,29 @@ export class GoogleDriveService {
 
   private drive: drive_v3.Drive;
 
-  public async uploadFile(
-    file: Express.Multer.File,
-  ): Promise<GoogleDriveUploadModel> {
+  public async uploadFile({
+    file,
+    mimetype,
+    originalFileName
+  }: {
+    file: Buffer;
+    mimetype: string;
+    originalFileName: string;
+  }): Promise<GoogleDriveUploadModel> {
     try {
       let tempFilePath: string | null;
-      const tempFileName = `${generateUUID()}${path.extname(file.mimetype)}`;
+      const tempFileName = `${generateUUID()}${path.extname(mimetype)}`;
       tempFilePath = path.join(tmpdir(), tempFileName);
-      await writeFileToStream(tempFilePath, file.buffer);
+      await writeFileToStream(tempFilePath, file);
       const fileStream = fs.createReadStream(tempFilePath, { autoClose: true });
 
       const res = await this.drive.files.create({
         requestBody: {
-          name: file.originalname,
+          name: originalFileName,
           mimeType: 'application/vnd.google-apps.presentation',
         },
         media: {
-          mimeType: file.mimetype,
+          mimeType: mimetype,
           body: fileStream,
         },
       });
@@ -94,6 +100,18 @@ export class GoogleDriveService {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Google drive: failed to get file',
+        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async getFileUrl(fileId: string): Promise<string> {
+    try {
+      const data = await this.drive.files.get({ fileId });
+      return data.data.webViewLink;
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Google drive: failed to get file location',
         error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

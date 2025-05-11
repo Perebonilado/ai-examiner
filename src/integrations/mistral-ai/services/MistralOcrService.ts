@@ -16,9 +16,9 @@ export class MistralOcrService extends MistralClient {
 
   private baseUrl = 'https://api.mistral.ai/v1';
 
-  public async processPdf(file: Express.Multer.File) {
+  public async processPdf(buffer: Buffer, originalFileName: string) {
     try {
-      const uploadedPDf = await this.handleUploadForOCR(file);
+      const uploadedPDf = await this.handleUploadForOCR(buffer, originalFileName);
       const signedUrl = await this.retrieveSignedUrl(uploadedPDf.id);
       const processedPDFTexts = await this.processOCRFile(signedUrl.url);
       return processedPDFTexts;
@@ -31,14 +31,15 @@ export class MistralOcrService extends MistralClient {
   }
 
   private async handleUploadForOCR(
-    file: Express.Multer.File,
+    buffer: Buffer,
+    originalFileName: string,
   ): Promise<UploadMistralFileModel> {
     try {
       const form = new FormData();
-      const stream = Readable.from(file.buffer); // Convert buffer to stream
+      const stream = Readable.from(buffer); // Convert buffer to stream
 
       form.append('purpose', 'ocr');
-      form.append('file', stream, file.originalname);
+      form.append('file', stream, originalFileName);
 
       const { data } =
         await this.httpService.axiosRef.post<UploadMistralFileModel>(

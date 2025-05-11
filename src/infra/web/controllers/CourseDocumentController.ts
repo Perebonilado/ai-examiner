@@ -50,19 +50,19 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { YoutubeKeywordsSchema } from 'src/schemas/YouTubeKeywordsSchema';
 import {
-  TextSimplificationPrompt,
+  getTextSimplificationPrompt,
   YoutubeKeyWordPrompt,
 } from 'src/constants/QuestionGenerationPromptV2';
-import {
-  YoutubeSearchModel,
-  YouTubeVideoItem,
-} from 'src/integrations/google/models/YoutubeSearchModel';
 import { YoutubeSearchService } from 'src/integrations/rapid/services/YoutubeSearchService';
 import { YoutubeSearchModelRapid } from 'src/integrations/rapid/models/YoutubeSearch';
 import { CreateRelatedVideoHandler } from 'src/business/handlers/RelatedVideo/CreateRelatedVideoHandler';
 import { RelatedVideoQueryService } from 'src/query/services/RelatedVideoQueryService';
 import { GoogleDriveService } from 'src/integrations/google/services/GoogleDriveService';
 import { SimplifiedPDFArraySchema } from 'src/schemas/SimplifiedPDFSchema';
+import { DocumentFileModel } from '../models/DocumentFileModel';
+import { StoredFileQueryService } from 'src/query/services/StoredFileQueryService';
+import { ExtractTextService } from 'src/integrations/text-extraction/services/ExtractTextService';
+import { UpdateStoredFileHandler } from 'src/business/handlers/StoredFile/UpdateStoredFileHandler';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -94,6 +94,11 @@ export class CourseDocumentController {
     @Inject(RelatedVideoQueryService)
     private relatedVideoQueryService: RelatedVideoQueryService,
     @Inject(GoogleDriveService) private googleDriveService: GoogleDriveService,
+    @Inject(StoredFileQueryService)
+    private storedFileQueryService: StoredFileQueryService,
+    @Inject(ExtractTextService) private extractTextService: ExtractTextService,
+    @Inject(UpdateStoredFileHandler)
+    private updateStoredFileHandler: UpdateStoredFileHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -134,42 +139,71 @@ export class CourseDocumentController {
   @Get('/document-file/:documentId')
   public async getDocumentFile(
     @Param('documentId') documentId: string,
-    @Res() res: Response,
-  ) {
+    @Req() request: Request,
+  ): Promise<DocumentFileModel> {
     try {
-      /**
-       * Get the pdf file
-       * split by pages
-       * extract text from each page
-       * map through, pass page with content to AI to rewrite, emtpy pages return default
-       * pass array of arrays to pdf creation service
-       * return pdf
-       */
+      const userToken = request['user'] as VerifiedTokenModel;
+      const storedFile =
+        await this.storedFileQueryService.findByDocumentId(documentId);
 
-      const pdf = await this.googleDriveService.getFile(documentId);
-      const pages = await extractPagesTextsFromPDF(pdf);
+      if (storedFile.originalFileId && storedFile.modifiedFileId) {
+        const [originalFile, modifiedFile] = await Promise.all([
+          this.googleDriveService.getFile(storedFile.originalFileId),
+          this.googleDriveService.getFile(storedFile.modifiedFileId),
+        ]);
+
+        return {
+          originalFile,
+          modifiedFile,
+        };
+      }
+
+      const originalPDF = await this.googleDriveService.getFile(
+        storedFile.originalFileId,
+      );
+      const [document, summary] = await Promise.all([
+        this.courseDocumentQueryService.findCourseDocumentById(
+          documentId,
+          userToken.sub,
+        ),
+        this.documentSummaryQueryService.findByDocumentId(documentId),
+      ]);
+      const pages = await this.extractTextService.extractTextFromPDFBuffer(
+        originalPDF,
+        `${document.title}.pdf`,
+      );
       const rewordedPages = await Promise.all(
-        pages.map(async (page, index) => {
+        pages.map(async (page) => {
           // open ai call to reword
           if (page.trim().length) {
-           const res = await this.simplifyTextContent(page);
-           return res
+            const res = await this.simplifyTextContent(page, summary.summary);
+            return res;
           }
           return [{ text: 'Empty Page', type: 'paragraph' }] as PDFContent[];
         }),
       );
-     
+
       const newPdf = await createSimplifiedPdf(rewordedPages);
-
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${'test.pdf'}"`,
-        'Content-Length': newPdf.length,
+      const modifiedFileUploaded = await this.googleDriveService.uploadFile({
+        file: newPdf,
+        mimetype: 'application/pdf',
+        originalFileName: `${document.title}.pdf`,
       });
+      const [modifiedFile, originalFile, updatedModifiedFile] =
+        await Promise.all([
+          this.googleDriveService.getFile(modifiedFileUploaded.fileId),
+          this.googleDriveService.getFile(storedFile.originalFileId),
+          this.updateStoredFileHandler.handle({
+            id: storedFile.id,
+            modifiedFileId: modifiedFileUploaded.fileId,
+          }),
+        ]);
 
-      return res.send(newPdf);
+      return {
+        originalFile,
+        modifiedFile,
+      };
     } catch (error) {
-      console.log(error);
       throw new HttpException('Failed to get file', HttpStatus.BAD_REQUEST);
     }
   }
@@ -583,7 +617,7 @@ export class CourseDocumentController {
     }
   }
 
-  private async simplifyTextContent(content: string) {
+  private async simplifyTextContent(content: string, summary: string) {
     try {
       const openaiClient = createOpenAI({
         compatibility: 'strict',
@@ -597,7 +631,7 @@ export class CourseDocumentController {
         schemaName: 'simplified',
         schema: SimplifiedPDFArraySchema,
         messages: [
-          { role: 'system', content: TextSimplificationPrompt },
+          { role: 'system', content: getTextSimplificationPrompt(summary) },
           {
             role: 'user',
             content: `

@@ -1,5 +1,5 @@
 export interface CreateStoredFileRequest {
-  fileLocation: string;
-  simplifiedFileLocation?: string;
+  originalFileId: string;
+  modifiedFileId?: string;
   documentId: string;
 }

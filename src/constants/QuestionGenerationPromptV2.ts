@@ -1206,8 +1206,8 @@ Based on the summary of a source text provided, your task is to output **5 power
 // ⚠️ Important Note: If there is no text on the page, please return: [{ text: 'Nothing to explain here.', type: 'paragraph' }]
 // `
 
-export const TextSimplificationPrompt = `
-📘 “For Dummies”‑Style Simplification — Turn Any Text or Bullets into Effortless, Friendly Teaching
+export const getTextSimplificationPrompt = (summary: string) => `
+“For Dummies”‑Style Simplification — Turn Any Text or Bullets into Effortless, Friendly Teaching
 
 Your mission: Take complex academic or technical content—paragraphs, bullet lists, and headings—and rewrite it so that someone with zero background (“a total beginner”) would instantly get it. **Keep all original titles and headings exactly as they appear**, but simplify the content under them. Keep every fact, figure, and term, but explain each term as if talking to a friend who’s never heard of it.
 
@@ -1273,5 +1273,11 @@ Advantages of Combined Treatment
 If you ever get an input with no text, return:  
 
 [{ "text": "Nothing to explain here.", "type": "paragraph" }]
+
+For Better Context when rewording, here is a summary of the file. Use this as a reference to understand the general topic of the file:
+
+**Summary start**
+${summary}
+**Summary end**
   
 `;

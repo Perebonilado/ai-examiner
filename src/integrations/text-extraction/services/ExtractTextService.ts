@@ -21,7 +21,7 @@ export class ExtractTextService {
 
       switch (mimetype) {
         case 'application/pdf':
-          return await this.extractChunksFromPDF(file);
+          return await this.extractChunksFromPDF(file.buffer, file.originalname);
 
         case 'text/plain':
           return await this.extractChunksFromTXT(file);
@@ -47,10 +47,17 @@ export class ExtractTextService {
     }
   }
 
-  private async extractChunksFromPDF(file: Express.Multer.File) {
+  public async extractTextFromPDFBuffer(
+    file: Buffer,
+    originalFileName: string,
+  ) {
+    return await this.extractChunksFromPDF(file, originalFileName);
+  }
+
+  private async extractChunksFromPDF(file: Buffer, originalFileName: string) {
     try {
       try {
-        const chunks = await extractPagesTextsFromPDF(file.buffer);
+        const chunks = await extractPagesTextsFromPDF(file);
         const isCamScannerDoc = chunks.some((chunk) => {
           const keywords = ['cam scanner', 'camscanner'];
           if (
@@ -64,7 +71,10 @@ export class ExtractTextService {
         });
 
         if (isCamScannerDoc) {
-          return await this.mistralOcrService.processPdf(file);
+          return await this.mistralOcrService.processPdf(
+            file,
+            originalFileName,
+          );
         }
         if (
           chunks
@@ -80,7 +90,10 @@ export class ExtractTextService {
         console.log('Error extracting text. Proceeding to OCR...');
       }
 
-      return await this.mistralOcrService.processPdf(file);
+      return await this.mistralOcrService.processPdf(
+        file,
+        originalFileName,
+      );
     } catch (error) {
       throw new Error(`Failed to extract chunks from PDF: ${error.message}`);
     }

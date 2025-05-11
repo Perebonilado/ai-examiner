@@ -24,8 +24,8 @@ export class CreateStoredFileHandler extends AbstractRequestHandlerTemplate<
   ): Promise<CommandResponse<CreateStoredFileResponse>> {
     try {
       const modelToCreate = {
-        fileLocation: request.fileLocation,
-        simplifiedFileLocation: request?.simplifiedFileLocation,
+        originalFileId: request.originalFileId,
+        modifiedFileId: request?.modifiedFileId,
         documentId: request.documentId,
       } as StoredFileModel;
 

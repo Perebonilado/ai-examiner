@@ -52,6 +52,7 @@ import { unlink } from 'fs/promises';
 import OpenAI from 'openai';
 import { GoogleDriveService } from 'src/integrations/google/services/GoogleDriveService';
 import { MistralOcrService } from 'src/integrations/mistral-ai/services/MistralOcrService';
+import { CreateStoredFileHandler } from 'src/business/handlers/StoredFile/CreateStoredFileHandler';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -69,7 +70,9 @@ export class FileUploadController {
     @Inject(CreateDocumentSummaryHandler)
     private createDocumentSummaryHandler: CreateDocumentSummaryHandler,
     @Inject(GoogleDriveService) private googleDriveService: GoogleDriveService,
-    @Inject(MistralOcrService) private mistralOcrService: MistralOcrService
+    @Inject(MistralOcrService) private mistralOcrService: MistralOcrService,
+    @Inject(CreateStoredFileHandler)
+    private createStoredFileHandler: CreateStoredFileHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -80,41 +83,29 @@ export class FileUploadController {
     @Query('pages') pages: string,
     @Query('start') start: string,
     @Query('end') end: string,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
-    const uploadedFileText = await this.mistralOcrService.processPdf(file)
-    console.log(uploadedFileText)
-    const uploadedFile = await this.googleDriveService.uploadFile(file);
-    console.log('file id', uploadedFile.fileId)
-    const fileBuffer = await this.googleDriveService.getFile(uploadedFile.fileId);
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${'test.pdf'}"`,
-      'Content-Length': fileBuffer.length,
-    });
+    try {
+      const pdfPageRange =
+        pages === 'custom' ? { start: Number(start), end: Number(end) } : {};
+      const uploadedFile = await this.examinerService.uploadFile(
+        file,
+        pdfPageRange,
+      );
 
-    return res.send(fileBuffer);
-    // try {
-    //   const pdfPageRange =
-    //     pages === 'custom' ? { start: Number(start), end: Number(end) } : {};
-    //   const uploadedFile = await this.examinerService.uploadFile(
-    //     file,
-    //     pdfPageRange,
-    //   );
-
-    //   return {
-    //     data: {
-    //       fileId: uploadedFile.id,
-    //     },
-    //     message: 'File uploaded successfully',
-    //     status: HttpStatus.CREATED,
-    //   };
-    // } catch (error) {
-    //   throw new HttpException(
-    //     error || 'Failed to upload file',
-    //     HttpStatus.BAD_REQUEST,
-    //   );
-    // }
+      return {
+        data: {
+          fileId: uploadedFile.id,
+        },
+        message: 'File uploaded successfully',
+        status: HttpStatus.CREATED,
+      };
+    } catch (error) {
+      throw new HttpException(
+        error || 'Failed to upload file',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 
   @UseGuards(AuthGuard)
@@ -143,30 +134,42 @@ export class FileUploadController {
 
       const maxNumPagesForSummaryAndTopicGeneration = 250;
 
-      const [createdDocument, topics, summaryInfo] = await Promise.all([
-        this.createCourseDocumentHandler.handle({
-          payload: {
-            title: file.originalname,
-            userId: userToken.sub,
-            courseId: '',
-            fileId: '',
-          },
-        }),
-        this.generateDocumentTopicsV2(
-          openaiClient,
-          chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
-        ),
-        this.summarizeDocumentV2(
-          openaiClient,
-          chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
-        ),
-      ]);
+      const [createdDocument, topics, summaryInfo, uploadedGoogleDriveFile] =
+        await Promise.all([
+          this.createCourseDocumentHandler.handle({
+            payload: {
+              title: file.originalname,
+              userId: userToken.sub,
+              courseId: '',
+              fileId: '',
+            },
+          }),
+          this.generateDocumentTopicsV2(
+            openaiClient,
+            chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
+          ),
+          this.summarizeDocumentV2(
+            openaiClient,
+            chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
+          ),
+          this.googleDriveService.uploadFile({
+            file: file.buffer,
+            originalFileName: file.originalname,
+            mimetype: file.mimetype,
+          }),
+        ]);
 
-      const savedSummary = await this.createDocumentSummaryHandler.handle({
-        documentId: createdDocument.data.id,
-        summary: summaryInfo,
-        userId: userToken.sub,
-      });
+      await Promise.all([
+        this.createDocumentSummaryHandler.handle({
+          documentId: createdDocument.data.id,
+          summary: summaryInfo,
+          userId: userToken.sub,
+        }),
+        this.createStoredFileHandler.handle({
+          documentId: createdDocument.data.id,
+          originalFileId: uploadedGoogleDriveFile.fileId,
+        }),
+      ]);
 
       const mappedTopics = topics.map((topic) => {
         return {
@@ -249,6 +252,7 @@ export class FileUploadController {
         ]);
       });
     } catch (error) {
+      console.log(error)
       throw new HttpException(
         error ?? 'V2: Failed to upload file',
         HttpStatus.BAD_REQUEST,

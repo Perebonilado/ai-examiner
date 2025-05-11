@@ -20,17 +20,17 @@ export class StoredFileModel extends Model<StoredFileModel> {
 
   @Column({
     type: DataType.STRING,
-    field: 'file_location',
+    field: 'original_file_id',
     allowNull: false,
   })
-  fileLocation: string;
+  originalFileId: string;
 
   @Column({
     type: DataType.STRING,
-    field: 'simplified_file_location',
+    field: 'modified_file_id',
     allowNull: true,
   })
-  simplifiedFileLocation: string;
+  modifiedFileId: string;
 
   @ForeignKey(() => CourseDocumentModel)
   @Column({
