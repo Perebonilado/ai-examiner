@@ -294,7 +294,6 @@ const wrapText = (
 
 export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<Buffer> => {
   try {
-    // Convert JSON content to HTML
     const html = generateHTMLFromContent(pageContent);
 
     const browser = await puppeteer.launch();
@@ -316,70 +315,104 @@ export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<
   }
 };
 
-const generateHTMLFromContent = (content: PDFContent[][]): string => {
+const generateHTMLFromContent = (pages: PDFContent[][]): string => {
   const fontUrl = 'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap';
 
   const styles = `
     <style>
       @import url('${fontUrl}');
+      * {
+        box-sizing: border-box;
+      }
       body {
         font-family: 'Noto Sans', sans-serif;
-        padding: 40px;
+        font-size: 16px;
+        line-height: 1.6;
+        padding: 0;
+        margin: 0;
         color: #000;
-      }
-      h1 {
-        font-size: 24px;
-        font-weight: 700;
-        margin-bottom: 20px;
-      }
-      h2 {
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 16px;
-      }
-      p {
-        font-size: 12px;
-        margin-bottom: 10px;
-      }
-      ul {
-        padding-left: 20px;
-        margin-bottom: 10px;
-      }
-      li {
-        font-size: 12px;
-        margin-bottom: 4px;
+        background-color: #fff;
       }
       .page {
+        padding: 40px;
         page-break-after: always;
       }
       .page:last-child {
         page-break-after: auto;
       }
+      h1 {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 16px;
+      }
+      h2 {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 12px;
+      }
+      p {
+        margin: 0 0 12px 0;
+      }
+      ul {
+        margin: 0 0 12px 20px;
+        padding-left: 0;
+      }
+      li {
+        margin-bottom: 6px;
+      }
     </style>
   `;
 
-  const pagesHtml = content.map(page => {
-    const pageHtml = page.map(item => {
+  const escapeHtml = (text: string): string =>
+    text.replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+  const renderPage = (content: PDFContent[]): string => {
+    let html = '';
+    let bulletItems: string[] = [];
+
+    content.forEach((item, idx) => {
+      const escapedText = escapeHtml(item.text);
       switch (item.type) {
         case 'headingOne':
-          return `<h1>${item.text}</h1>`;
+          html += flushBullets() + `<h1>${escapedText}</h1>\n`;
+          break;
         case 'headingTwo':
-          return `<h2>${item.text}</h2>`;
+          html += flushBullets() + `<h2>${escapedText}</h2>\n`;
+          break;
         case 'bullet':
-          return `<ul><li>${item.text}</li></ul>`;
+          bulletItems.push(`<li>${escapedText}</li>`);
+          break;
         case 'paragraph':
         default:
-          return `<p>${item.text}</p>`;
+          html += flushBullets() + `<p>${escapedText}</p>\n`;
+          break;
       }
-    }).join('\n');
-    return `<div class="page">${pageHtml}</div>`;
-  }).join('\n');
+
+      // Flush bullets on last item
+      if (idx === content.length - 1) html += flushBullets();
+    });
+
+    function flushBullets(): string {
+      if (!bulletItems.length) return '';
+      const listHtml = `<ul>\n${bulletItems.join('\n')}\n</ul>\n`;
+      bulletItems = [];
+      return listHtml;
+    }
+
+    return html;
+  };
+
+  const pagesHtml = pages.map(page => `<div class="page">${renderPage(page)}</div>`).join('\n');
 
   return `
     <!DOCTYPE html>
     <html>
       <head>
-        <meta charset="utf-8" />
+        <meta charset="utf-8">
         ${styles}
       </head>
       <body>
