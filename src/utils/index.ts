@@ -13,8 +13,11 @@ import * as fs from 'fs';
 import * as pdfParse from 'pdf-parse';
 import { rm } from 'fs/promises';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import fontkit from '@pdf-lib/fontkit';
+import fontkit from '@pdf-lib/fontkit'
 import * as path from 'path';
+import { readFile } from 'fs/promises';
+import puppeteer from 'puppeteer';
+
 
 const libreConvert = promisify(libre.convert);
 
@@ -257,7 +260,7 @@ export const splitPdfPagesToIndividualFiles = async (
   }
 };
 
-export type PDFContentType = 'headingOne' | 'headingTwo' | 'paragraph' | 'bullet';
+type PDFContentType = 'headingOne' | 'headingTwo' | 'paragraph' | 'bullet';
 
 export interface PDFContent {
   type: PDFContentType;
@@ -291,72 +294,97 @@ const wrapText = (
 
 export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<Buffer> => {
   try {
-    const pdfDoc = await PDFDocument.create();
+    // Convert JSON content to HTML
+    const html = generateHTMLFromContent(pageContent);
 
-    pdfDoc.registerFontkit(fontkit)
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
 
-    // Load Unicode-safe fonts
-    const regularFontBytes = fs.readFileSync(
-      path.join(__dirname, '../assets/fonts/NotoSans-Regular.ttf'),
-    );
-    const boldFontBytes = fs.readFileSync(
-      path.join(__dirname, '../assets/fonts/NotoSans-Bold.ttf'),
-    );
+    await page.setContent(html, { waitUntil: 'networkidle0' });
 
-    const regularFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-    const boldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '40px', bottom: '40px', left: '40px', right: '40px' }
+    });
 
-    for (const content of pageContent) {
-      const page = pdfDoc.addPage();
-      const { width, height } = page.getSize();
-      let cursorY = height - 50;
-
-      for (const item of content) {
-        let fontSize = 12;
-        let font = regularFont;
-        let color = rgb(0, 0, 0);
-        let indent = 0;
-        let spacingAfter = 10;
-
-        switch (item.type) {
-          case 'headingOne':
-            fontSize = 18;
-            font = boldFont;
-            spacingAfter = 20;
-            break;
-
-          case 'headingTwo':
-            fontSize = 14;
-            font = boldFont;
-            spacingAfter = 16;
-            break;
-
-          case 'bullet':
-            indent = 15;
-            item.text = `• ${item.text}`;
-            break;
-        }
-
-        const wrappedLines = wrapText(item.text, width - 100 - indent, font, fontSize);
-        for (const line of wrappedLines) {
-          page.drawText(line, {
-            x: 50 + indent,
-            y: cursorY,
-            size: fontSize,
-            font,
-            color,
-          });
-          cursorY -= fontSize + 4;
-        }
-
-        cursorY -= spacingAfter;
-      }
-    }
-
-    const pdfBytes = await pdfDoc.save();
-    return Buffer.from(pdfBytes);
+    await browser.close();
+    return Buffer.from(pdfBuffer);
   } catch (error) {
-    console.error('PDF generation failed:', error);
-    throw new Error('Failed to create simplified PDF');
+    console.error('Puppeteer PDF generation failed:', error);
+    throw new Error('Failed to create PDF using Puppeteer');
   }
+};
+
+const generateHTMLFromContent = (content: PDFContent[][]): string => {
+  const fontUrl = 'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap';
+
+  const styles = `
+    <style>
+      @import url('${fontUrl}');
+      body {
+        font-family: 'Noto Sans', sans-serif;
+        padding: 40px;
+        color: #000;
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 20px;
+      }
+      h2 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 16px;
+      }
+      p {
+        font-size: 12px;
+        margin-bottom: 10px;
+      }
+      ul {
+        padding-left: 20px;
+        margin-bottom: 10px;
+      }
+      li {
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+      .page {
+        page-break-after: always;
+      }
+      .page:last-child {
+        page-break-after: auto;
+      }
+    </style>
+  `;
+
+  const pagesHtml = content.map(page => {
+    const pageHtml = page.map(item => {
+      switch (item.type) {
+        case 'headingOne':
+          return `<h1>${item.text}</h1>`;
+        case 'headingTwo':
+          return `<h2>${item.text}</h2>`;
+        case 'bullet':
+          return `<ul><li>${item.text}</li></ul>`;
+        case 'paragraph':
+        default:
+          return `<p>${item.text}</p>`;
+      }
+    }).join('\n');
+    return `<div class="page">${pageHtml}</div>`;
+  }).join('\n');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        ${styles}
+      </head>
+      <body>
+        ${pagesHtml}
+      </body>
+    </html>
+  `;
 };

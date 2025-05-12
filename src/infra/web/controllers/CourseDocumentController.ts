@@ -136,25 +136,57 @@ export class CourseDocumentController {
   }
 
   @UseGuards(AuthGuard)
-  @Get('/document-file/:documentId')
-  public async getDocumentFile(
+  @Get('/original-document-file/:documentId')
+  public async getOriginalDocumentFile(
+    @Param('documentId') documentId: string,
+    @Res() res: Response,
+  ) {
+    try {
+      const storedFile =
+        await this.storedFileQueryService.findByDocumentId(documentId);
+
+      const originalFile = await this.googleDriveService.getFile(
+        storedFile.originalFileId,
+      );
+
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'inline; filename="file.pdf"',
+      });
+      res.send(originalFile);
+
+      return;
+    } catch (error) {
+      throw new HttpException(
+        'Failed to get original file',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/modified-document-file/:documentId')
+  public async getModifiedDocumentFile(
     @Param('documentId') documentId: string,
     @Req() request: Request,
-  ): Promise<DocumentFileModel> {
+    @Res() res: Response,
+  ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
       const storedFile =
         await this.storedFileQueryService.findByDocumentId(documentId);
 
-      if (storedFile.originalFileId && storedFile.modifiedFileId) {
-        const [originalFile, modifiedFile] = await Promise.all([
-          this.googleDriveService.getFile(storedFile.originalFileId),
-          this.googleDriveService.getFile(storedFile.modifiedFileId),
-        ]);
-        return {
-          originalFile,
-          modifiedFile,
-        };
+      if (storedFile.originalFileId && storedFile.modifiedContent) {
+        const newPdf = await createSimplifiedPdf(
+          JSON.parse(storedFile.modifiedContent),
+        );
+        res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'inline; filename="file.pdf"',
+        });
+        res.send(newPdf);
+
+        return;
       }
 
       const originalPDF = await this.googleDriveService.getFile(
@@ -182,27 +214,25 @@ export class CourseDocumentController {
         }),
       );
 
-      const newPdf = await createSimplifiedPdf(rewordedPages);
-      const modifiedFileUploaded = await this.googleDriveService.uploadFile({
-        file: newPdf,
-        mimetype: 'application/pdf',
-        originalFileName: `${document.title}.pdf`,
-      });
-      const [modifiedFile, originalFile, _] = await Promise.all([
-        this.googleDriveService.getFile(modifiedFileUploaded.fileId),
-        this.googleDriveService.getFile(storedFile.originalFileId),
+      const [newPdf, _] = await Promise.all([
+        createSimplifiedPdf(rewordedPages),
         this.updateStoredFileHandler.handle({
           id: storedFile.id,
-          modifiedFileId: modifiedFileUploaded.fileId,
+          modifiedContent: rewordedPages,
         }),
       ]);
 
-      return {
-        originalFile,
-        modifiedFile,
-      };
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'inline; filename="file.pdf"',
+      });
+      res.send(newPdf);
+      return;
     } catch (error) {
-      throw new HttpException('Failed to get file', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Failed to get modified file',
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 

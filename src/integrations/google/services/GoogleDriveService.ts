@@ -27,11 +27,13 @@ export class GoogleDriveService {
   public async uploadFile({
     file,
     mimetype,
-    originalFileName
+    originalFileName,
+    mimeTypeToSaveAs = 'application/vnd.google-apps.presentation'
   }: {
     file: Buffer;
     mimetype: string;
     originalFileName: string;
+    mimeTypeToSaveAs?: string
   }): Promise<GoogleDriveUploadModel> {
     try {
       let tempFilePath: string | null;
@@ -43,7 +45,7 @@ export class GoogleDriveService {
       const res = await this.drive.files.create({
         requestBody: {
           name: originalFileName,
-          mimeType: 'application/vnd.google-apps.presentation',
+          mimeType: mimeTypeToSaveAs
         },
         media: {
           mimeType: mimetype,

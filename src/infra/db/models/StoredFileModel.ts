@@ -26,11 +26,11 @@ export class StoredFileModel extends Model<StoredFileModel> {
   originalFileId: string;
 
   @Column({
-    type: DataType.STRING,
-    field: 'modified_file_id',
+    type: DataType.TEXT('long'),
+    field: 'modified_file_content',
     allowNull: true,
   })
-  modifiedFileId: string;
+  modifiedContent: string;
 
   @ForeignKey(() => CourseDocumentModel)
   @Column({

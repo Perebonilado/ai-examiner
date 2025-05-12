@@ -25,7 +25,7 @@ export class CreateStoredFileHandler extends AbstractRequestHandlerTemplate<
     try {
       const modelToCreate = {
         originalFileId: request.originalFileId,
-        modifiedFileId: request?.modifiedFileId,
+        modifiedContent: request?.modifiedContent,
         documentId: request.documentId,
       } as StoredFileModel;
 

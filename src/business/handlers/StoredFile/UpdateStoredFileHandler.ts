@@ -40,7 +40,7 @@ export class UpdateStoredFileHandler extends AbstractRequestHandlerTemplate<
       const modelToUpdate = {
         id: existingModel.id,
         originalFileId: existingModel.originalFileId,
-        modifiedFileId: request.modifiedFileId,
+        modifiedContent: JSON.stringify(request.modifiedContent),
         documentId: existingModel.documentId,
       } as StoredFileModel;
 

@@ -1,5 +1,5 @@
 export interface CreateStoredFileRequest {
   originalFileId: string;
-  modifiedFileId?: string;
+  modifiedContent?: string;
   documentId: string;
 }

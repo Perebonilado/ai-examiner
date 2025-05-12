@@ -1,4 +1,6 @@
+import { PDFContent } from "src/utils";
+
 export interface UpdateStoredFileRequest {
   id: string;
-  modifiedFileId: string;
+  modifiedContent: PDFContent[][];
 }

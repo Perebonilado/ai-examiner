@@ -70,6 +70,7 @@
     "pdf.js-extract": "^0.2.1",
     "pptx-parser": "^1.1.7-beta.9",
     "pptx2json": "^0.0.10",
+    "puppeteer": "^24.8.2",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "sequelize": "^6.37.3",
