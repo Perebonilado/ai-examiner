@@ -1,6 +1,12 @@
 export interface UploadFilePayloadModel {
   task: string;
-  file: Express.Multer.File;
+  file: FileModel;
+}
+
+export interface FileModel {
+  buffer: Buffer;
+  mimetype: string;
+  originalname: string;
 }
 
 export interface FileUploadModel {

@@ -14,6 +14,7 @@ import { PineconeModule } from './pinecone/PineconeModule';
 import { TextExtractionModule } from './text-extraction/TextExtractionModule';
 import { GoogleModule } from './google/GoogleModule';
 import { RapidModule } from './rapid/RapidModule';
+import { AsposeModule } from './aspose/AsposeModule';
 
 @Module({
   imports: [
@@ -31,7 +32,8 @@ import { RapidModule } from './rapid/RapidModule';
     PineconeModule,
     TextExtractionModule,
     GoogleModule,
-    RapidModule
+    RapidModule,
+    AsposeModule
   ],
   exports: [
     OpenAiModule,
@@ -48,7 +50,8 @@ import { RapidModule } from './rapid/RapidModule';
     PineconeModule,
     TextExtractionModule,
     GoogleModule,
-    RapidModule
+    RapidModule,
+    AsposeModule
   ],
 })
 export class IntegrationsModule {}

@@ -50,6 +50,10 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { unlink } from 'fs/promises';
 import OpenAI from 'openai';
+import { GoogleDriveService } from 'src/integrations/google/services/GoogleDriveService';
+import { MistralOcrService } from 'src/integrations/mistral-ai/services/MistralOcrService';
+import { CreateStoredFileHandler } from 'src/business/handlers/StoredFile/CreateStoredFileHandler';
+import { ILovePdfService } from 'src/integrations/i-love-pdf/services/ILovePdfService';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -60,18 +64,16 @@ export class FileUploadController {
     private createCourseDocumentHandler: CreateCourseDocumentHandler,
     @Inject(PineconeChunkService)
     private pineconeChunkService: PineconeChunkService,
-    @Inject(QuestionQueryService)
-    private questionQueryService: QuestionQueryService,
-    @Inject(CreateQuestionHandler)
-    private createQuestionHandler: CreateQuestionHandler,
     @Inject(CreateDocumentTopicHandler)
     private createDocumentTopicHandler: CreateDocumentTopicHandler,
-    @Inject(CreateDocumentMessageHandler)
-    private createDocumentMessageHandler: CreateDocumentMessageHandler,
     @Inject(UpdateCourseDocumentHandler)
     private updateCourseDocumentHandler: UpdateCourseDocumentHandler,
     @Inject(CreateDocumentSummaryHandler)
     private createDocumentSummaryHandler: CreateDocumentSummaryHandler,
+    @Inject(GoogleDriveService) private googleDriveService: GoogleDriveService,
+    @Inject(CreateStoredFileHandler)
+    private createStoredFileHandler: CreateStoredFileHandler,
+    @Inject(ILovePdfService) private iLovePDFService: ILovePdfService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -82,6 +84,7 @@ export class FileUploadController {
     @Query('pages') pages: string,
     @Query('start') start: string,
     @Query('end') end: string,
+    @Res() res: Response,
   ) {
     try {
       const pdfPageRange =
@@ -127,35 +130,79 @@ export class FileUploadController {
         apiKey: EnvironmentVariables.config.openAiApiKey,
       });
 
-      const chunks =
-        await this.extractTextService.getChunksBasedOnFileMimeType(file);
-
       const maxNumPagesForSummaryAndTopicGeneration = 250;
 
-      const [createdDocument, topics, summaryInfo] = await Promise.all([
-        this.createCourseDocumentHandler.handle({
-          payload: {
-            title: file.originalname,
-            userId: userToken.sub,
-            courseId: '',
-            fileId: '',
-          },
-        }),
-        this.generateDocumentTopicsV2(
-          openaiClient,
-          chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
-        ),
-        this.summarizeDocumentV2(
-          openaiClient,
-          chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
-        ),
-      ]);
+      let fileFormatToSaveFile = 'application/vnd.google-apps.presentation';
+      const googleFileExportLimitInMegaBytes = 10 * 1024 * 1024;
 
-      const savedSummary = await this.createDocumentSummaryHandler.handle({
-        documentId: createdDocument.data.id,
-        summary: summaryInfo,
-        userId: userToken.sub,
-      });
+      if (file.mimetype === 'application/pdf') {
+        fileFormatToSaveFile = 'application/pdf';
+      } else if (file.size > googleFileExportLimitInMegaBytes) {
+        fileFormatToSaveFile = file.mimetype;
+      }
+
+      let fileBufferToUse = file.buffer;
+      let isPPTFormat = file.mimetype === 'application/vnd.ms-powerpoint';
+
+      if (isPPTFormat) {
+        fileBufferToUse = await this.iLovePDFService.processFileBasedOnTool(
+          {
+            buffer: file.buffer,
+            mimetype: file.mimetype,
+            originalname: file.originalname,
+          },
+          'officepdf',
+        );
+
+        fileFormatToSaveFile = 'application/pdf';
+      }
+
+      const chunks = await this.extractTextService.getChunksBasedOnFileMimeType(
+        {
+          buffer: fileBufferToUse,
+          mimetype: isPPTFormat ? 'application/pdf' : file.mimetype,
+          originalName: file.originalname,
+        },
+      );
+
+      const [createdDocument, topics, summaryInfo, uploadedGoogleDriveFile] =
+        await Promise.all([
+          this.createCourseDocumentHandler.handle({
+            payload: {
+              title: file.originalname,
+              userId: userToken.sub,
+              courseId: '',
+              fileId: '',
+            },
+          }),
+          this.generateDocumentTopicsV2(
+            openaiClient,
+            chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
+          ),
+          this.summarizeDocumentV2(
+            openaiClient,
+            chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
+          ),
+          this.googleDriveService.uploadFile({
+            file: fileBufferToUse,
+            originalFileName: file.originalname,
+            mimetype: file.mimetype,
+            mimeTypeToSaveAs: fileFormatToSaveFile,
+          }),
+        ]);
+
+      await Promise.all([
+        this.createDocumentSummaryHandler.handle({
+          documentId: createdDocument.data.id,
+          summary: summaryInfo,
+          userId: userToken.sub,
+        }),
+        this.createStoredFileHandler.handle({
+          documentId: createdDocument.data.id,
+          originalFileId: uploadedGoogleDriveFile.fileId,
+          currentFileFormat: fileFormatToSaveFile,
+        }),
+      ]);
 
       const mappedTopics = topics.map((topic) => {
         return {
@@ -238,6 +285,7 @@ export class FileUploadController {
         ]);
       });
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         error ?? 'V2: Failed to upload file',
         HttpStatus.BAD_REQUEST,

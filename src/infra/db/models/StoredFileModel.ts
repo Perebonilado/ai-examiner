@@ -8,12 +8,10 @@ import {
 } from 'sequelize-typescript';
 import * as moment from 'moment';
 import { generateUUID } from 'src/utils';
-import { QuestionModel } from './QuestionModel';
-import { UserModel } from './UserModel';
 import { CourseDocumentModel } from './CourseDocumentModel';
 
-@Table({ tableName: 'score' })
-export class ScoreModel extends Model<ScoreModel> {
+@Table({ tableName: 'stored_files' })
+export class StoredFileModel extends Model<StoredFileModel> {
   @Column({
     type: DataType.STRING,
     primaryKey: true,
@@ -21,34 +19,32 @@ export class ScoreModel extends Model<ScoreModel> {
   id: string;
 
   @Column({
-    type: DataType.INTEGER,
-    field: 'percentage_score',
+    type: DataType.STRING,
+    field: 'original_file_id',
     allowNull: false,
   })
-  score: number;
+  originalFileId: string;
 
   @Column({
-    type: DataType.DATE,
-    field: 'created_on',
+    type: DataType.TEXT('long'),
+    field: 'modified_file_content',
     allowNull: true,
   })
-  createdOn: Date;
+  modifiedContent: string;
 
-  @ForeignKey(() => QuestionModel)
+  @Column({
+    type: DataType.TEXT('long'),
+    field: 'original_file_content_structured',
+    allowNull: true,
+  })
+  originalFileContentStructured: string;
+
   @Column({
     type: DataType.STRING,
-    field: 'question_id',
+    field: 'current_file_format',
     allowNull: false,
   })
-  questionId: string;
-
-  @ForeignKey(() => UserModel)
-  @Column({
-    type: DataType.STRING,
-    field: 'user_id',
-    allowNull: false,
-  })
-  userId: string;
+  currentFileFormat: string;
 
   @ForeignKey(() => CourseDocumentModel)
   @Column({
@@ -58,8 +54,15 @@ export class ScoreModel extends Model<ScoreModel> {
   })
   documentId: string;
 
+  @Column({
+    type: DataType.DATE,
+    field: 'created_on',
+    allowNull: true,
+  })
+  createdOn: Date;
+
   @BeforeCreate
-  static addUUID(instance: ScoreModel) {
+  static addUUID(instance: StoredFileModel) {
     instance.id = generateUUID();
     instance.createdOn = moment(new Date()).utc().toDate();
   }

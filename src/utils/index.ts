@@ -12,7 +12,12 @@ import * as libre from 'libreoffice-convert';
 import * as fs from 'fs';
 import * as pdfParse from 'pdf-parse';
 import { rm } from 'fs/promises';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit'
+import * as path from 'path';
+import { readFile } from 'fs/promises';
+import puppeteer from 'puppeteer-core';
+
 
 const libreConvert = promisify(libre.convert);
 
@@ -254,3 +259,222 @@ export const splitPdfPagesToIndividualFiles = async (
     throw new Error('Failed to split pages');
   }
 };
+
+type PDFContentType = 'headingOne' | 'headingTwo' | 'paragraph' | 'bullet';
+
+export interface PDFContent {
+  type: PDFContentType;
+  text: string;
+}
+
+const wrapText = (
+  text: string,
+  maxWidth: number,
+  font: any,
+  fontSize: number,
+): string[] => {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const width = font.widthOfTextAtSize(testLine, fontSize);
+    if (width < maxWidth) {
+      currentLine = testLine;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+
+  if (currentLine) lines.push(currentLine);
+  return lines;
+};
+
+export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<Buffer> => {
+  try {
+    const html = generateHTMLFromContent(pageContent);
+
+    const browser = await puppeteer.connect({browserWSEndpoint: 'wss://browserless-production-dfc4.up.railway.app?token=qu5tpi99EESc45tMpJn8BrPscsLeqWd9DwUxEm1nC2r648Vp'});
+    const page = await browser.newPage();
+
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '40px', bottom: '40px', left: '40px', right: '40px' }
+    });
+
+    await browser.close();
+    return Buffer.from(pdfBuffer);
+  } catch (error) {
+    console.error('Puppeteer PDF generation failed:', error);
+    throw new Error('Failed to create PDF using Puppeteer');
+  }
+};
+
+const generateHTMLFromContent = (pages: PDFContent[][]): string => {
+  const fontUrl = 'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap';
+
+  const styles = `
+    <style>
+      @import url('${fontUrl}');
+      * {
+        box-sizing: border-box;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Noto Sans', sans-serif;
+        background-color: #fff;
+        color: #000;
+        font-size: 22px;
+        line-height: 1.8;
+      }
+
+      .page {
+        width: 100%;
+        height: 100vh; /* or fixed like 1122px for A4 at 96dpi */
+        padding: 40px 24px;
+        overflow: hidden;
+        position: relative;
+        page-break-after: always;
+      }
+
+      .page:last-child {
+        page-break-after: auto;
+      }
+
+      .content {
+        transform-origin: top left;
+        width: 100%;
+        height: auto;
+        display: inline-block;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+      }
+
+      h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+      }
+
+      p {
+        font-size: 1.25rem;
+        margin: 0 0 1rem 0;
+      }
+
+      ul {
+        margin: 0 0 1rem 1.5rem;
+        padding-left: 0;
+      }
+
+      li {
+        margin-bottom: 0.75rem;
+        font-size: 1.25rem;
+      }
+
+      strong {
+        font-weight: 700;
+      }
+
+      @media (min-width: 768px) {
+        html {
+          font-size: 20px;
+        }
+      }
+
+      @media print {
+        .page {
+          height: 100vh;
+        }
+      }
+    </style>
+  `;
+
+  const autoScaleScript = `
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.page').forEach(page => {
+          const content = page.querySelector('.content');
+          const scale = page.clientHeight / content.scrollHeight;
+          if (scale < 1) {
+            content.style.transform = 'scale(' + scale + ')';
+          }
+        });
+      });
+    </script>
+  `;
+
+  const escapeHtmlWithFormatting = (text: string): string => {
+    const escaped = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+    return escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  };
+
+  const renderPage = (content: PDFContent[]): string => {
+    let html = '';
+    let bulletItems: string[] = [];
+
+    content.forEach((item, idx) => {
+      const formattedText = escapeHtmlWithFormatting(item.text);
+
+      switch (item.type) {
+        case 'headingOne':
+          html += flushBullets() + `<h1>${formattedText}</h1>\n`;
+          break;
+        case 'headingTwo':
+          html += flushBullets() + `<h2>${formattedText}</h2>\n`;
+          break;
+        case 'bullet':
+          bulletItems.push(`<li>${formattedText}</li>`);
+          break;
+        case 'paragraph':
+        default:
+          html += flushBullets() + `<p>${formattedText}</p>\n`;
+          break;
+      }
+
+      if (idx === content.length - 1) html += flushBullets();
+    });
+
+    function flushBullets(): string {
+      if (!bulletItems.length) return '';
+      const listHtml = `<ul>\n${bulletItems.join('\n')}\n</ul>\n`;
+      bulletItems = [];
+      return listHtml;
+    }
+
+    return `<div class="page"><div class="content">${html}</div></div>`;
+  };
+
+  const pagesHtml = pages.map(page => renderPage(page)).join('\n');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        ${styles}
+      </head>
+      <body>
+        ${pagesHtml}
+        ${autoScaleScript}
+      </body>
+    </html>
+  `;
+};
+
