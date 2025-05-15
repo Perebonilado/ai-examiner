@@ -16,6 +16,7 @@ import { DocumentMessageModel } from './DocumentMessageModel';
 import { PerformanceTrackingModel } from './PerformanceTrackingModel';
 import { DocumentSummaryModel } from './DocumentSummaryModel';
 import { RelatedVideoModel } from './RelatedVideoModel';
+import { StoredFileModel } from './StoredFileModel';
 
 @Table({ tableName: 'course_document' })
 export class CourseDocumentModel extends Model<CourseDocumentModel> {
@@ -190,6 +191,9 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
 
   @HasOne(() => DocumentSummaryModel, 'document_id')
   documentSummary: DocumentSummaryModel;
+
+  @HasOne(() => StoredFileModel, 'document_id')
+  storedFile: StoredFileModel;
 
   @BeforeCreate
   static addUUID(instance: CourseDocumentModel) {

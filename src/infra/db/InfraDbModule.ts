@@ -21,6 +21,7 @@ import { PreferredLanguageDbConnector } from './connectors/PreferredLanguageDbCo
 import { EssayQuestionAnalysisDbConnector } from './connectors/EssayQuestionAnalysisDbConnector';
 import { DocumentSummaryDbConnector } from './connectors/DocumentSummaryDbConnector';
 import { RelatedVideoDbConnector } from './connectors/RelatedVideoDbConnector';
+import { StoredFileDbConnector } from './connectors/StoredFileDbConnector';
 
 @Module({
   imports: [QueryModule],
@@ -45,7 +46,8 @@ import { RelatedVideoDbConnector } from './connectors/RelatedVideoDbConnector';
     PreferredLanguageDbConnector,
     EssayQuestionAnalysisDbConnector,
     DocumentSummaryDbConnector,
-    RelatedVideoDbConnector
+    RelatedVideoDbConnector,
+    StoredFileDbConnector
   ],
   exports: [
     ...databaseProviders,
@@ -68,7 +70,8 @@ import { RelatedVideoDbConnector } from './connectors/RelatedVideoDbConnector';
     PreferredLanguageDbConnector,
     EssayQuestionAnalysisDbConnector,
     DocumentSummaryDbConnector,
-    RelatedVideoDbConnector
+    RelatedVideoDbConnector,
+    StoredFileDbConnector
   ],
 })
 export class InfraDbModule {}

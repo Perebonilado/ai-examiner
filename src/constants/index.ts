@@ -19,6 +19,9 @@ export const inactiveSubscriptionStatuses = [
   'attention',
 ];
 
+export const googlePresentationFileFormat = 'application/vnd.google-apps.presentation';
+export const pdfMimeType = 'application/pdf';
+
 export const generateQuestionsPrompt = (
   questionCount: number = 5,
   focusAreas?: string[],
@@ -265,7 +268,7 @@ export const messagePromptPrefixGenerator = ({
       `;
     }
 
-    return question.question
+    return question.question;
   }
 
   if (highlightToPrompt) {
@@ -283,7 +286,7 @@ export const messagePromptPrefixGenerator = ({
         - If the term has multiple meanings or might be confusing, point that out and clarify.
 
         IMPORTANT: Explain like I'm 12 years old. Don't use technical jargon unless you also explain what it means. Keep it simple and use examples where possible.
-      `
+      `;
     }
 
     if (highlightToPrompt.highlight === 'explain') {
@@ -300,7 +303,7 @@ export const messagePromptPrefixGenerator = ({
         - If it’s a process, describe the steps involved in a very clear and logical way.
 
         IMPORTANT: Explain like I'm 12. Avoid complicated terms unless you also break them down. Feel free to use analogies or everyday examples to help me grasp it easily.
-      `
+      `;
     }
 
     if (highlightToPrompt.highlight === 'simplify') {
@@ -318,10 +321,10 @@ export const messagePromptPrefixGenerator = ({
         - Remove any big or technical words unless you explain them in the simplest way.
 
         IMPORTANT: Your goal is to make it super easy to understand, even for someone who has never seen this before.
-      `
+      `;
     }
 
-    return ``
+    return ``;
   }
 
   return question.question;

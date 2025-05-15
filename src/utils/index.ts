@@ -12,7 +12,12 @@ import * as libre from 'libreoffice-convert';
 import * as fs from 'fs';
 import * as pdfParse from 'pdf-parse';
 import { rm } from 'fs/promises';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit'
+import * as path from 'path';
+import { readFile } from 'fs/promises';
+import puppeteer from 'puppeteer';
+
 
 const libreConvert = promisify(libre.convert);
 
@@ -253,4 +258,166 @@ export const splitPdfPagesToIndividualFiles = async (
   } catch (error) {
     throw new Error('Failed to split pages');
   }
+};
+
+type PDFContentType = 'headingOne' | 'headingTwo' | 'paragraph' | 'bullet';
+
+export interface PDFContent {
+  type: PDFContentType;
+  text: string;
+}
+
+const wrapText = (
+  text: string,
+  maxWidth: number,
+  font: any,
+  fontSize: number,
+): string[] => {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const width = font.widthOfTextAtSize(testLine, fontSize);
+    if (width < maxWidth) {
+      currentLine = testLine;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+
+  if (currentLine) lines.push(currentLine);
+  return lines;
+};
+
+export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<Buffer> => {
+  try {
+    const html = generateHTMLFromContent(pageContent);
+
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '40px', bottom: '40px', left: '40px', right: '40px' }
+    });
+
+    await browser.close();
+    return Buffer.from(pdfBuffer);
+  } catch (error) {
+    console.error('Puppeteer PDF generation failed:', error);
+    throw new Error('Failed to create PDF using Puppeteer');
+  }
+};
+
+const generateHTMLFromContent = (pages: PDFContent[][]): string => {
+  const fontUrl = 'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap';
+
+  const styles = `
+    <style>
+      @import url('${fontUrl}');
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Noto Sans', sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        padding: 0;
+        margin: 0;
+        color: #000;
+        background-color: #fff;
+      }
+      .page {
+        padding: 40px;
+        page-break-after: always;
+      }
+      .page:last-child {
+        page-break-after: auto;
+      }
+      h1 {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 16px;
+      }
+      h2 {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 12px;
+      }
+      p {
+        margin: 0 0 12px 0;
+      }
+      ul {
+        margin: 0 0 12px 20px;
+        padding-left: 0;
+      }
+      li {
+        margin-bottom: 6px;
+      }
+    </style>
+  `;
+
+  const escapeHtml = (text: string): string =>
+    text.replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+  const renderPage = (content: PDFContent[]): string => {
+    let html = '';
+    let bulletItems: string[] = [];
+
+    content.forEach((item, idx) => {
+      const escapedText = escapeHtml(item.text);
+      switch (item.type) {
+        case 'headingOne':
+          html += flushBullets() + `<h1>${escapedText}</h1>\n`;
+          break;
+        case 'headingTwo':
+          html += flushBullets() + `<h2>${escapedText}</h2>\n`;
+          break;
+        case 'bullet':
+          bulletItems.push(`<li>${escapedText}</li>`);
+          break;
+        case 'paragraph':
+        default:
+          html += flushBullets() + `<p>${escapedText}</p>\n`;
+          break;
+      }
+
+      // Flush bullets on last item
+      if (idx === content.length - 1) html += flushBullets();
+    });
+
+    function flushBullets(): string {
+      if (!bulletItems.length) return '';
+      const listHtml = `<ul>\n${bulletItems.join('\n')}\n</ul>\n`;
+      bulletItems = [];
+      return listHtml;
+    }
+
+    return html;
+  };
+
+  const pagesHtml = pages.map(page => `<div class="page">${renderPage(page)}</div>`).join('\n');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        ${styles}
+      </head>
+      <body>
+        ${pagesHtml}
+      </body>
+    </html>
+  `;
 };

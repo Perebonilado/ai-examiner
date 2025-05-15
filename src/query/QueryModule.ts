@@ -23,6 +23,7 @@ import { PreferredLanguageQueryService } from './services/PreferredLanguageQuery
 import { EssayQuestionAnalysisQueryService } from './services/EssayQuestionAnalysisQueryService';
 import { DocumentSummaryQueryService } from './services/DocumentSummaryQueryService';
 import { RelatedVideoQueryService } from './services/RelatedVideoQueryService';
+import { StoredFileQueryService } from './services/StoredFileQueryService';
 
 @Module({
   imports: [IntegrationsModule],
@@ -49,7 +50,8 @@ import { RelatedVideoQueryService } from './services/RelatedVideoQueryService';
     PreferredLanguageQueryService,
     EssayQuestionAnalysisQueryService,
     DocumentSummaryQueryService,
-    RelatedVideoQueryService
+    RelatedVideoQueryService,
+    StoredFileQueryService
   ],
   exports: [
     UserQueryService,
@@ -73,7 +75,8 @@ import { RelatedVideoQueryService } from './services/RelatedVideoQueryService';
     PreferredLanguageQueryService,
     EssayQuestionAnalysisQueryService,
     DocumentSummaryQueryService,
-    RelatedVideoQueryService
+    RelatedVideoQueryService,
+    StoredFileQueryService
   ],
 })
 export class QueryModule {}

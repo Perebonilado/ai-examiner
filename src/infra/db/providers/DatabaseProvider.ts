@@ -23,6 +23,7 @@ import { PreferredLanguageModel } from '../models/PreferredLanguageModel';
 import { EssayQuestionAnalysisModel } from '../models/EssayQuestionAnalysisModel';
 import { DocumentSummaryModel } from '../models/DocumentSummaryModel';
 import { RelatedVideoModel } from '../models/RelatedVideoModel';
+import { StoredFileModel } from '../models/StoredFileModel';
 
 export let sequelize: Sequelize;
 
@@ -64,7 +65,8 @@ export const databaseProviders = [
         PreferredLanguageModel,
         EssayQuestionAnalysisModel,
         DocumentSummaryModel,
-        RelatedVideoModel
+        RelatedVideoModel,
+        StoredFileModel
       ]);
 
       try {

@@ -224,7 +224,7 @@ export class ExaminerService {
         } else {
           // const fileArrayBuffer =
           //   await this.IlovePdfService.processFileBasedOnTool(file, 'pdfocr');
-          fileContent = (await this.mistralOcrService.processPdf(file)).join(
+          fileContent = (await this.mistralOcrService.processPdf(file.buffer, file.originalname)).join(
             '\n',
           );
         }
