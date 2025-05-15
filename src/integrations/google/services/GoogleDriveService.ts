@@ -28,12 +28,12 @@ export class GoogleDriveService {
     file,
     mimetype,
     originalFileName,
-    mimeTypeToSaveAs = 'application/vnd.google-apps.presentation'
+    mimeTypeToSaveAs = 'application/vnd.google-apps.presentation',
   }: {
     file: Buffer;
     mimetype: string;
     originalFileName: string;
-    mimeTypeToSaveAs?: string
+    mimeTypeToSaveAs?: string;
   }): Promise<GoogleDriveUploadModel> {
     try {
       let tempFilePath: string | null;
@@ -45,7 +45,9 @@ export class GoogleDriveService {
       const res = await this.drive.files.create({
         requestBody: {
           name: originalFileName,
-          mimeType: mimeTypeToSaveAs
+          ...(mimeTypeToSaveAs.startsWith('application/vnd.google-apps')
+          ? { mimeType: mimeTypeToSaveAs }
+          : {}),
         },
         media: {
           mimeType: mimetype,
@@ -88,7 +90,37 @@ export class GoogleDriveService {
     }
   }
 
+  public async deleteFile(fileId: string) {
+    try {
+      return await this.drive.files.delete({ fileId });
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Google drive: failed to delete file',
+        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   public async getFile(fileId: string) {
+    try {
+      const data = await this.drive.files.get(
+        {
+          fileId,
+          alt: 'media',
+        },
+        { responseType: 'stream' },
+      );
+
+      return await this.streamToBuffer(data.data);
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Google drive: failed to get file',
+        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async exportFileAsPDF(fileId: string) {
     try {
       const data = await this.drive.files.export(
         {
@@ -101,7 +133,7 @@ export class GoogleDriveService {
       return await this.streamToBuffer(data.data);
     } catch (error) {
       throw new HttpException(
-        error.message ?? 'Google drive: failed to get file',
+        error.message ?? 'Google drive: failed to export file',
         error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

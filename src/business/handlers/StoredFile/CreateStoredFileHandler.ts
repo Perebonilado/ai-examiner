@@ -27,6 +27,7 @@ export class CreateStoredFileHandler extends AbstractRequestHandlerTemplate<
         originalFileId: request.originalFileId,
         modifiedContent: request?.modifiedContent,
         documentId: request.documentId,
+        currentFileFormat: request.currentFileFormat,
       } as StoredFileModel;
 
       const created = await this.storedFileRepository.create(modelToCreate);

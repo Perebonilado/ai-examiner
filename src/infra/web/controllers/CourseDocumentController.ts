@@ -22,7 +22,11 @@ import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
-import { inactiveSubscriptionStatuses } from 'src/constants';
+import {
+  googlePresentationFileFormat,
+  inactiveSubscriptionStatuses,
+  pdfMimeType,
+} from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import {
   createSimplifiedPdf,
@@ -63,6 +67,9 @@ import { DocumentFileModel } from '../models/DocumentFileModel';
 import { StoredFileQueryService } from 'src/query/services/StoredFileQueryService';
 import { ExtractTextService } from 'src/integrations/text-extraction/services/ExtractTextService';
 import { UpdateStoredFileHandler } from 'src/business/handlers/StoredFile/UpdateStoredFileHandler';
+import { StoredFileUrlModel } from '../models/StoredFileModel';
+import { FileConversionService } from 'src/integrations/aspose/services/FileConversionService';
+import { ExportFormat } from 'asposeslidescloud';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -99,6 +106,8 @@ export class CourseDocumentController {
     @Inject(ExtractTextService) private extractTextService: ExtractTextService,
     @Inject(UpdateStoredFileHandler)
     private updateStoredFileHandler: UpdateStoredFileHandler,
+    @Inject(FileConversionService)
+    private fileConversionService: FileConversionService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -136,27 +145,146 @@ export class CourseDocumentController {
   }
 
   @UseGuards(AuthGuard)
-  @Get('/original-document-file/:documentId')
-  public async getOriginalDocumentFile(
+  @Get('/stored-file-information/:documentId')
+  public async getStoredFileInformation(
     @Param('documentId') documentId: string,
-    @Res() res: Response,
-  ) {
+  ): Promise<StoredFileUrlModel> {
     try {
       const storedFile =
         await this.storedFileQueryService.findByDocumentId(documentId);
 
-      const originalFile = await this.googleDriveService.getFile(
-        storedFile.originalFileId,
+      if (!storedFile || !storedFile?.originalFileId) {
+        return {
+          thumbnailUrl: null,
+          iframUrl: null,
+        };
+      }
+
+      const fileId = storedFile.originalFileId;
+      return {
+        thumbnailUrl: `https://drive.google.com/thumbnail?id=${fileId}`,
+        iframUrl: `https://drive.google.com/file/d/${fileId}/preview`,
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Failed to get stored file info',
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/original-document-file/:documentId')
+  public async getOriginalDocumentFile(
+    @Param('documentId') documentId: string,
+    @Res() res: Response,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      const storedFile =
+        await this.storedFileQueryService.findByDocumentId(documentId);
+      const document =
+        await this.courseDocumentQueryService.findCourseDocumentById(
+          documentId,
+          userToken.sub,
+        );
+
+      let fileToSend: Buffer;
+
+      if (storedFile.currentFileFormat === googlePresentationFileFormat) {
+        fileToSend = await this.googleDriveService.exportFileAsPDF(
+          storedFile.originalFileId,
+        );
+      } else if (storedFile.currentFileFormat === pdfMimeType) {
+        fileToSend = await this.googleDriveService.getFile(
+          storedFile.originalFileId,
+        );
+      } else {
+        // convert file to pdf
+        switch (storedFile.currentFileFormat) {
+          case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': {
+            const fileToConvert = await this.googleDriveService.getFile(
+              storedFile.originalFileId,
+            );
+            fileToSend = await this.fileConversionService.convertDocument({
+              buffer: fileToConvert,
+              extension: 'docx',
+              convertTo: 'pdf',
+            });
+            break;
+          }
+          case 'text/plain': {
+            const fileToConvert = await this.googleDriveService.getFile(
+              storedFile.originalFileId,
+            );
+            fileToSend = await this.fileConversionService.convertDocument({
+              buffer: fileToConvert,
+              extension: 'txt',
+              convertTo: 'Pdf',
+            });
+            break;
+          }
+          case 'application/vnd.ms-powerpoint': {
+            const fileToConvert = await this.googleDriveService.getFile(
+              storedFile.originalFileId,
+            );
+            fileToSend = await this.fileConversionService.convertSlide({
+              buffer: fileToConvert,
+              extension: 'ppt',
+              convertTo: ExportFormat['Pdf'],
+            });
+            break;
+          }
+          case 'application/vnd.openxmlformats-officedocument.presentationml.presentation': {
+            const fileToConvert = await this.googleDriveService.getFile(
+              storedFile.originalFileId,
+            );
+            fileToSend = await this.fileConversionService.convertSlide({
+              buffer: fileToConvert,
+              extension: 'pptx',
+              convertTo: ExportFormat['Pdf'],
+            });
+            break;
+          }
+          default: {
+            throw new HttpException(
+              'File format not supported for viewing',
+              HttpStatus.BAD_REQUEST,
+            );
+          }
+        }
+      }
 
       res.set({
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'inline; filename="file.pdf"',
       });
-      res.send(originalFile);
+      res.send(fileToSend);
+
+      // update file if the type is not a pdf
+      if (storedFile.currentFileFormat !== pdfMimeType) {
+        const newFileUploaded = await this.googleDriveService.uploadFile({
+          file: fileToSend,
+          mimetype: pdfMimeType,
+          originalFileName: document.title,
+          mimeTypeToSaveAs: pdfMimeType,
+        });
+
+        await this.updateStoredFileHandler.handle({
+          id: storedFile.id,
+          modifiedContent:
+            (storedFile.modifiedContent as unknown as PDFContent[][]) || [],
+          currentFileFormat: pdfMimeType,
+          originalFileId: newFileUploaded.fileId,
+        });
+
+        await this.googleDriveService.deleteFile(storedFile.originalFileId);
+      }
 
       return;
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         'Failed to get original file',
         HttpStatus.BAD_REQUEST,
@@ -189,9 +317,17 @@ export class CourseDocumentController {
         return;
       }
 
-      const originalPDF = await this.googleDriveService.getFile(
-        storedFile.originalFileId,
-      );
+      let originalFile: Buffer;
+      if (storedFile.currentFileFormat === googlePresentationFileFormat) {
+        originalFile = await this.googleDriveService.exportFileAsPDF(
+          storedFile.originalFileId,
+        );
+      } else {
+        originalFile = await this.googleDriveService.getFile(
+          storedFile.originalFileId,
+        );
+      }
+
       const [document, summary] = await Promise.all([
         this.courseDocumentQueryService.findCourseDocumentById(
           documentId,
@@ -199,10 +335,14 @@ export class CourseDocumentController {
         ),
         this.documentSummaryQueryService.findByDocumentId(documentId),
       ]);
-      const pages = await this.extractTextService.extractTextFromPDFBuffer(
-        originalPDF,
-        `${document.title}.pdf`,
-      );
+      const pages = await this.extractTextService.getChunksBasedOnFileMimeType({
+        buffer: originalFile,
+        mimetype:
+          storedFile.currentFileFormat === googlePresentationFileFormat
+            ? pdfMimeType
+            : storedFile.currentFileFormat,
+        originalName: document.title,
+      });
       const rewordedPages = await Promise.all(
         pages.map(async (page) => {
           // open ai call to reword
@@ -230,8 +370,8 @@ export class CourseDocumentController {
       return;
     } catch (error) {
       throw new HttpException(
-        'Failed to get modified file',
-        HttpStatus.BAD_REQUEST,
+        error.message ?? 'Failed to get modified file',
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }

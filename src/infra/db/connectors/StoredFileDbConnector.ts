@@ -18,7 +18,12 @@ export class StoredFileDbConnector {
     try {
       await StoredFileModel.update(model, {
         where: { id: model.id },
-        fields: ['modifiedContent', 'originalFileId'],
+        fields: [
+          'modifiedContent',
+          'originalFileId',
+          'currentFileFormat',
+          'originalFileContentStructured',
+        ],
       });
 
       return await StoredFileModel.findOne({ where: { id: model.id } });

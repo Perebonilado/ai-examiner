@@ -39,6 +39,8 @@ export interface Config {
   mistralApiKey: string;
   youtubeApiKey: string;
   rapidApiKey: string;
+  asposeClientId: string;
+  asposeClientSecret: string;
 }
 
 export default (): Config => ({
@@ -83,4 +85,6 @@ export default (): Config => ({
   mistralApiKey: process.env.MISTRAL_API_KEY,
   youtubeApiKey: process.env.YOUTUBE_API_KEY,
   rapidApiKey: process.env.RAPID_API_KEY,
+  asposeClientId: process.env.ASPOSE_CLIENT_ID,
+  asposeClientSecret: process.env.ASPOSE_CLIENT_SECRET
 });

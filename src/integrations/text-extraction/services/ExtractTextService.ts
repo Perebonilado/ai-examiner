@@ -1,10 +1,23 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { chunkText, extractPagesTextsFromPDF } from 'src/utils';
+import {
+  chunkText,
+  extractPagesTextsFromPDF,
+  generateUUID,
+  writeFileToStream,
+} from 'src/utils';
 import * as mammoth from 'mammoth';
 import { parseOfficeAsync } from 'officeparser';
 import { decode } from 'iconv-lite';
 import { ILovePdfService } from 'src/integrations/i-love-pdf/services/ILovePdfService';
 import { MistralOcrService } from 'src/integrations/mistral-ai/services/MistralOcrService';
+import { FileModel } from 'src/integrations/i-love-pdf/models/FileUploadModel';
+const PPTX2Json = require('pptx2json');
+import { join } from 'path';
+import { tmpdir } from 'os';
+import PPTXCompose from 'pptx-compose';
+import PptxParser from 'node-pptx-parser';
+import { existsSync } from 'fs';
+import { unlink } from 'fs/promises';
 
 @Injectable()
 export class ExtractTextService {
@@ -15,25 +28,35 @@ export class ExtractTextService {
     @Inject(MistralOcrService) private mistralOcrService: MistralOcrService,
   ) {}
 
-  public async getChunksBasedOnFileMimeType(file: Express.Multer.File) {
+  public async getChunksBasedOnFileMimeType({
+    buffer,
+    mimetype,
+    originalName,
+  }: {
+    buffer: Buffer;
+    mimetype: string;
+    originalName: string;
+  }) {
     try {
-      const { mimetype, buffer } = file;
-
       switch (mimetype) {
         case 'application/pdf':
-          return await this.extractChunksFromPDF(file.buffer, file.originalname);
+          return await this.extractChunksFromPDF(buffer, originalName);
 
         case 'text/plain':
-          return await this.extractChunksFromTXT(file);
+          return await this.extractChunksFromTXT(buffer);
 
         case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-          return await this.extractTextFromDocx(file.buffer);
+          return await this.extractTextFromDocx(buffer);
 
         case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
           return await this.extractTextFromPPTX(buffer);
 
         case 'application/vnd.ms-powerpoint':
-          return await this.extractChunksFromPPT(file);
+          return await this.extractChunksFromPPT({
+            buffer,
+            mimetype,
+            originalname: originalName,
+          });
 
         default:
           throw new Error(
@@ -90,16 +113,13 @@ export class ExtractTextService {
         console.log('Error extracting text. Proceeding to OCR...');
       }
 
-      return await this.mistralOcrService.processPdf(
-        file,
-        originalFileName,
-      );
+      return await this.mistralOcrService.processPdf(file, originalFileName);
     } catch (error) {
       throw new Error(`Failed to extract chunks from PDF: ${error.message}`);
     }
   }
 
-  private async extractChunksFromPPT(file: Express.Multer.File) {
+  private async extractChunksFromPPT(file: FileModel) {
     try {
       const fileArrayBuffer = await this.IlovePdfService.processFileBasedOnTool(
         file,
@@ -112,9 +132,9 @@ export class ExtractTextService {
     }
   }
 
-  private async extractChunksFromTXT(file: Express.Multer.File) {
+  private async extractChunksFromTXT(buffer: Buffer) {
     try {
-      const textContent = decode(file.buffer, 'utf-8');
+      const textContent = decode(buffer, 'utf-8');
       const chunks = textContent.split(/\n\s*\n/).map((chunk) => chunk.trim());
       return chunks.filter((chunk) => chunk.length > 0);
     } catch (error) {
@@ -137,8 +157,37 @@ export class ExtractTextService {
 
   private async extractTextFromPPTX(buffer: Buffer): Promise<string[]> {
     try {
-      const text = await parseOfficeAsync(buffer);
-      return chunkText(text);
+      // const text = await parseOfficeAsync(buffer);
+      const tempFileName = `${generateUUID()}.pptx`;
+      const tempFilePath = join(tmpdir(), tempFileName);
+      await writeFileToStream(tempFilePath, buffer);
+      const parser = new PptxParser(tempFilePath);
+      const textContent = await parser.extractText();
+
+      const slides = textContent
+        .map((slide) => {
+          // id shape is rId1, rId34 but unordered
+          return { text: slide.text.join('\n'), id: Number(slide.id.slice(3)) };
+        })
+        .sort((a, b) => a.id - b.id);
+
+      // Add a small delay before attempting to delete the file
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      if (tempFilePath && existsSync(tempFilePath)) {
+        try {
+          await unlink(tempFilePath);
+        } catch (unlinkError) {
+          console.warn(
+            `Failed to delete temporary file: ${tempFilePath}`,
+            unlinkError,
+          );
+          // Continue execution even if file deletion fails
+        }
+      }
+
+      // return chunkText(text)
+      return slides.map((s) => s.text);
     } catch (error) {
       throw new Error(
         `Failed to extract text from PPTX file: ${error.message}`,

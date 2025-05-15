@@ -1206,78 +1206,251 @@ Based on the summary of a source text provided, your task is to output **5 power
 // ⚠️ Important Note: If there is no text on the page, please return: [{ text: 'Nothing to explain here.', type: 'paragraph' }]
 // `
 
+// export const getTextSimplificationPrompt = (summary: string) => `
+// “For Dummies”‑Style Simplification — Turn Any Text or Bullets into Effortless, Friendly Teaching
+
+// Your mission: Take complex academic or technical content—paragraphs, bullet lists, and headings—and rewrite it so that someone with zero background (“a total beginner”) would instantly get it. **Keep all original titles and headings exactly as they appear**, but simplify the content under them. Keep every fact, figure, and term, but explain each term as if talking to a friend who’s never heard of it.
+
+// ────────────────────────────────────────────────────────
+// 🎯 Step‑by‑Step Guide (built into the prompt):
+
+// 1. **Preserve Headings & Titles**  
+//    • Copy each heading or title verbatim (exactly as in the original).  
+// 2. **Scan for Jargon & Hard Words**  
+//    • As you read, flag any word or phrase a general reader might not know (e.g. “methodology,” “API,” “synergy”).  
+// 3. **Explain in‑line, Casually, with Brackets After Explanation**  
+//    • First give the simplified explanation in a natural sentence.  
+//    • Immediately after the sentence, put the original term or phrase in brackets—e.g. "It resets the heart cells so they can beat again (repolarization)." 
+//    • Use analogies from everyday life (“like,” “think of it as,” etc.).  
+// 4. **Simplify Sentence Structure**  
+//    • Break long sentences into two or three shorter ones.  
+//    • Use everyday connectors (“and,” “but,” “so,” “because”) instead of heavy transitions.  
+// 5. **Retain All Details**  
+//    • Never drop numbers, names, or core concepts—just make them feel familiar.  
+//    • If you mention a study, keep its data; then translate its significance into a simple “bottom‑line” sentence.  
+// 6. **Smooth Flow & Friendly Tone**  
+//    • Write as if you’re tutoring a friend over coffee—warm, upbeat, and patient.  
+//    • Avoid stiff, textbook phrasing.  
+// 7. **Bonus: Use Relatable Examples**  
+//    • Whenever an abstract concept appears, pair it with a mini‑analogy from daily life (cooking, games, sports, etc.).  
+
+// ────────────────────────────────────────────────────────
+// 🔄 How to Apply to Paragraphs or Bullets:
+
+// - **Paragraphs**: Rewrite each one into 2–4 short sentences. Embed definitions right where the tough words appear, with the original term in brackets.  
+// - **Bullet Lists**: Turn each bullet into a “For Dummies” mini‑paragraph—start with the term (in brackets), then a simple “why it matters” and “how it works” in plain talk.
+
+// ────────────────────────────────────────────────────────
+// 💡 Live Examples Inside the Prompt:
+
+// **Original Heading (kept verbatim):**
+// Advantages of Combined Treatment
+
+// **Original Paragraph:**  
+// “The efficacy of the intervention was predicated on the synergistic interaction of the two compounds.”  
+
+// **For Dummies Version (example):**  
+// “How well the treatment worked depended on how the two parts—called compounds [compounds] (think of them like special recipe ingredients)—boosted each other’s effect, almost like how peanut butter and jelly taste better together.”
+
+// ---
+
+// **Original Bullet (term in brackets):**  
+// - Rigorous methodology ensured veracity of findings.  
+
+// **For Dummies Version (example):**  
+// - They used a super‑thorough process [rigorous methodology] (fancy words for triple‑checking every step) so the results really are correct [veracity of findings] (meaning the facts are true).
+
+// ────────────────────────────────────────────────────────
+// ✅ Your Style Checklist (auto‑audit each rewrite):
+
+// - [ ] Titles and headings exactly match the original.  
+// - [ ] Short, clear sentences (no sentence longer than 20 words).  
+// - [ ] Every technical term appears in brackets with an in‑line, one‑phrase gloss.  
+// - [ ] Tone: friendly, conversational, patient.  
+// - [ ] All original data, names, and numbers are preserved.  
+// - [ ] Analogy or example for every abstract idea.  
+
+// If you ever get an input with no text, return:  
+
+// [{ "text": "Nothing to explain here.", "type": "paragraph" }]
+
+// For Better Context when rewording, here is a summary of the file. Use this as a reference to understand the general topic of the file:
+
+// **Summary start**
+// ${summary}
+// **Summary end**
+// `;
+
+// export const getTextSimplificationPrompt = (summary: string) => `
+// 🎓 Clear, Exam-Friendly Explanation — Rewrite Complex Content for Learners with Some Background Knowledge
+
+// Your mission: Rewrite complex academic or technical content—including paragraphs, bullet points, and headings—so that a learner with some familiarity in the field can understand it easily and confidently. They’re preparing for exams, so **keywords and core terminology must be preserved**.
+
+// ────────────────────────────────────────────────────────
+// 📌 What to Do:
+
+// 1. **Keep All Headings Exactly As Is**  
+//    • Every heading or title must be copied word-for-word.
+
+// 2. **Simplify, But Preserve Keywords**  
+//    • Some terms must stay as-is because they’re essential for exams (e.g. “abdomen,” “neuron,” “mitosis”).  
+//    • If simplifying for clarity, use: simpler term (original term)  
+//      👉 Example: "the belly (abdomen)"  
+//    • Only do this if the simple word aids comprehension. Otherwise, leave the keyword untouched.
+
+// 3. **Rewrite for Clarity**  
+//    • Improve sentence flow, fix awkward phrasing, and simplify structure.  
+//    • Break up long sentences into shorter, cleaner ones.
+
+// 4. **Explain Confusing or Dense Ideas**  
+//    • Use in-line explanations with analogies where helpful.  
+//    • Prefer casual, relatable phrasing: like explaining to a peer who knows the basics but is struggling to grasp the details.
+
+// 5. **Keep All Facts, Figures, and Terminology**  
+//    • Never remove important numbers, names, or keywords.  
+//    • If a study is mentioned, simplify what it means without removing the data.
+
+// 6. **Tone: Clear, Confident, and Friendly**  
+//    • Be supportive, focused, and clear—like a helpful study partner.
+
+// ────────────────────────────────────────────────────────
+// 📄 How to Treat Content Types:
+
+// - **Paragraphs**: Break into 2–4 simpler sentences. Clarify technical ideas as needed, and bracket key terms if replaced.  
+// - **Bullet Lists**: Convert each bullet into a short paragraph. Start with the keyword (in brackets if rephrased), then explain what it means and why it matters.
+
+// ────────────────────────────────────────────────────────
+// ✍️ Example Transformations:
+
+// **Original Heading (kept verbatim):**  
+// **Indications for Surgical Intervention**
+
+// **Original Paragraph:**  
+// “Surgical exploration is mandated when peritoneal signs are evident and hemodynamic instability persists despite resuscitative efforts.”  
+
+// **Simplified Version:**  
+// Surgery is necessary when clear signs of peritoneal irritation show up (that means the inner lining of the abdomen is inflamed) and the patient's blood pressure and heart rate stay unstable even after trying to stabilize them [resuscitative efforts].
+
+// ---
+
+// **Original Bullet:**  
+// - Hepatosplenomegaly is common in patients with advanced schistosomiasis.  
+
+// **Simplified Version:**  
+// - A swollen liver and spleen (hepatosplenomegaly) often shows up in people with advanced stages of schistosomiasis. This swelling happens as the body tries to fight off the long-term infection.
+
+// ────────────────────────────────────────────────────────
+// ✅ Study Mode Checklist:
+
+// - [ ] Headings and titles are exactly preserved  
+// - [ ] Sentence structure is simplified and clear  
+// - [ ] Keywords are either kept as-is or appear in brackets after a simple word  
+// - [ ] Tone is helpful, academic, and learner-friendly  
+// - [ ] Facts and terminology are never removed  
+// - [ ] Technical terms are explained when needed  
+// - [ ] Analogies or clarifying examples used if they aid understanding  
+
+// If there is no input text, respond with:  
+// [{ "text": "Nothing to explain here.", "type": "paragraph" }]
+
+// For better clarity, here’s a general summary of the file. Use this to understand the topic while simplifying the content:
+
+// **Summary start**  
+// ${summary}  
+// **Summary end**
+// `;
+
 export const getTextSimplificationPrompt = (summary: string) => `
-“For Dummies”‑Style Simplification — Turn Any Text or Bullets into Effortless, Friendly Teaching
+📘 Clarity for Exam-Ready Learners — Simplify Complex Medical or Technical Text Without Losing Key Terms
 
-Your mission: Take complex academic or technical content—paragraphs, bullet lists, and headings—and rewrite it so that someone with zero background (“a total beginner”) would instantly get it. **Keep all original titles and headings exactly as they appear**, but simplify the content under them. Keep every fact, figure, and term, but explain each term as if talking to a friend who’s never heard of it.
+You’re helping someone who is preparing for an exam in a technical field (e.g. medicine). They already understand the basics but need complex material to be written in a way that is easy to follow and remember.
 
-────────────────────────────────────────────────────────
-🎯 Step‑by‑Step Guide (built into the prompt):
+Here’s what to do:
 
-1. **Preserve Headings & Titles**  
-   • Copy each heading or title verbatim (exactly as in the original).  
-2. **Scan for Jargon & Hard Words**  
-   • As you read, flag any word or phrase a general reader might not know (e.g. “methodology,” “API,” “synergy”).  
-3. **Explain in‑line, Casually, with Brackets After Explanation**  
-   • First give the simplified explanation in a natural sentence.  
-   • Immediately after the sentence, put the original term or phrase in brackets—e.g. "It resets the heart cells so they can beat again (repolarization)." 
-   • Use analogies from everyday life (“like,” “think of it as,” etc.).  
-4. **Simplify Sentence Structure**  
-   • Break long sentences into two or three shorter ones.  
-   • Use everyday connectors (“and,” “but,” “so,” “because”) instead of heavy transitions.  
-5. **Retain All Details**  
-   • Never drop numbers, names, or core concepts—just make them feel familiar.  
-   • If you mention a study, keep its data; then translate its significance into a simple “bottom‑line” sentence.  
-6. **Smooth Flow & Friendly Tone**  
-   • Write as if you’re tutoring a friend over coffee—warm, upbeat, and patient.  
-   • Avoid stiff, textbook phrasing.  
-7. **Bonus: Use Relatable Examples**  
-   • Whenever an abstract concept appears, pair it with a mini‑analogy from daily life (cooking, games, sports, etc.).  
+1. **Simplify for Clarity, Not Dumbed-Down**  
+   • Rewrite dense or formal sentences using simpler words and a more natural sentence flow.  
+   • Break long sentences into shorter ones.
 
-────────────────────────────────────────────────────────
-🔄 How to Apply to Paragraphs or Bullets:
+2. **Preserve All Key Terms**  
+   • Never remove important terms like “cirrhosis” or “liver parenchyma.”  
+   • If using a simpler word for clarity, place it first, and then include the original technical term in parentheses.  
+     👉 Example: “serious liver scarring (cirrhosis)”
 
-- **Paragraphs**: Rewrite each one into 2–4 short sentences. Embed definitions right where the tough words appear, with the original term in brackets.  
-- **Bullet Lists**: Turn each bullet into a “For Dummies” mini‑paragraph—start with the term (in brackets), then a simple “why it matters” and “how it works” in plain talk.
+3. **Clarify and Explain In-Line**  
+   • Briefly explain what each technical term means, ideally in the same sentence.  
+   • Use analogies only if they help understanding—don’t overuse.
 
-────────────────────────────────────────────────────────
-💡 Live Examples Inside the Prompt:
+4. **Retain All Original Meaning and Data**  
+   • Keep any numbers, conditions, durations, or medical markers. These are vital for exam prep.
 
-**Original Heading (kept verbatim):**
-Advantages of Combined Treatment
+5. **Preserve Headings from Original Text**  
+   • If the input includes section titles or headers, keep them exactly as-is.
 
-**Original Paragraph:**  
-“The efficacy of the intervention was predicated on the synergistic interaction of the two compounds.”  
+6. **Tone and Style**  
+   • Sound like a helpful study partner—clear, confident, and focused on getting the concept across.
 
-**For Dummies Version (example):**  
-“How well the treatment worked depended on how the two parts—called compounds [compounds] (think of them like special recipe ingredients)—boosted each other’s effect, almost like how peanut butter and jelly taste better together.”
-
----
-
-**Original Bullet (term in brackets):**  
-- Rigorous methodology ensured veracity of findings.  
-
-**For Dummies Version (example):**  
-- They used a super‑thorough process [rigorous methodology] (fancy words for triple‑checking every step) so the results really are correct [veracity of findings] (meaning the facts are true).
-
-────────────────────────────────────────────────────────
-✅ Your Style Checklist (auto‑audit each rewrite):
-
-- [ ] Titles and headings exactly match the original.  
-- [ ] Short, clear sentences (no sentence longer than 20 words).  
-- [ ] Every technical term appears in brackets with an in‑line, one‑phrase gloss.  
-- [ ] Tone: friendly, conversational, patient.  
-- [ ] All original data, names, and numbers are preserved.  
-- [ ] Analogy or example for every abstract idea.  
-
-If you ever get an input with no text, return:  
-
+If the input is empty, respond:  
 [{ "text": "Nothing to explain here.", "type": "paragraph" }]
 
-For Better Context when rewording, here is a summary of the file. Use this as a reference to understand the general topic of the file:
+Here’s the overall topic of the file to guide your rewrite:
 
-**Summary start**
-${summary}
+**Summary start**  
+${summary}  
 **Summary end**
-  
 `;
+
+// export const getTextSimplificationPrompt = (summary: string) => `
+// 📘 Hey Study Buddy! Let’s Make Tough Text Easy to Follow
+
+// You’re chatting with a friend who’s prepping for a big test in a specialized field (like engineering, law, or medicine). They’ve got the basics down but need tricky stuff explained in plain, friendly terms.
+
+// Here’s the game plan—just like talking it out together:
+
+// > **Original:**
+// > "Use the tuberculin skin test (TST) to check for latent TB before starting preventive treatment if less than 30% of PLHIV in the area have latent TB."
+// >
+// > **Revision:**
+// > "If there are less than 30% of people living with HIV in the area have latent TB, use the tuberculin skin test (TST) before starting preventive treatment."
+
+// 1. **Start with the Key Point or Condition**
+//    Say what matters first, then explain the action. It helps the listener grasp the point right away.
+
+// 2. **Keep It Short and Smooth**
+//    Turn long, formal sentences into two shorter ones if needed. Use everyday words and throw in the fancy term in brackets.
+//    ➡️ Example: "reinforced steel (heavy-duty material)"
+
+// 3. **Stick to What’s There**
+//    Only talk about the ideas in the original text—no extras, no missing bits. You can add a few words to make it click, but steer clear of long detours.
+
+// 4. **Use Quick, Relatable Examples**
+//    If the text already has an analogy, keep it. If you add one, make it super brief and right on point.
+//    ➡️ Example: "Think of a circuit like water flowing through pipes—if there’s a clog, the flow slows (that’s resistance)."
+
+// 5. **Gloss the Jargon On the Spot**
+//    Briefly define each technical term in the same sentence.
+//    ➡️ Example: "photosynthesis (how plants turn light into energy)"
+
+// 6. **Keep Headings Intact**
+//    Any titles or section headers? Don’t change them—let them guide the structure.
+
+// 7. **Sound Like a Pal**
+//    Chatty but focused. Imagine you’re explaining over coffee: friendly, clear, no fluff.
+
+// 8. **Preserve All Key Terms**  
+// • Never remove important terms like “cirrhosis” or “liver parenchyma.”  
+// • If using a simpler word for clarity, place it first, and then include the original technical term in parentheses.  
+// 👉 Example: “serious liver scarring (cirrhosis)”
+
+// If there’s nothing to simplify, just say:
+
+// [{ "text": "Nothing to explain here.", "type": "paragraph" }]
+
+
+// **Topic:**
+// **Summary start**
+// ${summary}
+// **Summary end**
+// `;
+
+
+

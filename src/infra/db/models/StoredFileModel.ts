@@ -32,6 +32,20 @@ export class StoredFileModel extends Model<StoredFileModel> {
   })
   modifiedContent: string;
 
+  @Column({
+    type: DataType.TEXT('long'),
+    field: 'original_file_content_structured',
+    allowNull: true,
+  })
+  originalFileContentStructured: string;
+
+  @Column({
+    type: DataType.STRING,
+    field: 'current_file_format',
+    allowNull: false,
+  })
+  currentFileFormat: string;
+
   @ForeignKey(() => CourseDocumentModel)
   @Column({
     type: DataType.STRING,

@@ -53,6 +53,7 @@ import OpenAI from 'openai';
 import { GoogleDriveService } from 'src/integrations/google/services/GoogleDriveService';
 import { MistralOcrService } from 'src/integrations/mistral-ai/services/MistralOcrService';
 import { CreateStoredFileHandler } from 'src/business/handlers/StoredFile/CreateStoredFileHandler';
+import { ILovePdfService } from 'src/integrations/i-love-pdf/services/ILovePdfService';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -70,9 +71,9 @@ export class FileUploadController {
     @Inject(CreateDocumentSummaryHandler)
     private createDocumentSummaryHandler: CreateDocumentSummaryHandler,
     @Inject(GoogleDriveService) private googleDriveService: GoogleDriveService,
-    @Inject(MistralOcrService) private mistralOcrService: MistralOcrService,
     @Inject(CreateStoredFileHandler)
     private createStoredFileHandler: CreateStoredFileHandler,
+    @Inject(ILovePdfService) private iLovePDFService: ILovePdfService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -129,10 +130,40 @@ export class FileUploadController {
         apiKey: EnvironmentVariables.config.openAiApiKey,
       });
 
-      const chunks =
-        await this.extractTextService.getChunksBasedOnFileMimeType(file);
-
       const maxNumPagesForSummaryAndTopicGeneration = 250;
+
+      let fileFormatToSaveFile = 'application/vnd.google-apps.presentation';
+      const googleFileExportLimitInMegaBytes = 10 * 1024 * 1024;
+
+      if (file.mimetype === 'application/pdf') {
+        fileFormatToSaveFile = 'application/pdf';
+      } else if (file.size > googleFileExportLimitInMegaBytes) {
+        fileFormatToSaveFile = file.mimetype;
+      }
+
+      let fileBufferToUse = file.buffer;
+      let isPPTFormat = file.mimetype === 'application/vnd.ms-powerpoint';
+
+      if (isPPTFormat) {
+        fileBufferToUse = await this.iLovePDFService.processFileBasedOnTool(
+          {
+            buffer: file.buffer,
+            mimetype: file.mimetype,
+            originalname: file.originalname,
+          },
+          'officepdf',
+        );
+
+        fileFormatToSaveFile = 'application/pdf';
+      }
+
+      const chunks = await this.extractTextService.getChunksBasedOnFileMimeType(
+        {
+          buffer: fileBufferToUse,
+          mimetype: isPPTFormat ? 'application/pdf' : file.mimetype,
+          originalName: file.originalname,
+        },
+      );
 
       const [createdDocument, topics, summaryInfo, uploadedGoogleDriveFile] =
         await Promise.all([
@@ -153,9 +184,10 @@ export class FileUploadController {
             chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
           ),
           this.googleDriveService.uploadFile({
-            file: file.buffer,
+            file: fileBufferToUse,
             originalFileName: file.originalname,
             mimetype: file.mimetype,
+            mimeTypeToSaveAs: fileFormatToSaveFile,
           }),
         ]);
 
@@ -168,6 +200,7 @@ export class FileUploadController {
         this.createStoredFileHandler.handle({
           documentId: createdDocument.data.id,
           originalFileId: uploadedGoogleDriveFile.fileId,
+          currentFileFormat: fileFormatToSaveFile,
         }),
       ]);
 
@@ -252,7 +285,7 @@ export class FileUploadController {
         ]);
       });
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new HttpException(
         error ?? 'V2: Failed to upload file',
         HttpStatus.BAD_REQUEST,
