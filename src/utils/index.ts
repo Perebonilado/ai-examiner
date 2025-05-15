@@ -324,47 +324,64 @@ const generateHTMLFromContent = (pages: PDFContent[][]): string => {
       * {
         box-sizing: border-box;
       }
-      html {
-        font-size: 22px; /* Large base font for mobile */
-      }
-      body {
-        font-family: 'Noto Sans', sans-serif;
-        font-size: 1.25rem; /* ~28px */
-        line-height: 1.8;
-        padding: 0;
+
+      html, body {
         margin: 0;
-        color: #000;
+        padding: 0;
+        font-family: 'Noto Sans', sans-serif;
         background-color: #fff;
+        color: #000;
+        font-size: 22px;
+        line-height: 1.8;
       }
+
       .page {
+        width: 100%;
+        height: 100vh; /* or fixed like 1122px for A4 at 96dpi */
         padding: 40px 24px;
+        overflow: hidden;
+        position: relative;
         page-break-after: always;
       }
+
       .page:last-child {
         page-break-after: auto;
       }
+
+      .content {
+        transform-origin: top left;
+        width: 100%;
+        height: auto;
+        display: inline-block;
+      }
+
       h1 {
-        font-size: 2.5rem; /* ~55px */
+        font-size: 2.5rem;
         font-weight: 700;
         margin-bottom: 1rem;
       }
+
       h2 {
-        font-size: 2rem; /* ~44px */
+        font-size: 2rem;
         font-weight: 700;
         margin-bottom: 0.75rem;
       }
+
       p {
-        font-size: 1.25rem; /* ~28px */
+        font-size: 1.25rem;
         margin: 0 0 1rem 0;
       }
+
       ul {
         margin: 0 0 1rem 1.5rem;
         padding-left: 0;
       }
+
       li {
         margin-bottom: 0.75rem;
         font-size: 1.25rem;
       }
+
       strong {
         font-weight: 700;
       }
@@ -374,19 +391,36 @@ const generateHTMLFromContent = (pages: PDFContent[][]): string => {
           font-size: 20px;
         }
       }
+
+      @media print {
+        .page {
+          height: 100vh;
+        }
+      }
     </style>
   `;
 
+  const autoScaleScript = `
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.page').forEach(page => {
+          const content = page.querySelector('.content');
+          const scale = page.clientHeight / content.scrollHeight;
+          if (scale < 1) {
+            content.style.transform = 'scale(' + scale + ')';
+          }
+        });
+      });
+    </script>
+  `;
+
   const escapeHtmlWithFormatting = (text: string): string => {
-    // Escape special characters
     const escaped = text
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
-
-    // Replace **bold** with <strong> tags
     return escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   };
 
@@ -396,6 +430,7 @@ const generateHTMLFromContent = (pages: PDFContent[][]): string => {
 
     content.forEach((item, idx) => {
       const formattedText = escapeHtmlWithFormatting(item.text);
+
       switch (item.type) {
         case 'headingOne':
           html += flushBullets() + `<h1>${formattedText}</h1>\n`;
@@ -422,10 +457,10 @@ const generateHTMLFromContent = (pages: PDFContent[][]): string => {
       return listHtml;
     }
 
-    return html;
+    return `<div class="page"><div class="content">${html}</div></div>`;
   };
 
-  const pagesHtml = pages.map(page => `<div class="page">${renderPage(page)}</div>`).join('\n');
+  const pagesHtml = pages.map(page => renderPage(page)).join('\n');
 
   return `
     <!DOCTYPE html>
@@ -437,7 +472,9 @@ const generateHTMLFromContent = (pages: PDFContent[][]): string => {
       </head>
       <body>
         ${pagesHtml}
+        ${autoScaleScript}
       </body>
     </html>
   `;
 };
+
