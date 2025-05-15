@@ -16,7 +16,7 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit'
 import * as path from 'path';
 import { readFile } from 'fs/promises';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
 
 
 const libreConvert = promisify(libre.convert);
@@ -296,7 +296,7 @@ export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<
   try {
     const html = generateHTMLFromContent(pageContent);
 
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.connect({browserWSEndpoint: 'wss://browserless-production-dfc4.up.railway.app?token=qu5tpi99EESc45tMpJn8BrPscsLeqWd9DwUxEm1nC2r648Vp'});
     const page = await browser.newPage();
 
     await page.setContent(html, { waitUntil: 'networkidle0' });
