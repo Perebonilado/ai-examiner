@@ -324,75 +324,94 @@ const generateHTMLFromContent = (pages: PDFContent[][]): string => {
       * {
         box-sizing: border-box;
       }
+      html {
+        font-size: 22px; /* Large base font for mobile */
+      }
       body {
         font-family: 'Noto Sans', sans-serif;
-        font-size: 16px;
-        line-height: 1.6;
+        font-size: 1.25rem; /* ~28px */
+        line-height: 1.8;
         padding: 0;
         margin: 0;
         color: #000;
         background-color: #fff;
       }
       .page {
-        padding: 40px;
+        padding: 40px 24px;
         page-break-after: always;
       }
       .page:last-child {
         page-break-after: auto;
       }
       h1 {
-        font-size: 28px;
+        font-size: 2.5rem; /* ~55px */
         font-weight: 700;
-        margin-bottom: 16px;
+        margin-bottom: 1rem;
       }
       h2 {
-        font-size: 22px;
+        font-size: 2rem; /* ~44px */
         font-weight: 700;
-        margin-bottom: 12px;
+        margin-bottom: 0.75rem;
       }
       p {
-        margin: 0 0 12px 0;
+        font-size: 1.25rem; /* ~28px */
+        margin: 0 0 1rem 0;
       }
       ul {
-        margin: 0 0 12px 20px;
+        margin: 0 0 1rem 1.5rem;
         padding-left: 0;
       }
       li {
-        margin-bottom: 6px;
+        margin-bottom: 0.75rem;
+        font-size: 1.25rem;
+      }
+      strong {
+        font-weight: 700;
+      }
+
+      @media (min-width: 768px) {
+        html {
+          font-size: 20px;
+        }
       }
     </style>
   `;
 
-  const escapeHtml = (text: string): string =>
-    text.replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+  const escapeHtmlWithFormatting = (text: string): string => {
+    // Escape special characters
+    const escaped = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+    // Replace **bold** with <strong> tags
+    return escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  };
 
   const renderPage = (content: PDFContent[]): string => {
     let html = '';
     let bulletItems: string[] = [];
 
     content.forEach((item, idx) => {
-      const escapedText = escapeHtml(item.text);
+      const formattedText = escapeHtmlWithFormatting(item.text);
       switch (item.type) {
         case 'headingOne':
-          html += flushBullets() + `<h1>${escapedText}</h1>\n`;
+          html += flushBullets() + `<h1>${formattedText}</h1>\n`;
           break;
         case 'headingTwo':
-          html += flushBullets() + `<h2>${escapedText}</h2>\n`;
+          html += flushBullets() + `<h2>${formattedText}</h2>\n`;
           break;
         case 'bullet':
-          bulletItems.push(`<li>${escapedText}</li>`);
+          bulletItems.push(`<li>${formattedText}</li>`);
           break;
         case 'paragraph':
         default:
-          html += flushBullets() + `<p>${escapedText}</p>\n`;
+          html += flushBullets() + `<p>${formattedText}</p>\n`;
           break;
       }
 
-      // Flush bullets on last item
       if (idx === content.length - 1) html += flushBullets();
     });
 
@@ -413,6 +432,7 @@ const generateHTMLFromContent = (pages: PDFContent[][]): string => {
     <html>
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         ${styles}
       </head>
       <body>
