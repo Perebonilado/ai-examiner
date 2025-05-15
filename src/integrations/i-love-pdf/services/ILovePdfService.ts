@@ -3,6 +3,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { TaskModel } from '../models/TaskModel';
 import { ToolType } from '../models/ToolModel';
 import {
+  FileModel,
   FileUploadModel,
   UploadFilePayloadModel,
 } from '../models/FileUploadModel';
@@ -38,7 +39,7 @@ export class ILovePdfService {
   }
 
   public async processFileBasedOnTool(
-    file: Express.Multer.File,
+    file: FileModel,
     tool: ToolType,
     optionalArgs?: any,
   ): Promise<Buffer> {

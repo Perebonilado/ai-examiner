@@ -41,8 +41,6 @@ export class UpdatePreferredLanguageHandler extends AbstractRequestHandlerTempla
           id: existingLanguage.id,
         } as PreferredLanguageModel);
 
-        console.log(updated);
-
         return {
           data: {
             id: updated.id,
