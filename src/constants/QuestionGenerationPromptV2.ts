@@ -1281,123 +1281,123 @@ Based on the summary of a source text provided, your task is to output **5 power
 // **Summary end**
 // `;
 
-// export const getTextSimplificationPrompt = (summary: string) => `
-// 🎓 Clear, Exam-Friendly Explanation — Rewrite Complex Content for Learners with Some Background Knowledge
-
-// Your mission: Rewrite complex academic or technical content—including paragraphs, bullet points, and headings—so that a learner with some familiarity in the field can understand it easily and confidently. They’re preparing for exams, so **keywords and core terminology must be preserved**.
-
-// ────────────────────────────────────────────────────────
-// 📌 What to Do:
-
-// 1. **Keep All Headings Exactly As Is**  
-//    • Every heading or title must be copied word-for-word.
-
-// 2. **Simplify, But Preserve Keywords**  
-//    • Some terms must stay as-is because they’re essential for exams (e.g. “abdomen,” “neuron,” “mitosis”).  
-//    • If simplifying for clarity, use: simpler term (original term)  
-//      👉 Example: "the belly (abdomen)"  
-//    • Only do this if the simple word aids comprehension. Otherwise, leave the keyword untouched.
-
-// 3. **Rewrite for Clarity**  
-//    • Improve sentence flow, fix awkward phrasing, and simplify structure.  
-//    • Break up long sentences into shorter, cleaner ones.
-
-// 4. **Explain Confusing or Dense Ideas**  
-//    • Use in-line explanations with analogies where helpful.  
-//    • Prefer casual, relatable phrasing: like explaining to a peer who knows the basics but is struggling to grasp the details.
-
-// 5. **Keep All Facts, Figures, and Terminology**  
-//    • Never remove important numbers, names, or keywords.  
-//    • If a study is mentioned, simplify what it means without removing the data.
-
-// 6. **Tone: Clear, Confident, and Friendly**  
-//    • Be supportive, focused, and clear—like a helpful study partner.
-
-// ────────────────────────────────────────────────────────
-// 📄 How to Treat Content Types:
-
-// - **Paragraphs**: Break into 2–4 simpler sentences. Clarify technical ideas as needed, and bracket key terms if replaced.  
-// - **Bullet Lists**: Convert each bullet into a short paragraph. Start with the keyword (in brackets if rephrased), then explain what it means and why it matters.
-
-// ────────────────────────────────────────────────────────
-// ✍️ Example Transformations:
-
-// **Original Heading (kept verbatim):**  
-// **Indications for Surgical Intervention**
-
-// **Original Paragraph:**  
-// “Surgical exploration is mandated when peritoneal signs are evident and hemodynamic instability persists despite resuscitative efforts.”  
-
-// **Simplified Version:**  
-// Surgery is necessary when clear signs of peritoneal irritation show up (that means the inner lining of the abdomen is inflamed) and the patient's blood pressure and heart rate stay unstable even after trying to stabilize them [resuscitative efforts].
-
-// ---
-
-// **Original Bullet:**  
-// - Hepatosplenomegaly is common in patients with advanced schistosomiasis.  
-
-// **Simplified Version:**  
-// - A swollen liver and spleen (hepatosplenomegaly) often shows up in people with advanced stages of schistosomiasis. This swelling happens as the body tries to fight off the long-term infection.
-
-// ────────────────────────────────────────────────────────
-// ✅ Study Mode Checklist:
-
-// - [ ] Headings and titles are exactly preserved  
-// - [ ] Sentence structure is simplified and clear  
-// - [ ] Keywords are either kept as-is or appear in brackets after a simple word  
-// - [ ] Tone is helpful, academic, and learner-friendly  
-// - [ ] Facts and terminology are never removed  
-// - [ ] Technical terms are explained when needed  
-// - [ ] Analogies or clarifying examples used if they aid understanding  
-
-// If there is no input text, respond with:  
-// [{ "text": "Nothing to explain here.", "type": "paragraph" }]
-
-// For better clarity, here’s a general summary of the file. Use this to understand the topic while simplifying the content:
-
-// **Summary start**  
-// ${summary}  
-// **Summary end**
-// `;
-
 export const getTextSimplificationPrompt = (summary: string) => `
-📘 Clarity for Exam-Ready Learners — Simplify Complex Medical or Technical Text Without Losing Key Terms
+🎓 Clear, Exam-Friendly Explanation — Rewrite Complex Content for Learners with Some Background Knowledge
 
-You’re helping someone who is preparing for an exam in a technical field (e.g. medicine). They already understand the basics but need complex material to be written in a way that is easy to follow and remember.
+Your mission: Rewrite complex academic or technical content—including paragraphs, bullet points, and headings—so that a learner with some familiarity in the field can understand it easily and confidently. They’re preparing for exams, so **keywords and core terminology must be preserved**.
 
-Here’s what to do:
+────────────────────────────────────────────────────────
+📌 What to Do:
 
-1. **Simplify for Clarity, Not Dumbed-Down**  
-   • Rewrite dense or formal sentences using simpler words and a more natural sentence flow.  
-   • Break long sentences into shorter ones.
+1. **Keep All Headings Exactly As Is**  
+   • Every heading or title must be copied word-for-word.
 
-2. **Preserve All Key Terms**  
-   • Never remove important terms like “cirrhosis” or “liver parenchyma.”  
-   • If using a simpler word for clarity, place it first, and then include the original technical term in parentheses.  
-     👉 Example: “serious liver scarring (cirrhosis)”
+2. **Simplify, But Preserve Keywords**  
+   • Some terms must stay as-is because they’re essential for exams (e.g. “abdomen,” “neuron,” “mitosis”).  
+   • If simplifying for clarity, use: simpler term (original term)  
+     👉 Example: "the belly (abdomen)"  
+   • Only do this if the simple word aids comprehension. Otherwise, leave the keyword untouched.
 
-3. **Clarify and Explain In-Line**  
-   • Briefly explain what each technical term means, ideally in the same sentence.  
-   • Use analogies only if they help understanding—don’t overuse.
+3. **Rewrite for Clarity**  
+   • Improve sentence flow, fix awkward phrasing, and simplify structure.  
+   • Break up long sentences into shorter, cleaner ones.
 
-4. **Retain All Original Meaning and Data**  
-   • Keep any numbers, conditions, durations, or medical markers. These are vital for exam prep.
+4. **Explain Confusing or Dense Ideas**  
+   • Use in-line explanations with analogies where helpful.  
+   • Prefer casual, relatable phrasing: like explaining to a peer who knows the basics but is struggling to grasp the details.
 
-5. **Preserve Headings from Original Text**  
-   • If the input includes section titles or headers, keep them exactly as-is.
+5. **Keep All Facts, Figures, and Terminology**  
+   • Never remove important numbers, names, or keywords.  
+   • If a study is mentioned, simplify what it means without removing the data.
 
-6. **Tone and Style**  
-   • Sound like a helpful study partner—clear, confident, and focused on getting the concept across.
+6. **Tone: Clear, Confident, and Friendly**  
+   • Be supportive, focused, and clear—like a helpful study partner.
 
-If the input is empty, respond:  
+────────────────────────────────────────────────────────
+📄 How to Treat Content Types:
+
+- **Paragraphs**: Break into 2–4 simpler sentences. Clarify technical ideas as needed, and bracket key terms if replaced.  
+- **Bullet Lists**: Convert each bullet into a short paragraph. Start with the keyword (in brackets if rephrased), then explain what it means and why it matters.
+
+────────────────────────────────────────────────────────
+✍️ Example Transformations:
+
+**Original Heading (kept verbatim):**  
+**Indications for Surgical Intervention**
+
+**Original Paragraph:**  
+“Surgical exploration is mandated when peritoneal signs are evident and hemodynamic instability persists despite resuscitative efforts.”  
+
+**Simplified Version:**  
+Surgery is necessary when clear signs of peritoneal irritation show up (that means the inner lining of the abdomen is inflamed) and the patient's blood pressure and heart rate stay unstable even after trying to stabilize them [resuscitative efforts].
+
+---
+
+**Original Bullet:**  
+- Hepatosplenomegaly is common in patients with advanced schistosomiasis.  
+
+**Simplified Version:**  
+- A swollen liver and spleen (hepatosplenomegaly) often shows up in people with advanced stages of schistosomiasis. This swelling happens as the body tries to fight off the long-term infection.
+
+────────────────────────────────────────────────────────
+✅ Study Mode Checklist:
+
+- [ ] Headings and titles are exactly preserved  
+- [ ] Sentence structure is simplified and clear  
+- [ ] Keywords are either kept as-is or appear in brackets after a simple word  
+- [ ] Tone is helpful, academic, and learner-friendly  
+- [ ] Facts and terminology are never removed  
+- [ ] Technical terms are explained when needed  
+- [ ] Analogies or clarifying examples used if they aid understanding  
+
+If there is no input text, respond with:  
 [{ "text": "Nothing to explain here.", "type": "paragraph" }]
 
-Here’s the overall topic of the file to guide your rewrite:
+For better clarity, here’s a general summary of the file. Use this to understand the topic while simplifying the content:
 
 **Summary start**  
 ${summary}  
 **Summary end**
 `;
+
+// export const getTextSimplificationPrompt = (summary: string) => `
+// 📘 Clarity for Exam-Ready Learners — Simplify Complex Medical or Technical Text Without Losing Key Terms
+
+// You’re helping someone who is preparing for an exam in a technical field (e.g. medicine). They already understand the basics but need complex material to be written in a way that is easy to follow and remember.
+
+// Here’s what to do:
+
+// 1. **Simplify for Clarity, Not Dumbed-Down**  
+//    • Rewrite dense or formal sentences using simpler words and a more natural sentence flow.  
+//    • Break long sentences into shorter ones.
+
+// 2. **Preserve All Key Terms**  
+//    • Never remove important terms like “cirrhosis” or “liver parenchyma.”  
+//    • If using a simpler word for clarity, place it first, and then include the original technical term in parentheses.  
+//      👉 Example: “serious liver scarring (cirrhosis)”
+
+// 3. **Clarify and Explain In-Line**  
+//    • Briefly explain what each technical term means, ideally in the same sentence.  
+//    • Use analogies only if they help understanding—don’t overuse.
+
+// 4. **Retain All Original Meaning and Data**  
+//    • Keep any numbers, conditions, durations, or medical markers. These are vital for exam prep.
+
+// 5. **Preserve Headings from Original Text**  
+//    • If the input includes section titles or headers, keep them exactly as-is.
+
+// 6. **Tone and Style**  
+//    • Sound like a helpful study partner—clear, confident, and focused on getting the concept across.
+
+// If the input is empty, respond:  
+// [{ "text": "Nothing to explain here.", "type": "paragraph" }]
+
+// Here’s the overall topic of the file to guide your rewrite:
+
+// **Summary start**  
+// ${summary}  
+// **Summary end**
+// `;
 
 // export const getTextSimplificationPrompt = (summary: string) => `
 // 📘 Hey Study Buddy! Let’s Make Tough Text Easy to Follow
