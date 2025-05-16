@@ -180,9 +180,24 @@ export class FileUploadController {
         });
       };
 
-      const uploadGoogleDrivePromise = uploadFileToGoogleAndSaveStoredFile();
+      const createDocSummary = async () => {
+        const summaryInfo = await this.summarizeDocumentV2(
+          openaiClient,
+          chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
+        );
+        await this.createDocumentSummaryHandler.handle({
+          documentId: createdDocument.data.id,
+          summary: summaryInfo,
+          userId: userToken.sub,
+        });
 
-      const [createdDocument, topics, summaryInfo] = await Promise.all([
+        return summaryInfo;
+      };
+
+      const uploadGoogleDrivePromise = uploadFileToGoogleAndSaveStoredFile();
+      const summaryCreationPromise = createDocSummary();
+
+      const [createdDocument, topics] = await Promise.all([
         this.createCourseDocumentHandler.handle({
           payload: {
             title: file.originalname,
@@ -195,18 +210,6 @@ export class FileUploadController {
           openaiClient,
           chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
         ),
-        this.summarizeDocumentV2(
-          openaiClient,
-          chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
-        ),
-      ]);
-
-      await Promise.all([
-        this.createDocumentSummaryHandler.handle({
-          documentId: createdDocument.data.id,
-          summary: summaryInfo,
-          userId: userToken.sub,
-        }),
       ]);
 
       const mappedTopics = topics.map((topic) => {
@@ -261,7 +264,10 @@ export class FileUploadController {
         ]);
       }
 
-      await uploadGoogleDrivePromise;
+      const [summaryInfo] = await Promise.all([
+        summaryCreationPromise,
+        uploadGoogleDrivePromise,
+      ]);
 
       // return a response here
       res.status(HttpStatus.CREATED).json({
