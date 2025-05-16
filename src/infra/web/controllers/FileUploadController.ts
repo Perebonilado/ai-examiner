@@ -165,43 +165,51 @@ export class FileUploadController {
         },
       );
 
-      const [createdDocument, topics, summaryInfo, uploadedGoogleDriveFile] =
-        await Promise.all([
-          this.createCourseDocumentHandler.handle({
-            payload: {
-              title: file.originalname,
-              userId: userToken.sub,
-              courseId: '',
-              fileId: '',
-            },
-          }),
-          this.generateDocumentTopicsV2(
-            openaiClient,
-            chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
-          ),
-          this.summarizeDocumentV2(
-            openaiClient,
-            chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
-          ),
-          this.googleDriveService.uploadFile({
+      const uploadFileToGoogleAndSaveStoredFile = async () => {
+        const uploadedGoogleDriveFile =
+          await this.googleDriveService.uploadFile({
             file: fileBufferToUse,
             originalFileName: file.originalname,
             mimetype: file.mimetype,
             mimeTypeToSaveAs: fileFormatToSaveFile,
-          }),
-        ]);
-
-      await Promise.all([
-        this.createDocumentSummaryHandler.handle({
-          documentId: createdDocument.data.id,
-          summary: summaryInfo,
-          userId: userToken.sub,
-        }),
-        this.createStoredFileHandler.handle({
+          });
+        await this.createStoredFileHandler.handle({
           documentId: createdDocument.data.id,
           originalFileId: uploadedGoogleDriveFile.fileId,
           currentFileFormat: fileFormatToSaveFile,
+        });
+      };
+
+      const createDocSummary = async () => {
+        const summaryInfo = await this.summarizeDocumentV2(
+          openaiClient,
+          chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
+        );
+        await this.createDocumentSummaryHandler.handle({
+          documentId: createdDocument.data.id,
+          summary: summaryInfo,
+          userId: userToken.sub,
+        });
+
+        return summaryInfo;
+      };
+
+      const uploadGoogleDrivePromise = uploadFileToGoogleAndSaveStoredFile();
+      const summaryCreationPromise = createDocSummary();
+
+      const [createdDocument, topics] = await Promise.all([
+        this.createCourseDocumentHandler.handle({
+          payload: {
+            title: file.originalname,
+            userId: userToken.sub,
+            courseId: '',
+            fileId: '',
+          },
         }),
+        this.generateDocumentTopicsV2(
+          openaiClient,
+          chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
+        ),
       ]);
 
       const mappedTopics = topics.map((topic) => {
@@ -255,6 +263,11 @@ export class FileUploadController {
           this.createDocumentTopicHandler.handle({ payload: mappedTopics }),
         ]);
       }
+
+      const [summaryInfo] = await Promise.all([
+        summaryCreationPromise,
+        uploadGoogleDrivePromise,
+      ]);
 
       // return a response here
       res.status(HttpStatus.CREATED).json({
