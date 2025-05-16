@@ -459,7 +459,7 @@ export const generateHTMLFromContent = (pages: PDFContent[][]): string => {
   `;
 };
 
-
+// use when you need to print pdf
 const styles = `
     <style>
       @import url('${'fontUrl'}');
