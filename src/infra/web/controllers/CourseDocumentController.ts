@@ -266,22 +266,28 @@ export class CourseDocumentController {
 
       // update file if the type is not a pdf
       if (storedFile.currentFileFormat !== pdfMimeType) {
-        const newFileUploaded = await this.googleDriveService.uploadFile({
-          file: fileToSend,
-          mimetype: pdfMimeType,
-          originalFileName: document.title,
-          mimeTypeToSaveAs: pdfMimeType,
-        });
+        setTimeout(async () => {
+          const newFileUploaded = await this.googleDriveService.uploadFile({
+            file: fileToSend,
+            mimetype: pdfMimeType,
+            originalFileName: document.title,
+            mimeTypeToSaveAs: pdfMimeType,
+          });
 
-        await this.updateStoredFileHandler.handle({
-          id: storedFile.id,
-          modifiedContent:
-            (storedFile.modifiedContent as unknown as PDFContent[][]) || [],
-          currentFileFormat: pdfMimeType,
-          originalFileId: newFileUploaded.fileId,
-        });
+          const storedFileContent =
+            await this.storedFileQueryService.findByDocumentId(documentId);
 
-        await this.googleDriveService.deleteFile(storedFile.originalFileId);
+          await this.updateStoredFileHandler.handle({
+            id: storedFile.id,
+            modifiedContent:
+              (storedFileContent.modifiedContent as unknown as PDFContent[][]) ||
+              [],
+            currentFileFormat: pdfMimeType,
+            originalFileId: newFileUploaded.fileId,
+          });
+
+          await this.googleDriveService.deleteFile(storedFile.originalFileId);
+        }, 500);
       }
 
       return;
@@ -305,7 +311,11 @@ export class CourseDocumentController {
       const storedFile =
         await this.storedFileQueryService.findByDocumentId(documentId);
 
-      if (storedFile.originalFileId && storedFile.modifiedContent) {
+      if (
+        storedFile.originalFileId &&
+        storedFile.modifiedContent &&
+        JSON.parse(storedFile.modifiedContent).length
+      ) {
         const htmlContent = (
           JSON.parse(storedFile.modifiedContent) as PDFContent[][]
         ).map((content) => {
@@ -356,6 +366,11 @@ export class CourseDocumentController {
         }),
       );
 
+      await this.updateStoredFileHandler.handle({
+        id: storedFile.id,
+        modifiedContent: rewordedPages,
+      });
+
       const htmlContent = rewordedPages.map((content) => {
         const contentPerPage = generateHTMLFromContent([content]);
         return contentPerPage;
@@ -366,6 +381,7 @@ export class CourseDocumentController {
         pageCount: htmlContent.length,
       };
     } catch (error) {
+      console.log(error);
       throw new HttpException(
         error.message ?? 'Failed to get modified content',
         error.status ?? HttpStatus.BAD_REQUEST,
