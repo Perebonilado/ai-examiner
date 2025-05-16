@@ -201,13 +201,15 @@ export class FileUploadController {
         ),
       ]);
 
-      await Promise.all([
-        this.createDocumentSummaryHandler.handle({
+      const createDocSummary = async () => {
+        return await this.createDocumentSummaryHandler.handle({
           documentId: createdDocument.data.id,
           summary: summaryInfo,
           userId: userToken.sub,
-        }),
-      ]);
+        });
+      };
+
+      const summaryCreationPromise = createDocSummary();
 
       const mappedTopics = topics.map((topic) => {
         return {
@@ -258,10 +260,10 @@ export class FileUploadController {
         await Promise.all([
           upsertPromises,
           this.createDocumentTopicHandler.handle({ payload: mappedTopics }),
+          await uploadGoogleDrivePromise,
+          await summaryCreationPromise,
         ]);
       }
-
-      await uploadGoogleDrivePromise;
 
       // return a response here
       res.status(HttpStatus.CREATED).json({
