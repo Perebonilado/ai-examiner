@@ -13,11 +13,10 @@ import * as fs from 'fs';
 import * as pdfParse from 'pdf-parse';
 import { rm } from 'fs/promises';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import fontkit from '@pdf-lib/fontkit'
+import fontkit from '@pdf-lib/fontkit';
 import * as path from 'path';
 import { readFile } from 'fs/promises';
 import puppeteer from 'puppeteer-core';
-
 
 const libreConvert = promisify(libre.convert);
 
@@ -292,11 +291,16 @@ const wrapText = (
   return lines;
 };
 
-export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<Buffer> => {
+export const createSimplifiedPdf = async (
+  pageContent: PDFContent[][],
+): Promise<Buffer> => {
   try {
-    const html = generateHTMLFromContent(pageContent);
+    const html = generateHTMLFromContent(pageContent, true);
 
-    const browser = await puppeteer.connect({browserWSEndpoint: 'wss://browserless-production-dfc4.up.railway.app?token=qu5tpi99EESc45tMpJn8BrPscsLeqWd9DwUxEm1nC2r648Vp'});
+    const browser = await puppeteer.connect({
+      browserWSEndpoint:
+        'wss://browserless-production-dfc4.up.railway.app?token=qu5tpi99EESc45tMpJn8BrPscsLeqWd9DwUxEm1nC2r648Vp',
+    });
     const page = await browser.newPage();
 
     await page.setContent(html, { waitUntil: 'networkidle0' });
@@ -304,7 +308,7 @@ export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
-      margin: { top: '40px', bottom: '40px', left: '40px', right: '40px' }
+      margin: { top: '40px', bottom: '40px', left: '40px', right: '40px' },
     });
 
     await browser.close();
@@ -315,12 +319,158 @@ export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<
   }
 };
 
-const generateHTMLFromContent = (pages: PDFContent[][]): string => {
-  const fontUrl = 'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap';
+export const generateHTMLFromContent = (
+  pages: PDFContent[][],
+  isForPDFDownload = false,
+): string => {
+  const fontUrl =
+    'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap';
 
-  const styles = `
+  const styles = isForPDFDownload
+    ? stylesForPDFDownload
+    : `
+  <style>
+    @import url('${fontUrl}');
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Sans', sans-serif;
+      background-color: #fff;
+      color: #000;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    h1 {
+      font-size: 2rem; /* 32px */
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    h2 {
+      font-size: 1.5rem; /* 24px */
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    p {
+      font-size: 1rem; /* 16px */
+      margin: 0 0 1rem 0;
+    }
+
+    ul {
+      margin: 0 0 1rem 1.5rem;
+      padding-left: 0;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+      font-size: 1rem; /* 16px */
+    }
+
+    strong {
+      font-weight: 700;
+    }
+
+    @media (min-width: 768px) {
+      html {
+        font-size: 17px;
+      }
+    }
+
+    @media print {
+      .page {
+        height: 100vh;
+      }
+    }
+  </style>
+`;
+
+  const autoScaleScript = `
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.page').forEach(page => {
+          const content = page.querySelector('.content');
+          const scale = page.clientHeight / content.scrollHeight;
+          if (scale < 1) {
+            content.style.transform = 'scale(' + scale + ')';
+          }
+        });
+      });
+    </script>
+  `;
+
+  const escapeHtmlWithFormatting = (text: string): string => {
+    const escaped = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+    return escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  };
+
+  const renderPage = (content: PDFContent[]): string => {
+    let html = '';
+    let bulletItems: string[] = [];
+
+    content.forEach((item, idx) => {
+      const formattedText = escapeHtmlWithFormatting(item.text);
+
+      switch (item.type) {
+        case 'headingOne':
+          html += flushBullets() + `<h1>${formattedText}</h1>\n`;
+          break;
+        case 'headingTwo':
+          html += flushBullets() + `<h2>${formattedText}</h2>\n`;
+          break;
+        case 'bullet':
+          bulletItems.push(`<li>${formattedText}</li>`);
+          break;
+        case 'paragraph':
+        default:
+          html += flushBullets() + `<p>${formattedText}</p>\n`;
+          break;
+      }
+
+      if (idx === content.length - 1) html += flushBullets();
+    });
+
+    function flushBullets(): string {
+      if (!bulletItems.length) return '';
+      const listHtml = `<ul>\n${bulletItems.join('\n')}\n</ul>\n`;
+      bulletItems = [];
+      return listHtml;
+    }
+
+    return `<div class="page"><div class="content">${html}</div></div>`;
+  };
+
+  const pagesHtml = pages.map((page) => renderPage(page)).join('\n');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        ${styles}
+      </head>
+      <body>
+        ${pagesHtml}
+        ${autoScaleScript}
+      </body>
+    </html>
+  `;
+};
+
+const stylesForPDFDownload = `
     <style>
-      @import url('${fontUrl}');
+      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap');
       * {
         box-sizing: border-box;
       }
@@ -399,82 +549,3 @@ const generateHTMLFromContent = (pages: PDFContent[][]): string => {
       }
     </style>
   `;
-
-  const autoScaleScript = `
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('.page').forEach(page => {
-          const content = page.querySelector('.content');
-          const scale = page.clientHeight / content.scrollHeight;
-          if (scale < 1) {
-            content.style.transform = 'scale(' + scale + ')';
-          }
-        });
-      });
-    </script>
-  `;
-
-  const escapeHtmlWithFormatting = (text: string): string => {
-    const escaped = text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-    return escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  };
-
-  const renderPage = (content: PDFContent[]): string => {
-    let html = '';
-    let bulletItems: string[] = [];
-
-    content.forEach((item, idx) => {
-      const formattedText = escapeHtmlWithFormatting(item.text);
-
-      switch (item.type) {
-        case 'headingOne':
-          html += flushBullets() + `<h1>${formattedText}</h1>\n`;
-          break;
-        case 'headingTwo':
-          html += flushBullets() + `<h2>${formattedText}</h2>\n`;
-          break;
-        case 'bullet':
-          bulletItems.push(`<li>${formattedText}</li>`);
-          break;
-        case 'paragraph':
-        default:
-          html += flushBullets() + `<p>${formattedText}</p>\n`;
-          break;
-      }
-
-      if (idx === content.length - 1) html += flushBullets();
-    });
-
-    function flushBullets(): string {
-      if (!bulletItems.length) return '';
-      const listHtml = `<ul>\n${bulletItems.join('\n')}\n</ul>\n`;
-      bulletItems = [];
-      return listHtml;
-    }
-
-    return `<div class="page"><div class="content">${html}</div></div>`;
-  };
-
-  const pagesHtml = pages.map(page => renderPage(page)).join('\n');
-
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        ${styles}
-      </head>
-      <body>
-        ${pagesHtml}
-        ${autoScaleScript}
-      </body>
-    </html>
-  `;
-};
-
