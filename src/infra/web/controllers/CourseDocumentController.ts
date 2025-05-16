@@ -32,6 +32,7 @@ import {
   createSimplifiedPdf,
   extractJSONDataFromMessages,
   extractPagesTextsFromPDF,
+  generateHTMLFromContent,
   PDFContent,
   splitPdfPagesToIndividualFiles,
 } from 'src/utils';
@@ -70,6 +71,7 @@ import { UpdateStoredFileHandler } from 'src/business/handlers/StoredFile/Update
 import { StoredFileUrlModel } from '../models/StoredFileModel';
 import { FileConversionService } from 'src/integrations/aspose/services/FileConversionService';
 import { ExportFormat } from 'asposeslidescloud';
+import { ModifiedContentModel } from '../models/ModifiedContentModel';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -264,22 +266,28 @@ export class CourseDocumentController {
 
       // update file if the type is not a pdf
       if (storedFile.currentFileFormat !== pdfMimeType) {
-        const newFileUploaded = await this.googleDriveService.uploadFile({
-          file: fileToSend,
-          mimetype: pdfMimeType,
-          originalFileName: document.title,
-          mimeTypeToSaveAs: pdfMimeType,
-        });
+        setTimeout(async () => {
+          const newFileUploaded = await this.googleDriveService.uploadFile({
+            file: fileToSend,
+            mimetype: pdfMimeType,
+            originalFileName: document.title,
+            mimeTypeToSaveAs: pdfMimeType,
+          });
 
-        await this.updateStoredFileHandler.handle({
-          id: storedFile.id,
-          modifiedContent:
-            (storedFile.modifiedContent as unknown as PDFContent[][]) || [],
-          currentFileFormat: pdfMimeType,
-          originalFileId: newFileUploaded.fileId,
-        });
+          const storedFileContent =
+            await this.storedFileQueryService.findByDocumentId(documentId);
 
-        await this.googleDriveService.deleteFile(storedFile.originalFileId);
+          await this.updateStoredFileHandler.handle({
+            id: storedFile.id,
+            modifiedContent:
+              (storedFileContent.modifiedContent as unknown as PDFContent[][]) ||
+              [],
+            currentFileFormat: pdfMimeType,
+            originalFileId: newFileUploaded.fileId,
+          });
+
+          await this.googleDriveService.deleteFile(storedFile.originalFileId);
+        }, 500);
       }
 
       return;
@@ -288,6 +296,95 @@ export class CourseDocumentController {
       throw new HttpException(
         'Failed to get original file',
         HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/modified-content/:documentId')
+  public async getModifiedContent(
+    @Param('documentId') documentId: string,
+    @Req() request: Request,
+  ): Promise<ModifiedContentModel> {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      const storedFile =
+        await this.storedFileQueryService.findByDocumentId(documentId);
+
+      if (
+        storedFile.originalFileId &&
+        storedFile.modifiedContent &&
+        JSON.parse(storedFile.modifiedContent).length
+      ) {
+        const htmlContent = (
+          JSON.parse(storedFile.modifiedContent) as PDFContent[][]
+        ).map((content) => {
+          const contentPerPage = generateHTMLFromContent([content]);
+          return contentPerPage;
+        });
+
+        return {
+          content: htmlContent,
+          pageCount: htmlContent.length,
+        };
+      }
+
+      let originalFile: Buffer;
+      if (storedFile.currentFileFormat === googlePresentationFileFormat) {
+        originalFile = await this.googleDriveService.exportFileAsPDF(
+          storedFile.originalFileId,
+        );
+      } else {
+        originalFile = await this.googleDriveService.getFile(
+          storedFile.originalFileId,
+        );
+      }
+
+      const [document, summary] = await Promise.all([
+        this.courseDocumentQueryService.findCourseDocumentById(
+          documentId,
+          userToken.sub,
+        ),
+        this.documentSummaryQueryService.findByDocumentId(documentId),
+      ]);
+      const pages = await this.extractTextService.getChunksBasedOnFileMimeType({
+        buffer: originalFile,
+        mimetype:
+          storedFile.currentFileFormat === googlePresentationFileFormat
+            ? pdfMimeType
+            : storedFile.currentFileFormat,
+        originalName: document.title,
+      });
+      const rewordedPages = await Promise.all(
+        pages.map(async (page) => {
+          // open ai call to reword
+          if (page.trim().length) {
+            const res = await this.simplifyTextContent(page, summary.summary);
+            return res;
+          }
+          return [{ text: 'Empty Page', type: 'paragraph' }] as PDFContent[];
+        }),
+      );
+
+      await this.updateStoredFileHandler.handle({
+        id: storedFile.id,
+        modifiedContent: rewordedPages,
+      });
+
+      const htmlContent = rewordedPages.map((content) => {
+        const contentPerPage = generateHTMLFromContent([content]);
+        return contentPerPage;
+      });
+
+      return {
+        content: htmlContent,
+        pageCount: htmlContent.length,
+      };
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(
+        error.message ?? 'Failed to get modified content',
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }
