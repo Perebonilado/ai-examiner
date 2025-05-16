@@ -315,90 +315,71 @@ export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<
   }
 };
 
-const generateHTMLFromContent = (pages: PDFContent[][]): string => {
+export const generateHTMLFromContent = (pages: PDFContent[][]): string => {
   const fontUrl = 'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap';
 
   const styles = `
-    <style>
-      @import url('${fontUrl}');
-      * {
-        box-sizing: border-box;
-      }
+  <style>
+    @import url('${fontUrl}');
+    * {
+      box-sizing: border-box;
+    }
 
-      html, body {
-        margin: 0;
-        padding: 0;
-        font-family: 'Noto Sans', sans-serif;
-        background-color: #fff;
-        color: #000;
-        font-size: 22px;
-        line-height: 1.8;
-      }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Sans', sans-serif;
+      background-color: #fff;
+      color: #000;
+      font-size: 16px;
+      line-height: 1.6;
+    }
 
+    h1 {
+      font-size: 2rem; /* 32px */
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    h2 {
+      font-size: 1.5rem; /* 24px */
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    p {
+      font-size: 1rem; /* 16px */
+      margin: 0 0 1rem 0;
+    }
+
+    ul {
+      margin: 0 0 1rem 1.5rem;
+      padding-left: 0;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+      font-size: 1rem; /* 16px */
+    }
+
+    strong {
+      font-weight: 700;
+    }
+
+    @media (min-width: 768px) {
+      html {
+        font-size: 17px;
+      }
+    }
+
+    @media print {
       .page {
-        width: 100%;
-        height: 100vh; /* or fixed like 1122px for A4 at 96dpi */
-        padding: 40px 24px;
-        overflow: hidden;
-        position: relative;
-        page-break-after: always;
+        height: 100vh;
       }
+    }
+  </style>
+`;
 
-      .page:last-child {
-        page-break-after: auto;
-      }
-
-      .content {
-        transform-origin: top left;
-        width: 100%;
-        height: auto;
-        display: inline-block;
-      }
-
-      h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 1rem;
-      }
-
-      h2 {
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 0.75rem;
-      }
-
-      p {
-        font-size: 1.25rem;
-        margin: 0 0 1rem 0;
-      }
-
-      ul {
-        margin: 0 0 1rem 1.5rem;
-        padding-left: 0;
-      }
-
-      li {
-        margin-bottom: 0.75rem;
-        font-size: 1.25rem;
-      }
-
-      strong {
-        font-weight: 700;
-      }
-
-      @media (min-width: 768px) {
-        html {
-          font-size: 20px;
-        }
-      }
-
-      @media print {
-        .page {
-          height: 100vh;
-        }
-      }
-    </style>
-  `;
 
   const autoScaleScript = `
     <script>
@@ -478,3 +459,85 @@ const generateHTMLFromContent = (pages: PDFContent[][]): string => {
   `;
 };
 
+// use when you need to print pdf
+const styles = `
+    <style>
+      @import url('${'fontUrl'}');
+      * {
+        box-sizing: border-box;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Noto Sans', sans-serif;
+        background-color: #fff;
+        color: #000;
+        font-size: 22px;
+        line-height: 1.8;
+      }
+
+      .page {
+        width: 100%;
+        height: 100vh; /* or fixed like 1122px for A4 at 96dpi */
+        padding: 40px 24px;
+        overflow: hidden;
+        position: relative;
+        page-break-after: always;
+      }
+
+      .page:last-child {
+        page-break-after: auto;
+      }
+
+      .content {
+        transform-origin: top left;
+        width: 100%;
+        height: auto;
+        display: inline-block;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+      }
+
+      h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+      }
+
+      p {
+        font-size: 1.25rem;
+        margin: 0 0 1rem 0;
+      }
+
+      ul {
+        margin: 0 0 1rem 1.5rem;
+        padding-left: 0;
+      }
+
+      li {
+        margin-bottom: 0.75rem;
+        font-size: 1.25rem;
+      }
+
+      strong {
+        font-weight: 700;
+      }
+
+      @media (min-width: 768px) {
+        html {
+          font-size: 20px;
+        }
+      }
+
+      @media print {
+        .page {
+          height: 100vh;
+        }
+      }
+    </style>
+  `;
