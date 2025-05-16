@@ -336,19 +336,19 @@ export const generateHTMLFromContent = (pages: PDFContent[][]): string => {
     }
 
     h1 {
-      font-size: 2rem; /* 32px */
+      font-size: 1.5rem; 
       font-weight: 700;
       margin-bottom: 1rem;
     }
 
     h2 {
-      font-size: 1.5rem; /* 24px */
+      font-size: 1.2rem; 
       font-weight: 700;
       margin-bottom: 0.75rem;
     }
 
     p {
-      font-size: 1rem; /* 16px */
+      font-size: 1rem; 
       margin: 0 0 1rem 0;
     }
 
@@ -359,7 +359,7 @@ export const generateHTMLFromContent = (pages: PDFContent[][]): string => {
 
     li {
       margin-bottom: 0.5rem;
-      font-size: 1rem; /* 16px */
+      font-size: 1rem;
     }
 
     strong {
@@ -368,7 +368,7 @@ export const generateHTMLFromContent = (pages: PDFContent[][]): string => {
 
     @media (min-width: 768px) {
       html {
-        font-size: 17px;
+        font-size: 14px;
       }
     }
 
