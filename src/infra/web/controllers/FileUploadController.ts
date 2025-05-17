@@ -194,18 +194,18 @@ export class FileUploadController {
         return summaryInfo;
       };
 
-      const uploadGoogleDrivePromise = uploadFileToGoogleAndSaveStoredFile();
+      const createdDocument = await this.createCourseDocumentHandler.handle({
+        payload: {
+          title: file.originalname,
+          userId: userToken.sub,
+          courseId: '',
+          fileId: '',
+        },
+      });
       const summaryCreationPromise = createDocSummary();
+      const uploadGoogleDrivePromise = uploadFileToGoogleAndSaveStoredFile();
 
-      const [createdDocument, topics] = await Promise.all([
-        this.createCourseDocumentHandler.handle({
-          payload: {
-            title: file.originalname,
-            userId: userToken.sub,
-            courseId: '',
-            fileId: '',
-          },
-        }),
+      const [topics] = await Promise.all([
         this.generateDocumentTopicsV2(
           openaiClient,
           chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
