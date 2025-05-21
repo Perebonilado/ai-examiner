@@ -23,6 +23,7 @@
     "@ai-sdk/google": "^1.2.13",
     "@ai-sdk/openai": "^1.2.2",
     "@aws-sdk/client-s3": "^3.529.1",
+    "@dqbd/tiktoken": "^1.0.21",
     "@mistralai/mistralai": "^1.5.1",
     "@nestjs-modules/mailer": "^1.11.2",
     "@nestjs/axios": "^3.0.2",

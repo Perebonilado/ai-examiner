@@ -12,12 +12,24 @@ import * as libre from 'libreoffice-convert';
 import * as fs from 'fs';
 import * as pdfParse from 'pdf-parse';
 import { rm } from 'fs/promises';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import fontkit from '@pdf-lib/fontkit'
-import * as path from 'path';
-import { readFile } from 'fs/promises';
+import { PDFDocument } from 'pdf-lib';
 import puppeteer from 'puppeteer-core';
+import { encoding_for_model } from '@dqbd/tiktoken';
 
+const MAX_TOKENS = 128000;
+const SAFE_MARGIN = 200; // keep a little room for response or overhead
+
+export function trimToEstimatedTokens(input: string): string {
+  const estimatedTokenLength = Math.ceil(input.length / 4);
+
+  if (estimatedTokenLength <= MAX_TOKENS - SAFE_MARGIN) {
+    return input;
+  }
+
+  const allowedChars = Math.floor((MAX_TOKENS - SAFE_MARGIN) * 4);
+
+  return input.slice(0, allowedChars);
+}
 
 const libreConvert = promisify(libre.convert);
 
@@ -292,11 +304,16 @@ const wrapText = (
   return lines;
 };
 
-export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<Buffer> => {
+export const createSimplifiedPdf = async (
+  pageContent: PDFContent[][],
+): Promise<Buffer> => {
   try {
     const html = generateHTMLFromContent(pageContent);
 
-    const browser = await puppeteer.connect({browserWSEndpoint: 'wss://browserless-production-dfc4.up.railway.app?token=qu5tpi99EESc45tMpJn8BrPscsLeqWd9DwUxEm1nC2r648Vp'});
+    const browser = await puppeteer.connect({
+      browserWSEndpoint:
+        'wss://browserless-production-dfc4.up.railway.app?token=qu5tpi99EESc45tMpJn8BrPscsLeqWd9DwUxEm1nC2r648Vp',
+    });
     const page = await browser.newPage();
 
     await page.setContent(html, { waitUntil: 'networkidle0' });
@@ -304,7 +321,7 @@ export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
-      margin: { top: '40px', bottom: '40px', left: '40px', right: '40px' }
+      margin: { top: '40px', bottom: '40px', left: '40px', right: '40px' },
     });
 
     await browser.close();
@@ -316,7 +333,8 @@ export const createSimplifiedPdf = async (pageContent: PDFContent[][]): Promise<
 };
 
 export const generateHTMLFromContent = (pages: PDFContent[][]): string => {
-  const fontUrl = 'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap';
+  const fontUrl =
+    'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap';
 
   const styles = `
   <style>
@@ -380,7 +398,6 @@ export const generateHTMLFromContent = (pages: PDFContent[][]): string => {
   </style>
 `;
 
-
   const autoScaleScript = `
     <script>
       document.addEventListener('DOMContentLoaded', () => {
@@ -397,11 +414,11 @@ export const generateHTMLFromContent = (pages: PDFContent[][]): string => {
 
   const escapeHtmlWithFormatting = (text: string): string => {
     const escaped = text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
     return escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   };
 
@@ -441,7 +458,7 @@ export const generateHTMLFromContent = (pages: PDFContent[][]): string => {
     return `<div class="page"><div class="content">${html}</div></div>`;
   };
 
-  const pagesHtml = pages.map(page => renderPage(page)).join('\n');
+  const pagesHtml = pages.map((page) => renderPage(page)).join('\n');
 
   return `
     <!DOCTYPE html>
