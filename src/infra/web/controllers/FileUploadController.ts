@@ -26,6 +26,7 @@ import {
   extractJSONDataFromMessages,
   generateUUID,
   splitPdfPagesToIndividualFiles,
+  trimToEstimatedTokens,
   writeFileToStream,
 } from 'src/utils';
 import { generateMessagePrompt, generateTopicPrompt } from 'src/constants';
@@ -183,7 +184,9 @@ export class FileUploadController {
       const createDocSummary = async () => {
         const summaryInfo = await this.summarizeDocumentV2(
           openaiClient,
-          chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
+          trimToEstimatedTokens(
+            chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
+          ),
         );
         await this.createDocumentSummaryHandler.handle({
           documentId: createdDocument.data.id,
@@ -208,7 +211,7 @@ export class FileUploadController {
       const [topics] = await Promise.all([
         this.generateDocumentTopicsV2(
           openaiClient,
-          chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
+          trimToEstimatedTokens(chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n')),
         ),
       ]);
 
