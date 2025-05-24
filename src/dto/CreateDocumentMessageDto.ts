@@ -14,6 +14,10 @@ export interface CreateDocumentMessageDto {
     documentId: string;
     threadId: string;
   };
+   imageDescriptionData?: {
+    imageUrl: string;
+    originalKeywordSearch: string;
+   }
 }
 
 export interface NotSureQuestion {

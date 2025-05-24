@@ -1050,6 +1050,83 @@ Based on the summary of a source text provided, your task is to output **5 power
    - Incorporating field-specific terminology needed for proper comprehension
 `;
 
+export const getGoogleImageQueryPrompt = (summary: string): string => {
+  return `You are a Google Image search optimization expert. Your sole objective is to extract the ONE most visually searchable term that will return the highest quality, most relevant images.
+
+DOCUMENT SUMMARY:
+${summary}
+
+CRITICAL REQUIREMENTS:
+
+1. **VISUAL PRIMACY**: Choose terms that represent distinct, recognizable visual subjects—not abstract concepts, processes, or ideas that lack clear visual representation.
+
+2. **SPECIFICITY HIERARCHY**: Follow this priority order:
+   - Anatomical structures > general body parts
+   - Specific diseases/conditions > symptom categories  
+   - Technical equipment/instruments > general tools
+   - Species names > broad classifications
+   - Chemical compounds > substance categories
+
+3. **SEARCH EFFECTIVENESS**: Your term must:
+   - Generate images from authoritative sources (medical atlases, scientific journals, educational materials)
+   - Avoid generic stock photos or irrelevant results
+   - Return diagrams, illustrations, or photographs that directly support understanding
+
+4. **PROVEN PATTERNS**: Prioritize terms that follow successful search patterns:
+   - Medical: "cardiac catheterization", "mitral valve stenosis", "pneumothorax chest xray"
+   - Scientific: "DNA replication fork", "mitochondrial cristae", "protein folding"
+   - Technical: "mass spectrometer", "electron microscopy", "PCR amplification"
+
+5. **ELIMINATION CRITERIA**: Reject terms that are:
+   - Too broad ("heart", "cancer", "treatment")
+   - Too narrow (specific patient cases, rare variants)
+   - Process-heavy without visual markers ("diagnosis", "therapy", "management")
+   - Abstract concepts ("wellness", "prevention", "outcomes")
+
+ANALYZE THE SUMMARY → IDENTIFY THE MOST VISUALLY DISTINCTIVE ELEMENT → RETURN ONLY THAT TERM/PHRASE
+`;
+};
+
+// export const getGoogleImageQueryPrompt = (summary: string): string => {
+//   return `You are an expert Google Image search strategist. Your task is to identify the single most effective keyword or short keyword phrase (2–4 words max) for visual search, based on a user's document.
+
+// You have access to a detailed summary of the document, which provides essential context and terminology.
+
+// ---
+// Document Summary:
+// ${summary}
+// ---
+
+// Your mission:
+
+// 1. **Visual relevance:** Identify a term or short phrase from the summary that is highly likely to yield visually useful and accurate image results.
+// 2. **Domain specificity:** Prefer precise, field-specific terminology over generic terms, especially those used in medical, scientific, educational, or technical contexts.
+// 3. **Search effectiveness:** Choose a keyword or phrase that would likely appear in high-quality image sources (e.g., scientific atlases, educational diagrams, journal articles).
+// 4. **Clarity & specificity:** Avoid overly broad or ambiguous terms. Choose something that clearly represents a distinct visual concept or subject.
+
+// Only return the most effective keyword or short phrase—nothing else.`;
+// };
+
+
+// export const getGoogleImageQueryPrompt = (summary: string): string => {
+//   return `You are an expert Google Image search strategist. Your mission is to transform a user's initial, often broad, image search query into a highly precise and visually effective query. You have access to a detailed document summary for crucial context and terminology.
+
+// Given the following document summary:
+
+// ---
+// Document Summary:
+// ${summary}
+// ---
+
+// When the user provides their initial image search query, your task is to leverage the information in the above summary to:
+
+// 1.  **Refine the query for visual relevance:** Identify the most visually impactful terms and concepts from the summary that directly relate to the user's initial query.
+// 2.  **Incorporate specific terminology:** Utilize precise, field-specific jargon from the document that would lead to more authoritative and accurate image results.
+// 3.  **Enhance specificity and clarity:** Make the query as focused as possible, aiming for images that clearly depict the subject.
+// 4.  **Prioritize high-quality results:** Formulate the query in a way that is likely to return images from reputable sources (e.g., scientific publications, medical atlases, educational institutions).
+// `;
+// };
+
 // export const TextSimplificationPrompt = `
 // You are an expert text transformation engine designed to rewrite complex academic or lecture-style content into clear, concise, and engaging explanations suitable for students. Your goal is to achieve a level of clarity and simplicity that significantly surpasses the "For Dummies" book series while meticulously preserving all essential information and nuances. A key aspect of your approach is to incorporate brief, relevant real-life scenarios to make abstract concepts more concrete and relatable.
 
@@ -1214,30 +1291,30 @@ Based on the summary of a source text provided, your task is to output **5 power
 // ────────────────────────────────────────────────────────
 // 🎯 Step‑by‑Step Guide (built into the prompt):
 
-// 1. **Preserve Headings & Titles**  
-//    • Copy each heading or title verbatim (exactly as in the original).  
-// 2. **Scan for Jargon & Hard Words**  
-//    • As you read, flag any word or phrase a general reader might not know (e.g. “methodology,” “API,” “synergy”).  
-// 3. **Explain in‑line, Casually, with Brackets After Explanation**  
-//    • First give the simplified explanation in a natural sentence.  
-//    • Immediately after the sentence, put the original term or phrase in brackets—e.g. "It resets the heart cells so they can beat again (repolarization)." 
-//    • Use analogies from everyday life (“like,” “think of it as,” etc.).  
-// 4. **Simplify Sentence Structure**  
-//    • Break long sentences into two or three shorter ones.  
-//    • Use everyday connectors (“and,” “but,” “so,” “because”) instead of heavy transitions.  
-// 5. **Retain All Details**  
-//    • Never drop numbers, names, or core concepts—just make them feel familiar.  
-//    • If you mention a study, keep its data; then translate its significance into a simple “bottom‑line” sentence.  
-// 6. **Smooth Flow & Friendly Tone**  
-//    • Write as if you’re tutoring a friend over coffee—warm, upbeat, and patient.  
-//    • Avoid stiff, textbook phrasing.  
-// 7. **Bonus: Use Relatable Examples**  
-//    • Whenever an abstract concept appears, pair it with a mini‑analogy from daily life (cooking, games, sports, etc.).  
+// 1. **Preserve Headings & Titles**
+//    • Copy each heading or title verbatim (exactly as in the original).
+// 2. **Scan for Jargon & Hard Words**
+//    • As you read, flag any word or phrase a general reader might not know (e.g. “methodology,” “API,” “synergy”).
+// 3. **Explain in‑line, Casually, with Brackets After Explanation**
+//    • First give the simplified explanation in a natural sentence.
+//    • Immediately after the sentence, put the original term or phrase in brackets—e.g. "It resets the heart cells so they can beat again (repolarization)."
+//    • Use analogies from everyday life (“like,” “think of it as,” etc.).
+// 4. **Simplify Sentence Structure**
+//    • Break long sentences into two or three shorter ones.
+//    • Use everyday connectors (“and,” “but,” “so,” “because”) instead of heavy transitions.
+// 5. **Retain All Details**
+//    • Never drop numbers, names, or core concepts—just make them feel familiar.
+//    • If you mention a study, keep its data; then translate its significance into a simple “bottom‑line” sentence.
+// 6. **Smooth Flow & Friendly Tone**
+//    • Write as if you’re tutoring a friend over coffee—warm, upbeat, and patient.
+//    • Avoid stiff, textbook phrasing.
+// 7. **Bonus: Use Relatable Examples**
+//    • Whenever an abstract concept appears, pair it with a mini‑analogy from daily life (cooking, games, sports, etc.).
 
 // ────────────────────────────────────────────────────────
 // 🔄 How to Apply to Paragraphs or Bullets:
 
-// - **Paragraphs**: Rewrite each one into 2–4 short sentences. Embed definitions right where the tough words appear, with the original term in brackets.  
+// - **Paragraphs**: Rewrite each one into 2–4 short sentences. Embed definitions right where the tough words appear, with the original term in brackets.
 // - **Bullet Lists**: Turn each bullet into a “For Dummies” mini‑paragraph—start with the term (in brackets), then a simple “why it matters” and “how it works” in plain talk.
 
 // ────────────────────────────────────────────────────────
@@ -1246,31 +1323,31 @@ Based on the summary of a source text provided, your task is to output **5 power
 // **Original Heading (kept verbatim):**
 // Advantages of Combined Treatment
 
-// **Original Paragraph:**  
-// “The efficacy of the intervention was predicated on the synergistic interaction of the two compounds.”  
+// **Original Paragraph:**
+// “The efficacy of the intervention was predicated on the synergistic interaction of the two compounds.”
 
-// **For Dummies Version (example):**  
+// **For Dummies Version (example):**
 // “How well the treatment worked depended on how the two parts—called compounds [compounds] (think of them like special recipe ingredients)—boosted each other’s effect, almost like how peanut butter and jelly taste better together.”
 
 // ---
 
-// **Original Bullet (term in brackets):**  
-// - Rigorous methodology ensured veracity of findings.  
+// **Original Bullet (term in brackets):**
+// - Rigorous methodology ensured veracity of findings.
 
-// **For Dummies Version (example):**  
+// **For Dummies Version (example):**
 // - They used a super‑thorough process [rigorous methodology] (fancy words for triple‑checking every step) so the results really are correct [veracity of findings] (meaning the facts are true).
 
 // ────────────────────────────────────────────────────────
 // ✅ Your Style Checklist (auto‑audit each rewrite):
 
-// - [ ] Titles and headings exactly match the original.  
-// - [ ] Short, clear sentences (no sentence longer than 20 words).  
-// - [ ] Every technical term appears in brackets with an in‑line, one‑phrase gloss.  
-// - [ ] Tone: friendly, conversational, patient.  
-// - [ ] All original data, names, and numbers are preserved.  
-// - [ ] Analogy or example for every abstract idea.  
+// - [ ] Titles and headings exactly match the original.
+// - [ ] Short, clear sentences (no sentence longer than 20 words).
+// - [ ] Every technical term appears in brackets with an in‑line, one‑phrase gloss.
+// - [ ] Tone: friendly, conversational, patient.
+// - [ ] All original data, names, and numbers are preserved.
+// - [ ] Analogy or example for every abstract idea.
 
-// If you ever get an input with no text, return:  
+// If you ever get an input with no text, return:
 
 // [{ "text": "Nothing to explain here.", "type": "paragraph" }]
 
@@ -1367,35 +1444,35 @@ ${summary}
 
 // Here’s what to do:
 
-// 1. **Simplify for Clarity, Not Dumbed-Down**  
-//    • Rewrite dense or formal sentences using simpler words and a more natural sentence flow.  
+// 1. **Simplify for Clarity, Not Dumbed-Down**
+//    • Rewrite dense or formal sentences using simpler words and a more natural sentence flow.
 //    • Break long sentences into shorter ones.
 
-// 2. **Preserve All Key Terms**  
-//    • Never remove important terms like “cirrhosis” or “liver parenchyma.”  
-//    • If using a simpler word for clarity, place it first, and then include the original technical term in parentheses.  
+// 2. **Preserve All Key Terms**
+//    • Never remove important terms like “cirrhosis” or “liver parenchyma.”
+//    • If using a simpler word for clarity, place it first, and then include the original technical term in parentheses.
 //      👉 Example: “serious liver scarring (cirrhosis)”
 
-// 3. **Clarify and Explain In-Line**  
-//    • Briefly explain what each technical term means, ideally in the same sentence.  
+// 3. **Clarify and Explain In-Line**
+//    • Briefly explain what each technical term means, ideally in the same sentence.
 //    • Use analogies only if they help understanding—don’t overuse.
 
-// 4. **Retain All Original Meaning and Data**  
+// 4. **Retain All Original Meaning and Data**
 //    • Keep any numbers, conditions, durations, or medical markers. These are vital for exam prep.
 
-// 5. **Preserve Headings from Original Text**  
+// 5. **Preserve Headings from Original Text**
 //    • If the input includes section titles or headers, keep them exactly as-is.
 
-// 6. **Tone and Style**  
+// 6. **Tone and Style**
 //    • Sound like a helpful study partner—clear, confident, and focused on getting the concept across.
 
-// If the input is empty, respond:  
+// If the input is empty, respond:
 // [{ "text": "Nothing to explain here.", "type": "paragraph" }]
 
 // Here’s the overall topic of the file to guide your rewrite:
 
-// **Summary start**  
-// ${summary}  
+// **Summary start**
+// ${summary}
 // **Summary end**
 // `;
 
@@ -1436,21 +1513,17 @@ ${summary}
 // 7. **Sound Like a Pal**
 //    Chatty but focused. Imagine you’re explaining over coffee: friendly, clear, no fluff.
 
-// 8. **Preserve All Key Terms**  
-// • Never remove important terms like “cirrhosis” or “liver parenchyma.”  
-// • If using a simpler word for clarity, place it first, and then include the original technical term in parentheses.  
+// 8. **Preserve All Key Terms**
+// • Never remove important terms like “cirrhosis” or “liver parenchyma.”
+// • If using a simpler word for clarity, place it first, and then include the original technical term in parentheses.
 // 👉 Example: “serious liver scarring (cirrhosis)”
 
 // If there’s nothing to simplify, just say:
 
 // [{ "text": "Nothing to explain here.", "type": "paragraph" }]
 
-
 // **Topic:**
 // **Summary start**
 // ${summary}
 // **Summary end**
 // `;
-
-
-

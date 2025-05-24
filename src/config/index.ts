@@ -14,6 +14,8 @@ export interface Config {
   googleClientId: string;
   googleClientSecret: string;
   googleCallbackUrl: string;
+  googleApiKey: string;
+  googleSearchEngineId: string;
   frontendBaseUrl: string;
   frontendAccessTokenKey: string;
   mailChimpApiKey: string;
@@ -62,6 +64,8 @@ export default (): Config => ({
   googleClientId: process.env.GOOGLE_CLIENT_ID,
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
   googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL,
+  googleApiKey: process.env.GOOGLE_API_KEY,
+  googleSearchEngineId: process.env.GOOGLE_SEARCH_ENGINE_ID,
   frontendBaseUrl: process.env.FRONTEND_BASE_URL,
   frontendAccessTokenKey: process.env.FRONTEND_ACCESS_TOKEN_KEY,
   mailChimpApiKey: process.env.MAILCHIMP_API_KEY,
@@ -86,5 +90,5 @@ export default (): Config => ({
   youtubeApiKey: process.env.YOUTUBE_API_KEY,
   rapidApiKey: process.env.RAPID_API_KEY,
   asposeClientId: process.env.ASPOSE_CLIENT_ID,
-  asposeClientSecret: process.env.ASPOSE_CLIENT_SECRET
+  asposeClientSecret: process.env.ASPOSE_CLIENT_SECRET,
 });
