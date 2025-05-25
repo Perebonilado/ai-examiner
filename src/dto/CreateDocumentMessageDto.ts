@@ -16,7 +16,6 @@ export interface CreateDocumentMessageDto {
   };
    imageDescriptionData?: {
     imageUrl: string;
-    originalKeywordSearch: string;
    }
 }
 
