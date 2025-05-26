@@ -135,8 +135,6 @@ ${sourceText}
 `;
 };
 
-
-
 export const generateEssayAnalysisPrompt = ({
   answer,
   question,
@@ -204,4 +202,35 @@ If no text can be read, respond with exactly:
 no text
 
 ⚠️ Do not explain anything. Do not return any formatting or metadata. Do not add quotation marks. Return only the raw extracted text or no text.
-`
+`;
+
+export const getRefinedImagePrompt = ({
+  imageDesc,
+  initialQuery,
+  relatedContent,
+  summary,
+}: {
+  imageDesc: string;
+  summary: string;
+  relatedContent: string;
+  initialQuery: string;
+}) => {
+  return `You are an expert tutor. Your job is to take the in depth description of an image, and draw connections from that to the document the student is studying at the moment. The student ran a search to find the image being described, and would like to learn more about the image from the description, how its relevant to the document he/she is studying. You will be provided with a summary of the students document, and some content from specific areas the student was studying. You will also be provided with the query the user searched. All this is to serve as context so you give the best description of the image and make a deep connection with their document. In your response, use simple conversational language but keep key scientific terminologies. Try to be brief and straight to the point as well. Do not reference the query in your response, just make the necessary connections and if there isnt then say it politely.
+
+            ** Image indepth description start **
+            ${imageDesc}
+            ** Image indepth description start **
+
+            ** document summary start **
+            ${summary}
+            ** document summary end **
+
+            ** related content from document start **
+            ${relatedContent}
+            ** related content from document end **
+
+            ** student's search query start **
+            ${initialQuery}
+            ** student's search query end **
+            `;
+};

@@ -52,9 +52,10 @@ import {
 } from 'src/constants/QuestionGenerationPrompt';
 import { DocumentSummaryQueryService } from 'src/query/services/DocumentSummaryQueryService';
 import { createOpenAI } from '@ai-sdk/openai';
-import { generateObject } from 'ai';
+import { generateObject, generateText } from 'ai';
 import { YoutubeKeywordsSchema } from 'src/schemas/YouTubeKeywordsSchema';
 import {
+  getGoogleImageQueryPrompt,
   getTextSimplificationPrompt,
   YoutubeKeyWordPrompt,
 } from 'src/constants/QuestionGenerationPromptV2';
@@ -72,6 +73,9 @@ import { StoredFileUrlModel } from '../models/StoredFileModel';
 import { FileConversionService } from 'src/integrations/aspose/services/FileConversionService';
 import { ExportFormat } from 'asposeslidescloud';
 import { ModifiedContentModel } from '../models/ModifiedContentModel';
+import { GoogleSearchService } from 'src/integrations/google/services/GoogleSearchService';
+import { GoogleImageSearchQuerySchema } from 'src/schemas/GoogleImageSearchQuerySchema';
+import { GoogleImageSearchModel } from 'src/integrations/google/models/GoogleSearchModel';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -110,6 +114,8 @@ export class CourseDocumentController {
     private updateStoredFileHandler: UpdateStoredFileHandler,
     @Inject(FileConversionService)
     private fileConversionService: FileConversionService,
+    @Inject(GoogleSearchService)
+    private googleSearchService: GoogleSearchService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -489,6 +495,38 @@ export class CourseDocumentController {
   }
 
   @UseGuards(AuthGuard)
+  @Get('/web-images/search/:documentId')
+  public async searchWebImages(
+    @Query('query') query: string,
+    @Param('documentId') documentId: string,
+  ) {
+    try {
+      let images: GoogleImageSearchModel[] = [];
+      const summary =
+        await this.documentSummaryQueryService.findByDocumentId(documentId);
+
+      if (!summary?.summary) {
+        images = await this.googleSearchService.imageSearch(query);
+      } else {
+        const modifiedSearchQuery = await this.getModifiedImageSearchQuery({
+          query,
+          summary: summary.summary,
+        });
+
+        images =
+          await this.googleSearchService.imageSearch(modifiedSearchQuery);
+      }
+
+      return images;
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Error finding images',
+        error.status ?? HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(AuthGuard)
   @Get('/youtube-search/:documentId')
   public async getRelevantYoutubeVideos(
     @Param('documentId') documentId: string,
@@ -843,6 +881,43 @@ export class CourseDocumentController {
       throw new HttpException(
         error?.response ?? 'Failed to create document',
         HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  private async getModifiedImageSearchQuery({
+    query,
+    summary,
+  }: {
+    query: string;
+    summary: string;
+  }) {
+    try {
+      const openaiClient = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
+      });
+
+      const response = await generateObject({
+        model: openaiClient.responses('gpt-4o-mini'),
+        maxRetries: 3,
+        mode: 'json',
+        schemaName: 'modifiedQuery',
+        schema: GoogleImageSearchQuerySchema,
+        messages: [
+          { role: 'system', content: getGoogleImageQueryPrompt(summary) },
+          {
+            role: 'user',
+            content: query,
+          },
+        ],
+      });
+
+      return response.object.modifiedQuery;
+    } catch (error) {
+      throw new HttpException(
+        error?.message ?? 'Failed to get query',
+        error?.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }

@@ -23,7 +23,8 @@ export class YoutubeService {
           q: query.query,
           maxResults: query.maxResults,
           key: EnvironmentVariables.config.youtubeApiKey,
-          part: 'snippet'
+          part: 'snippet',
+          imgSize: 'HUGE'
         },
       });
 

@@ -17,8 +17,12 @@ import {
 import { UpdateCourseDocumentHandler } from '../CourseDocument/UpdateCourseDocumentHandler';
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateText } from 'ai';
-import { generateDocumentMessagePromptV2 } from 'src/constants/V2Prompts';
+import {
+  generateDocumentMessagePromptV2,
+  getRefinedImagePrompt,
+} from 'src/constants/V2Prompts';
 import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
+import { DocumentSummaryQueryService } from 'src/query/services/DocumentSummaryQueryService';
 
 @Injectable()
 export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate<
@@ -37,6 +41,8 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
     private pineconeChunkService: PineconeChunkService,
     @Inject(DocumentMessageQueryService)
     private documentMessageQueryService: DocumentMessageQueryService,
+    @Inject(DocumentSummaryQueryService)
+    private documentSummaryQueryService: DocumentSummaryQueryService,
   ) {
     super();
   }
@@ -73,6 +79,51 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           courseDocument.id,
           20,
         );
+
+      if (request.payload?.imageDescriptionData?.imageUrl) {
+        const systemResponse = await this.getImageDescriptionMessage({
+          documentId: courseDocument.id,
+          image: request.payload?.imageDescriptionData?.imageUrl,
+          initialQuery: userMessage,
+          relatedContent: relevantChunks.join('\n'),
+        });
+
+        const savedUserMessage = await this.documentMessageRepository.create({
+          message: 'Tell me more about this image',
+          sender: 'user',
+          openAiFileId: courseDocument.openAiFileId,
+          openAiThreadId: ' ',
+          image: request.payload?.imageDescriptionData?.imageUrl,
+          userId: userId,
+          courseDocumentId: courseDocument.id,
+        } as DocumentMessageModel);
+
+        if (savedUserMessage) {
+          setTimeout(async () => {
+            const systemMessageWithContext = `
+              ${systemResponse}
+  
+              **source text start**
+              ${relevantChunks.join('\n')}
+              **source text end**
+            `;
+            await this.documentMessageRepository.create({
+              message: systemMessageWithContext,
+              sender: 'system',
+              openAiFileId: courseDocument.openAiFileId,
+              openAiThreadId: ' ',
+              userId: userId,
+              courseDocumentId: courseDocument.id,
+            } as DocumentMessageModel);
+          }, 1000);
+        }
+
+        return {
+          data: { systemResponse },
+          message: 'Messages successfully created',
+          status: HttpStatus.CREATED,
+        };
+      }
 
       if (useRag) {
         const previousMessages =
@@ -308,6 +359,69 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
       throw new HandlerError(
         'Failed to handle Document Message creation',
       ).InnerError(error);
+    }
+  }
+
+  private async getImageDescriptionMessage({
+    documentId,
+    initialQuery,
+    image,
+    relatedContent,
+  }: {
+    documentId: string;
+    initialQuery: string;
+    image: string;
+    relatedContent: string;
+  }) {
+    try {
+      const summary =
+        await this.documentSummaryQueryService.findByDocumentId(documentId);
+
+      const openaiClient = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
+      });
+
+      const imageDescription = await generateText({
+        model: openaiClient('gpt-4o-mini'),
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: `Describe the image in deep detail` },
+              {
+                type: 'image',
+                image: image,
+                providerOptions: {
+                  openai: { imageDetail: 'high' },
+                },
+              },
+            ],
+          },
+        ],
+      });
+
+      const refined = await generateText({
+        model: openaiClient('gpt-4o-mini'),
+        messages: [
+          {
+            role: 'user',
+            content: getRefinedImagePrompt({
+              imageDesc: imageDescription.text,
+              initialQuery,
+              summary: summary.summary,
+              relatedContent,
+            }),
+          },
+        ],
+      });
+
+      return refined.text;
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Failed to get system response: image description',
+        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
