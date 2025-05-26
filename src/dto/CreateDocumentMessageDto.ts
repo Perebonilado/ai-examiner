@@ -14,6 +14,9 @@ export interface CreateDocumentMessageDto {
     documentId: string;
     threadId: string;
   };
+   imageDescriptionData?: {
+    imageUrl: string;
+   }
 }
 
 export interface NotSureQuestion {

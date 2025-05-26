@@ -38,6 +38,13 @@ export class DocumentMessageModel extends Model<DocumentMessageModel> {
 
   @Column({
     type: DataType.STRING,
+    allowNull: true,
+    field: 'image',
+  })
+  image: string;
+
+  @Column({
+    type: DataType.STRING,
     field: 'open_ai_thread_id',
     allowNull: false,
   })

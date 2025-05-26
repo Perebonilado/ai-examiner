@@ -53,7 +53,7 @@ import { PreferredLanguageController } from './controllers/PreferredLanguageCont
     PerformanceTrackingController,
     CallCreditsController,
     FlagContentController,
-    PreferredLanguageController
+    PreferredLanguageController,
   ],
 })
 export class InfraWebModule {}

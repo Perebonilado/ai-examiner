@@ -62,6 +62,7 @@ export class DocumentMessageQueryService {
             id: m.id,
             message: messageToReturn,
             sender: m.sender,
+            image: m?.image,
             createdOn: m.createdOn,
             threadId: m.openAiThreadId,
           };
