@@ -952,7 +952,7 @@ export class CourseDocumentController {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Failed to get keywords',
-        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -987,7 +987,7 @@ export class CourseDocumentController {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Failed to simplify content',
-        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }

@@ -33,7 +33,7 @@ export class ILovePdfService {
     } catch (error) {
       throw new HttpException(
         'Failed to authenticate pdf lib',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -76,7 +76,7 @@ export class ILovePdfService {
     } catch (error) {
       throw new HttpException(
         'Failed to process file',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -92,7 +92,7 @@ export class ILovePdfService {
     } catch (error) {
       throw new HttpException(
         'Failed to start pdf processing task',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -130,7 +130,7 @@ export class ILovePdfService {
     } catch (error) {
       throw new HttpException(
         'Failed to upload file for processing',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -151,7 +151,7 @@ export class ILovePdfService {
     } catch (error) {
       throw new HttpException(
         'Failed to process uploaded file',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -170,7 +170,7 @@ export class ILovePdfService {
     } catch (error) {
       throw new HttpException(
         'Failed to process download file',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }

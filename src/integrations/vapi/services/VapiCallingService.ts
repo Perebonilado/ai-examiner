@@ -61,7 +61,7 @@ export class VapiCallingService {
     } catch (error) {
       throw new HttpException(
         error ?? 'Failed to handle client call initiation',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -87,7 +87,7 @@ export class VapiCallingService {
     } catch (error) {
       throw new HttpException(
         'Failed to translate content',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -141,7 +141,7 @@ export class VapiCallingService {
     } catch (error) {
       throw new HttpException(
         error ?? 'Failed to initiate call',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }

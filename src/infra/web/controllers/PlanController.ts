@@ -40,7 +40,7 @@ export class PlanController {
     } catch (error) {
       throw new HttpException(
         'Failed to get plans',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }

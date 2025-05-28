@@ -85,7 +85,7 @@ export class GoogleDriveService {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Google drive: upload error',
-        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -96,7 +96,7 @@ export class GoogleDriveService {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Google drive: failed to delete file',
-        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -115,7 +115,7 @@ export class GoogleDriveService {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Google drive: failed to get file',
-        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -134,7 +134,7 @@ export class GoogleDriveService {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Google drive: failed to export file',
-        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -146,7 +146,7 @@ export class GoogleDriveService {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Google drive: failed to get file location',
-        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }
