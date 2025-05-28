@@ -242,7 +242,7 @@ export class PerformanceTrackingController {
     } catch (error) {
       throw new HttpException(
         'failed to generate performance tracking data',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }

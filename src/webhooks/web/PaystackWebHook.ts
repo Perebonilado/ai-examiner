@@ -122,7 +122,7 @@ export class PaystackWebhook {
     } catch (error) {
       throw new HttpException(
         'An error occured while processing payment',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }

@@ -38,7 +38,7 @@ export class FloDeskMailerService {
     } catch (error) {
       throw new HttpException(
         'Failed to create subscriber on FloDesk',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -66,7 +66,7 @@ export class FloDeskMailerService {
     } catch (error) {
       throw new HttpException(
         'Failed to retrieve subscriber on FloDesk',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -94,7 +94,7 @@ export class FloDeskMailerService {
     } catch (error) {
       throw new HttpException(
         'Failed to unsubscribe subscriber on FloDesk',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
