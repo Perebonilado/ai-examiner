@@ -45,7 +45,7 @@ export class ManageMailChimpAudience {
     } catch (error) {
       throw new HttpException(
         'Failed to save member to mailchimp list',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -67,7 +67,7 @@ export class ManageMailChimpAudience {
     } catch (error) {
       throw new HttpException(
         'Failed to check member subscription status',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }

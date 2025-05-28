@@ -33,7 +33,7 @@ export class GoogleSearchService {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Google drive: upload error',
-        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }

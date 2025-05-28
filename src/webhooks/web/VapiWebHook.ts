@@ -56,7 +56,7 @@ export class VapiWebhook {
     } catch (error) {
       throw new HttpException(
         'Failed to handle call ended request',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }

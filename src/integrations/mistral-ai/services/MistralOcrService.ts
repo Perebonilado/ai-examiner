@@ -58,7 +58,7 @@ export class MistralOcrService extends MistralClient {
     } catch (error) {
       throw new HttpException(
         error?.response?.data || error?.message || 'Failed to OCR document',
-        error?.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+        error?.response?.status || HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -69,7 +69,7 @@ export class MistralOcrService extends MistralClient {
     } catch (error) {
       throw new HttpException(
         error ?? 'Failed to retrieve signed url',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -88,7 +88,7 @@ export class MistralOcrService extends MistralClient {
     } catch (error) {
       throw new HttpException(
         error ?? 'Failed to carry out ocr processing',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }

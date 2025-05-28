@@ -420,7 +420,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Failed to get system response: image description',
-        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -454,7 +454,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Failed to get system response',
-        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }
