@@ -17,7 +17,7 @@ import puppeteer from 'puppeteer-core';
 import { encoding_for_model } from '@dqbd/tiktoken';
 
 const MAX_TOKENS = 128000;
-const SAFE_MARGIN = 200; // keep a little room for response or overhead
+const SAFE_MARGIN = 700; // keep a little room for response or overhead
 
 export function trimToEstimatedTokens(input: string): string {
   const estimatedTokenLength = Math.ceil(input.length / 4);
