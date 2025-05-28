@@ -352,7 +352,7 @@ export class FileUploadController {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Failed to summarize doc',
-        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -375,7 +375,7 @@ export class FileUploadController {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Failed to generate topics',
-        error.status ?? HttpStatus.INTERNAL_SERVER_ERROR,
+        error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
   }
@@ -485,7 +485,7 @@ export class FileUploadController {
     } catch (error) {
       throw new HttpException(
         'Failed to get topics',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
