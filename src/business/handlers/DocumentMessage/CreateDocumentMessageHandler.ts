@@ -23,6 +23,7 @@ import {
 } from 'src/constants/V2Prompts';
 import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
 import { DocumentSummaryQueryService } from 'src/query/services/DocumentSummaryQueryService';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
 @Injectable()
 export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate<
@@ -431,13 +432,16 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
     messages: { role: 'system' | 'user'; content: string }[],
   ) {
     try {
-      const openai = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
+      // const openai = createOpenAI({
+      //   compatibility: 'strict',
+      //   apiKey: EnvironmentVariables.config.openAiApiKey,
+      // });
+      const google = createGoogleGenerativeAI({
+        apiKey: EnvironmentVariables.config.geminiApiKey,
       });
 
-      const { text, providerMetadata } = await generateText({
-        model: openai('gpt-4o-mini'),
+      const { text } = await generateText({
+        model: google('gemini-1.5-flash'),
         messages: [
           ...messages,
           {
@@ -447,8 +451,9 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         ],
       });
 
-      const prevResponseId = providerMetadata?.openai
-        ?.responseId as unknown as string;
+      const prevResponseId = ''
+      // const prevResponseId = providerMetadata?.openai
+      //   ?.responseId as unknown as string;
 
       return { text, prevResponseId };
     } catch (error) {
