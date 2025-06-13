@@ -20,7 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@ai-sdk/google": "^1.2.13",
+    "@ai-sdk/google": "^1.2.19",
     "@ai-sdk/openai": "^1.2.2",
     "@aws-sdk/client-s3": "^3.529.1",
     "@dqbd/tiktoken": "^1.0.21",
