@@ -46,7 +46,6 @@ export class DocumentMessageController {
         },
       });
     } catch (error) {
-      console.log(error)
       throw new HttpException(
         error?.response ?? 'Failed to create document message',
         HttpStatus.BAD_REQUEST,
