@@ -20,41 +20,31 @@ import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerServi
 import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
 import { ExtractTextService } from 'src/integrations/text-extraction/services/ExtractTextService';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
-import { QuestionQueryService } from 'src/query/services/QuestionQueryService';
-import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import {
   extractJSONDataFromMessages,
   generateUUID,
   splitPdfPagesToIndividualFiles,
   trimToEstimatedTokens,
-  writeFileToStream,
 } from 'src/utils';
-import { generateMessagePrompt, generateTopicPrompt } from 'src/constants';
+import { generateMessagePrompt } from 'src/constants';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 import {
   generateTopicPromptV2,
   generateTopicPromptV2_2,
 } from 'src/constants/QuestionGenerationPromptV2';
-import { PreferredLanguageQueryService } from 'src/query/services/PreferredLanguageQueryService';
 import {
   generateDocumentSummaryPromptV2,
   summarizeDocumentPrompt,
 } from 'src/constants/V2Prompts';
-import { CreateDocumentMessageHandler } from 'src/business/handlers/DocumentMessage/CreateDocumentMessageHandler';
-import { createOpenAI, openai, OpenAIProvider } from '@ai-sdk/openai';
+import { createOpenAI, OpenAIProvider } from '@ai-sdk/openai';
 import { generateObject, generateText } from 'ai';
 import { TopicsSchema } from 'src/schemas/TopicsSchema';
 import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/UpdateCourseDocumentHandler';
 import { CreateDocumentSummaryHandler } from 'src/business/handlers/DocumentSummary/CreateDocumentSummaryHandler';
-import { createReadStream, existsSync, readFileSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { unlink } from 'fs/promises';
-import OpenAI from 'openai';
 import { GoogleDriveService } from 'src/integrations/google/services/GoogleDriveService';
-import { MistralOcrService } from 'src/integrations/mistral-ai/services/MistralOcrService';
 import { CreateStoredFileHandler } from 'src/business/handlers/StoredFile/CreateStoredFileHandler';
 import { ILovePdfService } from 'src/integrations/i-love-pdf/services/ILovePdfService';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -126,13 +116,6 @@ export class FileUploadController {
       const pdfPageRange =
         pages === 'custom' ? { start: Number(start), end: Number(end) } : {};
 
-      const openaiClient = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
-      });
-
-      const maxNumPagesForSummaryAndTopicGeneration = 250;
-
       let fileFormatToSaveFile = 'application/vnd.google-apps.presentation';
       const googleFileExportLimitInMegaBytes = 10 * 1024 * 1024;
 
@@ -182,12 +165,7 @@ export class FileUploadController {
       };
 
       const createDocSummary = async () => {
-        const summaryInfo = await this.summarizeDocumentV2(
-          openaiClient,
-          trimToEstimatedTokens(
-            chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n'),
-          ),
-        );
+        const summaryInfo = await this.summarizeDocumentV2(chunks.join('\n'));
         await this.createDocumentSummaryHandler.handle({
           documentId: createdDocument.data.id,
           summary: summaryInfo,
@@ -209,10 +187,7 @@ export class FileUploadController {
       const uploadGoogleDrivePromise = uploadFileToGoogleAndSaveStoredFile();
 
       const [topics] = await Promise.all([
-        this.generateDocumentTopicsV2(
-          openaiClient,
-          trimToEstimatedTokens(chunks.slice(0, maxNumPagesForSummaryAndTopicGeneration).join('\n')),
-        ),
+        this.generateDocumentTopicsV2(chunks.join('\n')),
       ]);
 
       const mappedTopics = topics.map((topic) => {
@@ -338,13 +313,13 @@ export class FileUploadController {
     }
   }
 
-  private async summarizeDocumentV2(
-    client: OpenAIProvider,
-    sourceText: string,
-  ) {
+  private async summarizeDocumentV2(sourceText: string) {
     try {
+      const google = createGoogleGenerativeAI({
+        apiKey: EnvironmentVariables.config.geminiApiKey,
+      });
       const { text: summary } = await generateText({
-        model: client('gpt-4o-mini'),
+        model: google('gemini-1.5-flash'),
         prompt: generateDocumentSummaryPromptV2(sourceText),
       });
 
@@ -357,13 +332,13 @@ export class FileUploadController {
     }
   }
 
-  private async generateDocumentTopicsV2(
-    client: OpenAIProvider,
-    sourceText: string,
-  ) {
+  private async generateDocumentTopicsV2(sourceText: string) {
     try {
+      const google = createGoogleGenerativeAI({
+        apiKey: EnvironmentVariables.config.geminiApiKey,
+      });
       const response = await generateObject({
-        model: client.responses('gpt-4o-mini'),
+        model: google('gemini-1.5-flash'),
         maxRetries: 3,
         mode: 'json',
         schemaName: 'Topics',
@@ -483,10 +458,7 @@ export class FileUploadController {
 
       return generatedTopics;
     } catch (error) {
-      throw new HttpException(
-        'Failed to get topics',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('Failed to get topics', HttpStatus.BAD_REQUEST);
     }
   }
 }
