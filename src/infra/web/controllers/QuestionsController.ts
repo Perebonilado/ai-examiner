@@ -28,7 +28,6 @@ import {
 } from 'src/utils';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import {
-  generateQuestionsPrompt,
   generateSourceInfoPrompt,
   inactiveSubscriptionStatuses,
 } from 'src/constants';
@@ -91,6 +90,7 @@ import { UpdateEssayQuestionAnalysisRequest } from 'src/business/handlers/reques
 import { EssayAnalysisSchema } from 'src/schemas/EssayAnalysisSchema';
 import { EssayQuestionAnalysisStatus } from '../models/EssayQuestionAnalysisStatus';
 import { EssayQuestionAnalysisQueryService } from 'src/query/services/EssayQuestionAnalysisQueryService';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
 @Controller('questions')
 export class QuestionsController {
@@ -766,9 +766,12 @@ export class QuestionsController {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
 
-      const openai = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
+      // const openai = createOpenAI({
+      //   compatibility: 'strict',
+      //   apiKey: EnvironmentVariables.config.openAiApiKey,
+      // });
+      const google = createGoogleGenerativeAI({
+        apiKey: EnvironmentVariables.config.geminiApiKey,
       });
       const prevQuestionLimit = 10;
       const previousQuestions =
@@ -893,7 +896,7 @@ export class QuestionsController {
 
       const questionPromises = questionsPerBatch.map((batchSize, index) =>
         generateObject({
-          model: openai.responses('gpt-4o-mini'),
+          model: google('gemini-1.5-flash'),
           maxRetries: 3,
           mode: 'json',
           schemaName: 'Questions',
