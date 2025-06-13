@@ -43,6 +43,7 @@ export interface Config {
   rapidApiKey: string;
   asposeClientId: string;
   asposeClientSecret: string;
+  geminiApiKey: string;
 }
 
 export default (): Config => ({
@@ -91,4 +92,5 @@ export default (): Config => ({
   rapidApiKey: process.env.RAPID_API_KEY,
   asposeClientId: process.env.ASPOSE_CLIENT_ID,
   asposeClientSecret: process.env.ASPOSE_CLIENT_SECRET,
+  geminiApiKey: process.env.GEMINI_API_KEY
 });
