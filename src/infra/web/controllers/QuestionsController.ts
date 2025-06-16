@@ -214,7 +214,8 @@ export class QuestionsController {
         messageContent: generateOralExaminationPrompt(questionsToAsk),
         metadata: { customerEmail: user.email, questionId: questions.id },
         userName: user.firstName,
-        maxDurationMs: callCredits.freeRemainingTimeMs + callCredits.remainingTimeMs,
+        maxDurationMs:
+          callCredits.freeRemainingTimeMs + callCredits.remainingTimeMs,
         language: body?.language || 'english',
       });
     } catch (error) {
@@ -773,7 +774,7 @@ export class QuestionsController {
       const google = createGoogleGenerativeAI({
         apiKey: EnvironmentVariables.config.geminiApiKey,
       });
-      const prevQuestionLimit = 10;
+      const prevQuestionLimit = 20;
       const previousQuestions =
         await this.questionQueryService.findPreviousQuestionsByConfig(
           documentId,
@@ -798,7 +799,7 @@ export class QuestionsController {
       }
 
       const retrievedChunks: string[][] = await Promise.all(
-        topicsToUse.slice(0, 4).map((topic) => {
+        topicsToUse.slice(0, 40).map((topic) => {
           return this.pineconeChunkService.semanticChunkSearch(
             topic,
             documentId,
@@ -849,7 +850,11 @@ export class QuestionsController {
         .includes('oral')
         ? 5
         : body.questionCount;
-      const maxBatchSize = 5; // Max questions per API call
+      const maxBatchSize = questionTypeName.title
+        .toLowerCase()
+        .includes('flash')
+        ? 20
+        : 5; // Max questions per API call
 
       // Determine the number of batches needed
       // We'll use either the number needed based on max batch size or the number of chunks,
