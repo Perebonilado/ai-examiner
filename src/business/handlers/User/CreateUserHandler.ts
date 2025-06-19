@@ -13,6 +13,7 @@ import { hashPassword } from 'src/utils';
 import { ManageMailChimpAudience } from 'src/integrations/mail-chimp/services/ManageMailChimpAudience';
 import { FloDeskMailerService } from 'src/integrations/flo-desk-mailer/services/FloDeskMailerService';
 import { FloDeskSegments } from 'src/constants';
+import { UserRole } from 'src/infra/web/models/UserRole';
 
 @Injectable()
 export class CreateUserHandler extends AbstractRequestHandlerTemplate<
@@ -23,8 +24,6 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
     @Inject(UserQueryService) private userQueryService: UserQueryService,
     @Inject(UserRepository) private userRepository: UserRepository,
     private jwtService: JwtService,
-    @Inject(ManageMailChimpAudience)
-    private manageMailChimpAudience: ManageMailChimpAudience,
     @Inject(FloDeskMailerService)
     private floDeskMailerService: FloDeskMailerService,
   ) {
@@ -39,6 +38,10 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
         request.payload.email,
       );
 
+      if (!request.payload?.role) {
+        request.payload.role = UserRole.User;
+      }
+
       if (!userExists) {
         const payload = {
           ...request.payload,
@@ -46,17 +49,20 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
             ? ''
             : await hashPassword(request.payload.password),
           institution: '',
+          role: request.payload.role,
         };
         const savedUser = await this.userRepository.create(
           payload as UserModel,
         );
 
-        await this.floDeskMailerService.createSubscriber({
-          email: savedUser.email,
-          firstName: savedUser.firstName,
-          lastName: savedUser.lastName,
-          segment_ids: [FloDeskSegments.newSubscribers.id]
-        });
+        if (request.payload.role !== UserRole.Guest) {
+          await this.floDeskMailerService.createSubscriber({
+            email: savedUser.email,
+            firstName: savedUser.firstName,
+            lastName: savedUser.lastName,
+            segment_ids: [FloDeskSegments.newSubscribers.id],
+          });
+        }
 
         const token = this.jwtService.sign(
           {
