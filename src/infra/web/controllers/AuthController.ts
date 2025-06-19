@@ -32,6 +32,8 @@ import { ResetPasswordDto } from 'src/dto/ResetPasswordDto';
 import { UpdateUserHandler } from 'src/business/handlers/User/UpdateUserHandler';
 import { MobileGoogleValidationSchema } from '../zod-validation-schemas/MobileGoogleValidationSchema';
 import { GoogleAuthService } from 'src/infra/auth/services/GoogleAuthService';
+import { UserRole } from '../models/UserRole';
+import { generateUUID } from 'src/utils';
 
 @Controller('auth')
 export class AuthController {
@@ -49,10 +51,35 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(SignUpValidationSchema))
   public async signUp(@Body() body: CreateUserDto) {
     try {
-      return await this.createUserHandler.handle({ payload: body });
+      return await this.createUserHandler.handle({
+        payload: { ...body, role: UserRole.User },
+      });
     } catch (error) {
       throw new HttpException(
         error?._innerError ?? 'Failed to create new user',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Post('/create-guest-account')
+  public async createGuestAccount() {
+    try {
+      const email = `aiexaminerguest${generateUUID()}@aiexaminer.com`;
+      const payload = {
+        email: email,
+        firstName: 'Guest',
+        lastName: 'Guest',
+        password: '',
+        role: UserRole.Guest,
+      } as CreateUserDto;
+
+      return await this.createUserHandler.handle({
+        payload,
+      });
+    } catch (error) {
+      throw new HttpException(
+        error?._innerError ?? 'Failed to guest account',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -75,7 +102,9 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(MobileGoogleValidationSchema))
   public async loginWithGoogleMobile(@Body() body: LoginGoogleMobileDto) {
     try {
-      const userIdentity= await this.googleAuthService.verifyGoogleToken(body.token)
+      const userIdentity = await this.googleAuthService.verifyGoogleToken(
+        body.token,
+      );
 
       const { email, firstName, lastName } = userIdentity;
 
@@ -104,6 +133,7 @@ export class AuthController {
             firstName,
             lastName,
             password: '',
+            role: UserRole.User,
           },
         });
 
@@ -229,6 +259,7 @@ export class AuthController {
             firstName,
             lastName,
             password: '',
+            role: UserRole.User,
           },
         });
 

@@ -8,6 +8,8 @@ import { UserRepository } from 'src/business/repository/UserRepository';
 import { UserQueryService } from 'src/query/services/UserQueryService';
 import { UserModel } from 'src/infra/db/models/UserModel';
 import { hashPassword } from 'src/utils';
+import { JwtService } from '@nestjs/jwt';
+import { EnvironmentVariables } from 'src/EnvironmentVariables';
 
 @Injectable()
 export class UpdateUserHandler extends AbstractRequestHandlerTemplate<
@@ -17,6 +19,7 @@ export class UpdateUserHandler extends AbstractRequestHandlerTemplate<
   constructor(
     @Inject(UserRepository) private userRepository: UserRepository,
     @Inject(UserQueryService) private userQueryService: UserQueryService,
+    private jwtService: JwtService,
   ) {
     super();
   }
@@ -36,10 +39,22 @@ export class UpdateUserHandler extends AbstractRequestHandlerTemplate<
       await this.userRepository.update({
         ...user.get({ plain: true }),
         password: await hashPassword(password),
+        firstName: request.payload?.firstName ?? user.firstName,
+        lastName: request.payload?.lastName ?? user.lastName,
+        email: request.payload?.email ?? user.email,
+        role: request.payload?.role ?? user.role
       } as UserModel);
 
+      const token = this.jwtService.sign(
+        {
+          sub: user.id,
+          email: user.email,
+        },
+        { secret: EnvironmentVariables.config.jwtSecret },
+      );
+
       return {
-        data: { data: null },
+        data: { data: null, token },
         message: 'User updated succesfully',
         status: HttpStatus.OK,
       };
