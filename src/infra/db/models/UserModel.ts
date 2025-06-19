@@ -18,6 +18,7 @@ import { OneTimeSubscriptionModel } from './OneTimeSubscriptionModel';
 import { QuestionProgressModel } from './QuestionProgressModel';
 import { PerformanceTrackingModel } from './PerformanceTrackingModel';
 import { CallCreditsModel } from './CallCreditsModel';
+import { UserRole } from 'src/infra/web/models/UserRole';
 
 @Table({ tableName: 'user' })
 export class UserModel extends Model<UserModel> {
@@ -62,6 +63,13 @@ export class UserModel extends Model<UserModel> {
     field: 'institution',
   })
   institution: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    field: 'role'
+  })
+  role: UserRole;
 
   @Column({
     type: DataType.DATE,

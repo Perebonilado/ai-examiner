@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UserModel } from '../models/UserModel';
 import { DatabaseError } from 'src/error-handlers/infra/DatabaseError';
 
@@ -16,11 +16,12 @@ export class UserDbConnector {
     try {
       await UserModel.update(user, {
         where: { id: user.id },
-        fields: ['firstName', 'lastName', 'password'],
+        fields: ['firstName', 'lastName', 'password', 'email', 'role'],
       });
 
       return await UserModel.findOne({ where: { id: user.id } });
     } catch (error) {
+      console.log('db error =====>', error)
       throw new DatabaseError('Failed to update user').InnerError(error);
     }
   }
