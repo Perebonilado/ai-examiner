@@ -51,6 +51,14 @@ export class SubscriptionController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
+
+      if (userToken.email.includes('aiexaminerguest')) {
+        throw new HttpException(
+          'Please upgrade your account to continue',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       let subscriptionProcessingInfo: CreateSubscriptionModel;
 
       const planDetails = (
@@ -88,15 +96,20 @@ export class SubscriptionController {
               'day',
             );
 
-        const subscriptionStatus = !recurringSubscriptionDetails?.subscriptionCode ? null : (
-          await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
-            recurringSubscriptionDetails?.subscriptionCode,
-          )
-        ).subscrptionInformation.status;
+        const subscriptionStatus =
+          !recurringSubscriptionDetails?.subscriptionCode
+            ? null
+            : (
+                await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
+                  recurringSubscriptionDetails?.subscriptionCode,
+                )
+              ).subscrptionInformation.status;
 
         const userHasActiveRecurringSubscription = !recurringSubscriptionDetails
           ? false
-          : activeSubscriptionStatuses.includes(subscriptionStatus?.toLowerCase());
+          : activeSubscriptionStatuses.includes(
+              subscriptionStatus?.toLowerCase(),
+            );
 
         if (userHasActiveOneTimeSubscription) {
           throw new HttpException(
@@ -237,7 +250,7 @@ export class SubscriptionController {
             currency: planDetails.currency,
             name: planDetails.planName,
             planCode: planDetails.planId,
-            interval: planDetails.interval
+            interval: planDetails.interval,
           },
           subscrptionInformation: {
             code: null,
@@ -275,7 +288,7 @@ export class SubscriptionController {
               currency: null,
               name: 'Free',
               planCode: null,
-              interval: "monthly"
+              interval: 'monthly',
             },
             subscrptionInformation: {
               code: null,
