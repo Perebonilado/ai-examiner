@@ -429,7 +429,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
   private async getSystemResponseUsingRag(
     message: string,
     sourceText: string,
-    messages: { role: 'system' | 'user'; content: string }[],
+    messages: { role: 'system' | 'user' ; content: string }[],
   ) {
     try {
       // const openai = createOpenAI({
@@ -440,10 +440,17 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         apiKey: EnvironmentVariables.config.geminiApiKey,
       });
 
+      const prevMessages = messages.map((m)=>{
+        if(m.role =='system') {
+          return {...m, role: 'assistant'}
+        }
+        return m
+      }) as { role: 'system' | 'user' ; content: string }[]
+
       const { text } = await generateText({
         model: google('gemini-1.5-flash'),
         messages: [
-          ...messages,
+          ...prevMessages,
           {
             role: 'user',
             content: generateDocumentMessagePromptV2(message, sourceText),
