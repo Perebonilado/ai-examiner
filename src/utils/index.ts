@@ -470,7 +470,6 @@ export const generateHTMLFromContent = (pages: PDFContent[][]): string => {
       </head>
       <body>
         ${pagesHtml}
-        ${autoScaleScript}
       </body>
     </html>
   `;
