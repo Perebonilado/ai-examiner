@@ -17,6 +17,8 @@ import { CreateOneTimeSubscriptionHandler } from 'src/business/handlers/OneTimeS
 import * as moment from 'moment';
 import { UpdateCallCreditsHandler } from 'src/business/handlers/CallCredits/UpdateCallCreditsHandler';
 import { CallCreditsQueryService } from 'src/query/services/CallCreditsQueryService';
+import { USRegionFreeTimeMs } from 'src/constants';
+import { CreateCallCreditsHandler } from 'src/business/handlers/CallCredits/CreateCallCreditsHandler';
 
 @Controller('webhook/paystack')
 export class PaystackWebhook {
@@ -31,6 +33,10 @@ export class PaystackWebhook {
     private updateCallCreditsHander: UpdateCallCreditsHandler,
     @Inject(CallCreditsQueryService)
     private callCreditsQueryService: CallCreditsQueryService,
+    @Inject(UpdateCallCreditsHandler)
+    private updateCallCreditsHandler: UpdateCallCreditsHandler,
+    @Inject(CreateCallCreditsHandler)
+    private createCallCreditsHandler: CreateCallCreditsHandler,
   ) {}
 
   @Post('')
@@ -59,6 +65,34 @@ export class PaystackWebhook {
                   payload: { subscriptionData, userId: user.id },
                 });
 
+                // create/update viva free hours for US
+                const planDescription: any = JSON.parse(
+                  (body.data as ChargeSuccessEventDto<any>).plan.description,
+                );
+                if (
+                  (planDescription['region'] as string)
+                    .toLowerCase()
+                    .includes('america')
+                ) {
+                  const callCredits =
+                    await this.callCreditsQueryService.findByUserId(user.id);
+
+                  if (callCredits) {
+                    await this.updateCallCreditsHandler.handle({
+                      action: 'add_reamining_time',
+                      freeCallCredits: USRegionFreeTimeMs,
+                      freeCallCreditsModifiedOn: new Date(),
+                      timeToUpdate: 0,
+                      userId: user.id,
+                    });
+                  } else {
+                     await this.createCallCreditsHandler.handle({
+                      timeToAddMs: USRegionFreeTimeMs,
+                      userId: user.id,
+                    });
+                  }
+                }
+
                 this.notificationsGateway.notifyClient(user.email, {
                   status: 'successful',
                   message: 'Payment for subscription successful',
@@ -72,7 +106,7 @@ export class PaystackWebhook {
                   subscriptionInformation.customer.email,
                 );
 
-                // we currently only have monthly/quarterly plans
+                // we currently only have monthly/quarterly plans for one time payment
                 const monthsToExpiration =
                   subscriptionInformation.plan.interval === 'monthly' ? 1 : 3;
 

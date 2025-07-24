@@ -15,6 +15,7 @@ export interface GetSubscriptionModel {
     amount: number;
     currency: string;
     interval: PlanInterval
+    description: any
   };
   subscrptionInformation: {
     code: string;
