@@ -72,7 +72,7 @@ export class PaystackWebhook {
                   subscriptionInformation.customer.email,
                 );
 
-                // we currently only have monthly/quarterly plans
+                // we currently only have monthly/quarterly plans for one time payment
                 const monthsToExpiration =
                   subscriptionInformation.plan.interval === 'monthly' ? 1 : 3;
 
