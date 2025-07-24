@@ -14,11 +14,19 @@ export interface Plan {
   hosted_page_summary: string | null;
   currency: string;
   id: number;
+  is_deleted: boolean;
+  is_archived: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export type PlanInterval = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'bianually' | 'annualy'
+export type PlanInterval =
+  | 'daily'
+  | 'weekly'
+  | 'monthly'
+  | 'quarterly'
+  | 'bianually'
+  | 'annually';
 
 interface Subscription {
   customer: number;
