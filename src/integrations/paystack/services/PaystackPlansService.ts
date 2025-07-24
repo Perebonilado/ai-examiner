@@ -30,14 +30,16 @@ export class PaystackPlansService {
         },
       });
 
-      return data.data.map((pl) => ({
-        planName: pl.name,
-        planId: pl.plan_code,
-        currency: pl.currency,
-        interval: pl.interval,
-        amount: convertSmallerDemoninationtoLarger(pl.amount, 100),
-        description: pl.description,
-      }));
+      return data.data
+        .filter((pl) => !pl.is_archived && !pl.is_deleted)
+        .map((pl) => ({
+          planName: pl.name,
+          planId: pl.plan_code,
+          currency: pl.currency,
+          interval: pl.interval,
+          amount: convertSmallerDemoninationtoLarger(pl.amount, 100),
+          description: pl.description,
+        }));
     } catch (error) {
       throw new HttpException('Failed to get plans', HttpStatus.BAD_GATEWAY);
     }
