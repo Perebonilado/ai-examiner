@@ -188,7 +188,8 @@ export class PaystackSubscriptionService {
             currency: subscription.plan.currency,
             name: subscription.plan.name,
             planCode: subscription.plan.plan_code,
-            interval: subscription.plan.interval
+            interval: subscription.plan.interval,
+            description: JSON.parse(subscription.plan.description)
           },
           subscrptionInformation: {
             code: subscription.subscription_code,
@@ -240,7 +241,8 @@ export class PaystackSubscriptionService {
           currency: subscription.plan.currency,
           name: subscription.plan.name,
           planCode: subscription.plan.plan_code,
-          interval: subscription.plan.interval
+          interval: subscription.plan.interval,
+          description: JSON.parse(subscription.plan.description)
         },
         subscrptionInformation: {
           code: subscription.subscription_code,

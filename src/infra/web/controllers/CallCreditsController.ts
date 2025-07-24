@@ -18,6 +18,8 @@ import { PaystackCallCreditsService } from 'src/integrations/paystack/services/P
 import { PurchaseCallCreditDto } from 'src/dto/PurchaseCallCreditDto';
 import * as moment from 'moment';
 import { UpdateCallCreditsHandler } from 'src/business/handlers/CallCredits/UpdateCallCreditsHandler';
+import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
+import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
 
 @Controller('call-credits')
 export class CallCreditsController {
@@ -30,6 +32,10 @@ export class CallCreditsController {
     private paystackCallCreditService: PaystackCallCreditsService,
     @Inject(UpdateCallCreditsHandler)
     private updateCallCreditsHandler: UpdateCallCreditsHandler,
+    @Inject(SubscriptionQueryService)
+    private subscriptionQueryService: SubscriptionQueryService,
+    @Inject(PaystackSubscriptionService)
+    private paystackSubcriptionService: PaystackSubscriptionService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -70,7 +76,8 @@ export class CallCreditsController {
         userToken.sub,
       );
 
-      const freeTimeMs = 180000; // 3mins in milliseconds
+      let freeTimeMs = 180000; // 3mins in milliseconds
+
       if (!callCredits) {
         const createdFreeCredits = await this.createCallCreditsHandler.handle({
           timeToAddMs: freeTimeMs,
@@ -78,9 +85,11 @@ export class CallCreditsController {
         });
 
         return {
-          remainingCreditsMs: createdFreeCredits.data.remainingCreditsMs + createdFreeCredits.data.freeCredits,
+          remainingCreditsMs:
+            createdFreeCredits.data.remainingCreditsMs +
+            createdFreeCredits.data.freeCredits,
           free: createdFreeCredits.data.freeCredits,
-          paid: createdFreeCredits.data.remainingCreditsMs
+          paid: createdFreeCredits.data.remainingCreditsMs,
         };
       }
 
@@ -100,9 +109,10 @@ export class CallCreditsController {
       }
 
       return {
-        remainingCreditsMs: callCredits.remainingTimeMs + callCredits.freeRemainingTimeMs,
+        remainingCreditsMs:
+          callCredits.remainingTimeMs + callCredits.freeRemainingTimeMs,
         free: callCredits.freeRemainingTimeMs,
-        paid: callCredits.remainingTimeMs
+        paid: callCredits.remainingTimeMs,
       };
     } catch (error) {
       throw new HttpException(
