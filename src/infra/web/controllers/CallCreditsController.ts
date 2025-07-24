@@ -78,21 +78,6 @@ export class CallCreditsController {
 
       let freeTimeMs = 180000; // 3mins in milliseconds
 
-      const userSubscription = await this.subscriptionQueryService.findByUserId(
-        userToken.sub,
-      );
-
-      if (userSubscription) {
-        const subInfo =
-          await this.paystackSubcriptionService.fetchSubscriptionBySubscriptionCode(
-            userSubscription.subscriptionCode,
-          );
-
-        if ((subInfo.planInformation.description.region as string).toLocaleLowerCase().includes('america')) {
-          freeTimeMs = 3_600_000; // 1 hour
-        }
-      }
-
       if (!callCredits) {
         const createdFreeCredits = await this.createCallCreditsHandler.handle({
           timeToAddMs: freeTimeMs,
