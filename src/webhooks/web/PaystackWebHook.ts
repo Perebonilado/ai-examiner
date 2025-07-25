@@ -72,7 +72,7 @@ export class PaystackWebhook {
                 if (
                   (planDescription['region'] as string)
                     .toLowerCase()
-                    .includes('africa')
+                    .includes('america')
                 ) {
                   const callCredits =
                     await this.callCreditsQueryService.findByUserId(user.id);
