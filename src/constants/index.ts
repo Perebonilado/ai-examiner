@@ -13,7 +13,7 @@ export const saltRounds = 10;
 
 export const maxNumberOfQuestionGenerationForFreePlanTier = 1;
 
-export const USRegionFreeTimeMs = 3_600_000;
+export const USRegionFreeTimeMs = 7_200_000;
 export const AfricanFreeTimeMs = 180000
 
 export const inactiveSubscriptionStatuses = [
