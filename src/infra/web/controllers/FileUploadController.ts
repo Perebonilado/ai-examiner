@@ -320,7 +320,7 @@ export class FileUploadController {
       });
       const { text: summary } = await generateText({
         model: google('gemini-1.5-flash'),
-        prompt: generateDocumentSummaryPromptV2(sourceText),
+        prompt: generateDocumentSummaryPromptV2(trimToEstimatedTokens(sourceText)),
       });
 
       return summary;
@@ -343,7 +343,7 @@ export class FileUploadController {
         mode: 'json',
         schemaName: 'Topics',
         schema: TopicsSchema,
-        prompt: generateTopicPromptV2_2(sourceText),
+        prompt: generateTopicPromptV2_2(trimToEstimatedTokens(sourceText)),
       });
 
       return response.object.topics as string[];
