@@ -343,7 +343,7 @@ export class FileUploadController {
         mode: 'json',
         schemaName: 'Topics',
         schema: TopicsSchema,
-        prompt: generateTopicPromptV2_2(sourceText),
+        prompt: generateTopicPromptV2_2(trimToEstimatedTokens(sourceText)),
       });
 
       return response.object.topics as string[];
