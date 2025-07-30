@@ -315,13 +315,24 @@ export class FileUploadController {
 
   private async summarizeDocumentV2(sourceText: string) {
     try {
-      const google = createGoogleGenerativeAI({
-        apiKey: EnvironmentVariables.config.geminiApiKey,
+      // const google = createGoogleGenerativeAI({
+      //   apiKey: EnvironmentVariables.config.geminiApiKey,
+      // });
+      // const { text: summary } = await generateText({
+      //   model: google('gemini-1.5-flash'),
+      //   prompt: generateDocumentSummaryPromptV2(sourceText),
+      // });
+      const openai = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
       });
+
       const { text: summary } = await generateText({
-        model: google('gemini-1.5-flash'),
-        prompt: generateDocumentSummaryPromptV2(sourceText),
+        model: openai.responses('gpt-4o-mini'),
+        maxRetries: 3,
+        prompt:  generateDocumentSummaryPromptV2(sourceText),
       });
+
 
       return summary;
     } catch (error) {
@@ -334,11 +345,25 @@ export class FileUploadController {
 
   private async generateDocumentTopicsV2(sourceText: string) {
     try {
-      const google = createGoogleGenerativeAI({
-        apiKey: EnvironmentVariables.config.geminiApiKey,
+      // const google = createGoogleGenerativeAI({
+      //   apiKey: EnvironmentVariables.config.geminiApiKey,
+      // });
+      // const response = await generateObject({
+      //   model: google('gemini-1.5-flash'),
+      //   maxRetries: 3,
+      //   mode: 'json',
+      //   schemaName: 'Topics',
+      //   schema: TopicsSchema,
+      //   prompt: generateTopicPromptV2_2(sourceText),
+      // });
+
+      const openai = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
       });
+
       const response = await generateObject({
-        model: google('gemini-1.5-flash'),
+        model: openai.responses('gpt-4o-mini'),
         maxRetries: 3,
         mode: 'json',
         schemaName: 'Topics',

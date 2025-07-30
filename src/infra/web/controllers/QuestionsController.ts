@@ -767,13 +767,13 @@ export class QuestionsController {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
 
-      // const openai = createOpenAI({
-      //   compatibility: 'strict',
-      //   apiKey: EnvironmentVariables.config.openAiApiKey,
-      // });
-      const google = createGoogleGenerativeAI({
-        apiKey: EnvironmentVariables.config.geminiApiKey,
+      const openai = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
       });
+      // const google = createGoogleGenerativeAI({
+      //   apiKey: EnvironmentVariables.config.geminiApiKey,
+      // });
       const prevQuestionLimit = 20;
       const previousQuestions =
         await this.questionQueryService.findPreviousQuestionsByConfig(
@@ -901,7 +901,8 @@ export class QuestionsController {
 
       const questionPromises = questionsPerBatch.map((batchSize, index) =>
         generateObject({
-          model: google('gemini-1.5-flash'),
+          // model: google('gemini-1.5-flash'),
+          model: openai.responses('gpt-4o-mini'),
           maxRetries: 3,
           mode: 'json',
           schemaName: 'Questions',
