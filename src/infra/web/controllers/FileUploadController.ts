@@ -149,20 +149,20 @@ export class FileUploadController {
         },
       );
 
-      const uploadFileToGoogleAndSaveStoredFile = async () => {
-        const uploadedGoogleDriveFile =
-          await this.googleDriveService.uploadFile({
-            file: fileBufferToUse,
-            originalFileName: file.originalname,
-            mimetype: file.mimetype,
-            mimeTypeToSaveAs: fileFormatToSaveFile,
-          });
-        await this.createStoredFileHandler.handle({
-          documentId: createdDocument.data.id,
-          originalFileId: uploadedGoogleDriveFile.fileId,
-          currentFileFormat: fileFormatToSaveFile,
-        });
-      };
+      // const uploadFileToGoogleAndSaveStoredFile = async () => {
+      //   const uploadedGoogleDriveFile =
+      //     await this.googleDriveService.uploadFile({
+      //       file: fileBufferToUse,
+      //       originalFileName: file.originalname,
+      //       mimetype: file.mimetype,
+      //       mimeTypeToSaveAs: fileFormatToSaveFile,
+      //     });
+      //   await this.createStoredFileHandler.handle({
+      //     documentId: createdDocument.data.id,
+      //     originalFileId: uploadedGoogleDriveFile.fileId,
+      //     currentFileFormat: fileFormatToSaveFile,
+      //   });
+      // };
 
       const createDocSummary = async () => {
         const summaryInfo = await this.summarizeDocumentV2(chunks.join('\n'));
@@ -184,7 +184,7 @@ export class FileUploadController {
         },
       });
       const summaryCreationPromise = createDocSummary();
-      const uploadGoogleDrivePromise = uploadFileToGoogleAndSaveStoredFile();
+      // const uploadGoogleDrivePromise = uploadFileToGoogleAndSaveStoredFile();
 
       const [topics] = await Promise.all([
         this.generateDocumentTopicsV2(chunks.join('\n')),
@@ -244,7 +244,7 @@ export class FileUploadController {
 
       const [summaryInfo] = await Promise.all([
         summaryCreationPromise,
-        uploadGoogleDrivePromise,
+        // uploadGoogleDrivePromise,
       ]);
 
       // return a response here
