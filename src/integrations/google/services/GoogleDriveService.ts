@@ -7,6 +7,7 @@ import { Readable } from 'stream';
 import { generateUUID, writeFileToStream } from 'src/utils';
 import { tmpdir } from 'os';
 import { unlink } from 'fs/promises';
+import { EnvironmentVariables } from 'src/EnvironmentVariables';
 
 @Injectable()
 export class GoogleDriveService {
@@ -39,7 +40,7 @@ export class GoogleDriveService {
   // newer files are owned by the workspace account
   private driveServiceAcc: drive_v3.Drive;
   private driveWorkSpace: drive_v3.Drive;
-  private workSpaceEmail = 'perebonilado@aiexaminer.app';
+  private workSpaceEmail = EnvironmentVariables.config.adminEmail;
 
   public async uploadFile({
     file,
@@ -114,7 +115,7 @@ export class GoogleDriveService {
         fields: 'owners(emailAddress)',
       });
       const owner = (await existingFile).data.owners[0].emailAddress;
-      
+
       if (owner === this.workSpaceEmail) {
         return await this.driveWorkSpace.files.delete({ fileId });
       }
