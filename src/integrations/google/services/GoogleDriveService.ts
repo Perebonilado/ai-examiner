@@ -85,7 +85,7 @@ export class GoogleDriveService {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Google drive: upload error',
-        error.status ?? HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
