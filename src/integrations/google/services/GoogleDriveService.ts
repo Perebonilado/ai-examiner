@@ -7,10 +7,12 @@ import { Readable } from 'stream';
 import { generateUUID, writeFileToStream } from 'src/utils';
 import { tmpdir } from 'os';
 import { unlink } from 'fs/promises';
+import { EnvironmentVariables } from 'src/EnvironmentVariables';
 
 @Injectable()
 export class GoogleDriveService {
   constructor() {
+    //service acc
     const auth = new google.auth.GoogleAuth({
       keyFile: path.join(
         __dirname,
@@ -19,10 +21,26 @@ export class GoogleDriveService {
       scopes: ['https://www.googleapis.com/auth/drive'],
     });
 
-    this.drive = google.drive({ version: 'v3', auth });
+    this.driveServiceAcc = google.drive({ version: 'v3', auth });
+
+    //ws acc
+    const authWs = new google.auth.JWT({
+      keyFile: path.join(
+        __dirname,
+        '../config/service-account-google-drive.json',
+      ),
+      scopes: ['https://www.googleapis.com/auth/drive'],
+      subject: this.workSpaceEmail, // Workspace user email to impersonate
+    });
+
+    this.driveWorkSpace = google.drive({ version: 'v3', auth: authWs });
   }
 
-  private drive: drive_v3.Drive;
+  // older files are owned by the service account
+  // newer files are owned by the workspace account
+  private driveServiceAcc: drive_v3.Drive;
+  private driveWorkSpace: drive_v3.Drive;
+  private workSpaceEmail = EnvironmentVariables.config.adminEmail;
 
   public async uploadFile({
     file,
@@ -42,12 +60,12 @@ export class GoogleDriveService {
       await writeFileToStream(tempFilePath, file);
       const fileStream = fs.createReadStream(tempFilePath, { autoClose: true });
 
-      const res = await this.drive.files.create({
+      const res = await this.driveWorkSpace.files.create({
         requestBody: {
           name: originalFileName,
           ...(mimeTypeToSaveAs.startsWith('application/vnd.google-apps')
-          ? { mimeType: mimeTypeToSaveAs }
-          : {}),
+            ? { mimeType: mimeTypeToSaveAs }
+            : {}),
         },
         media: {
           mimeType: mimetype,
@@ -71,7 +89,7 @@ export class GoogleDriveService {
 
       const fileId = res.data.id;
 
-      await this.drive.permissions.create({
+      await this.driveWorkSpace.permissions.create({
         fileId,
         requestBody: {
           role: 'reader',
@@ -92,7 +110,17 @@ export class GoogleDriveService {
 
   public async deleteFile(fileId: string) {
     try {
-      return await this.drive.files.delete({ fileId });
+      const existingFile = this.driveServiceAcc.files.get({
+        fileId,
+        fields: 'owners(emailAddress)',
+      });
+      const owner = (await existingFile).data.owners[0].emailAddress;
+
+      if (owner === this.workSpaceEmail) {
+        return await this.driveWorkSpace.files.delete({ fileId });
+      }
+
+      return await this.driveServiceAcc.files.delete({ fileId });
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Google drive: failed to delete file',
@@ -103,7 +131,7 @@ export class GoogleDriveService {
 
   public async getFile(fileId: string) {
     try {
-      const data = await this.drive.files.get(
+      const data = await this.driveServiceAcc.files.get(
         {
           fileId,
           alt: 'media',
@@ -122,7 +150,7 @@ export class GoogleDriveService {
 
   public async exportFileAsPDF(fileId: string) {
     try {
-      const data = await this.drive.files.export(
+      const data = await this.driveServiceAcc.files.export(
         {
           fileId,
           mimeType: 'application/pdf',
@@ -141,7 +169,7 @@ export class GoogleDriveService {
 
   public async getFileUrl(fileId: string): Promise<string> {
     try {
-      const data = await this.drive.files.get({ fileId });
+      const data = await this.driveServiceAcc.files.get({ fileId });
       return data.data.webViewLink;
     } catch (error) {
       throw new HttpException(
