@@ -985,6 +985,88 @@ export const generateTopicPromptV2_2 = (sourceText: string) => {
   `;
 };
 
+export const generateGenericTopicsPrompt = (sourceText: string) => {
+  return `
+    Your job is to categorize the source text below into topics. Wholistically look at the source text and break it down into meaningful divisions. Think of yourself as someone writing the glossary for a textbook. Your job is to create this glossary for the below source text. The text might be from a lecture slide and so there may be pages where it might just be the name of the lecturer, you may just group sections like this into the introduction. Your job ultimately is to group the sections of the source text into meaningful topics. Analyze and determine where the source text might have originated from, then categorize it so we can use the information you provide to create a glossary for the text. The text itself might contain a glossary, this might be grouped under introduction as well. Your job is to come up with your own groupings to create a new and better glossary. Each topic should be unique, and for each, write a short one or two liner short description to give a little insight on what that topic might be about.
+
+    **SOUCE TEXT START**
+    ${sourceText}
+    **SOURCE TEXT END**
+  `;
+};
+
+export const generateTopicPromptV2_3 = (docsByPage: string[]) => {
+  return `
+  Below is an array os strings which originate from a single document. Each item in the array represents a page in the document.
+  Your job is to look through the content, thoroughly understand it, then generate topics based on the page range. So, if the 
+  first 5 items in the array cover the outline of the overall text, then group that into one topic, and so on.
+  Do this with utmost precision as it is would be detrimental not to do so. Ensure topics are grouped correctly and based
+  on your deep understanding of the overall text! 
+
+  **DOCUMENT BY PAGES**
+  ${docsByPage}
+  **DOCUMENT BY PAGES**
+  `;
+};
+
+interface TopicCategorizationPayload {
+  genericTopics: string[];
+  pageText: string;
+  pageNumber: number;
+  totalPages: number;
+  previousPageText: string;
+  nextPageText: string;
+}
+
+export const generateTopicCategorizationPrompt = ({
+  genericTopics,
+  nextPageText,
+  pageNumber,
+  pageText,
+  previousPageText,
+  totalPages,
+}: TopicCategorizationPayload) => {
+  return `
+              We are building out the glossary for a source text.
+              This text may have originated from a textbook or lecture slides.
+              Nonetheless, all the possible topics or categories covered in the 
+              text have been provided. Your job is to take a look at the categories
+              and decide which the source text should be placed under. You need to do this
+              with very high accuracy so that a properly ordered glossary can be mapped out.
+              The text might just be an introduction. Introductions are texts that may just contain
+              maybe the lecturer's name of some starting out information. Really aanalyze the source text deeply
+              before categorizing it. This is the final step in crafting out the glossary and we are all counting on you
+              to do this job accurately. After you reason this out, only pick from the list of possible
+              categories, the best fit for the source text and use just that one, VERBATIM, that should be the only information we need, just that category.
+              Also, to give you some more context to predict more accurately the category, you will be provided with the page number and the total pages in the document.
+              You will also be provided with info from the previous page and the page right after except the page in question is the first, last or only page. You may use
+              this info to more accurately predict if the page you are looking for is at the beginning and might be an introductory page or maybe not. Use this information
+              with your discretion to give a more accurate prediction. Note that it is not possible to have an introduction on the last page. Really take a look at the Page
+              number as that is indicative of the source text's page. Very important in helping you decide
+
+              **ALL POSSIBLE CATEGORIES**
+              ${genericTopics.join('\n')}
+              **ALL POSSIBLE CATEGORIES**
+
+              **source text start**
+              ${pageText}
+              **source text end**
+
+              **meta info**
+              Page number: ${pageNumber}
+              Total Pages: ${totalPages}
+              **meta info**
+
+              **Previous Page**
+              ${previousPageText}
+              **Previous Page**
+
+              **Next Page**
+              ${nextPageText}
+              **Next Page**
+  `;
+};
+
 export const translateEnglishToOtherLanguagePrompt = (
   text: string,
   language: string,
@@ -1106,7 +1188,6 @@ ANALYZE THE SUMMARY → IDENTIFY THE MOST VISUALLY DISTINCTIVE ELEMENT → RETUR
 
 // Only return the most effective keyword or short phrase—nothing else.`;
 // };
-
 
 // export const getGoogleImageQueryPrompt = (summary: string): string => {
 //   return `You are an expert Google Image search strategist. Your mission is to transform a user's initial, often broad, image search query into a highly precise and visually effective query. You have access to a detailed document summary for crucial context and terminology.

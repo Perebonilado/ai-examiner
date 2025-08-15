@@ -689,6 +689,9 @@ export class QuestionsController {
             title: topic,
             documentId: id,
             userId: userToken.sub,
+            startPage: null,
+            endPage: null,
+            shortDescription: null
           }));
 
           const createdDocumentTopics =
@@ -1496,6 +1499,9 @@ export class QuestionsController {
           title: topic,
           documentId: id,
           userId: userToken.sub,
+          startPage: null,
+          endPage: null,
+          shortDescription: null
         }));
 
         const createdDocumentTopics =

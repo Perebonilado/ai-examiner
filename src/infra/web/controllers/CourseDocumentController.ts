@@ -751,6 +751,9 @@ export class CourseDocumentController {
           title: topic,
           documentId: createdDocument.data.id,
           userId: userToken.sub,
+          startPage: null,
+          endPage: null,
+          shortDescription: null
         }));
 
         const createdDocumentTopicsResponse =

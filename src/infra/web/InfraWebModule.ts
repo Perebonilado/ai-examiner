@@ -24,6 +24,7 @@ import { GoogleAuthService } from '../auth/services/GoogleAuthService';
 import { CallCreditsController } from './controllers/CallCreditsController';
 import { FlagContentController } from './controllers/FlagContentController';
 import { PreferredLanguageController } from './controllers/PreferredLanguageController';
+import { ReadingProgressController } from './controllers/ReadingProgressController';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { PreferredLanguageController } from './controllers/PreferredLanguageCont
     CallCreditsController,
     FlagContentController,
     PreferredLanguageController,
+    ReadingProgressController
   ],
 })
 export class InfraWebModule {}

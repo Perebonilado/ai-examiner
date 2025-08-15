@@ -29,8 +29,11 @@ import {
 import { generateMessagePrompt } from 'src/constants';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 import {
+  generateGenericTopicsPrompt,
+  generateTopicCategorizationPrompt,
   generateTopicPromptV2,
   generateTopicPromptV2_2,
+  generateTopicPromptV2_3,
 } from 'src/constants/QuestionGenerationPromptV2';
 import {
   generateDocumentSummaryPromptV2,
@@ -45,6 +48,8 @@ import { GoogleDriveService } from 'src/integrations/google/services/GoogleDrive
 import { CreateStoredFileHandler } from 'src/business/handlers/StoredFile/CreateStoredFileHandler';
 import { ILovePdfService } from 'src/integrations/i-love-pdf/services/ILovePdfService';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { TopicsSchemaV2 } from 'src/schemas/TopicsSchemaV2';
+import { TopicV2Model } from '../models/TopicV2Model';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -186,17 +191,11 @@ export class FileUploadController {
       const summaryCreationPromise = createDocSummary();
       const uploadGoogleDrivePromise = uploadFileToGoogleAndSaveStoredFile();
 
-      const [topics] = await Promise.all([
-        this.generateDocumentTopicsV2(chunks.join('\n')),
-      ]);
-
-      const mappedTopics = topics.map((topic) => {
-        return {
-          title: topic,
-          documentId: createdDocument.data.id,
-          userId: userToken.sub,
-        };
-      });
+      const topics = await this.generateDocumentTopicV3(
+        chunks,
+        createdDocument.data.id,
+        userToken.sub,
+      );
 
       if (chunks.length < this.extractTextService.MAX_CHUNKS) {
         await Promise.all([
@@ -204,7 +203,7 @@ export class FileUploadController {
             chunks.filter((c) => c.trim().length),
             createdDocument.data.id,
           ),
-          this.createDocumentTopicHandler.handle({ payload: mappedTopics }),
+          this.createDocumentTopicHandler.handle({ payload: topics }),
         ]);
       } else {
         const splitChunks: string[][] = [];
@@ -238,7 +237,7 @@ export class FileUploadController {
 
         await Promise.all([
           upsertPromises,
-          this.createDocumentTopicHandler.handle({ payload: mappedTopics }),
+          this.createDocumentTopicHandler.handle({ payload: topics }),
         ]);
       }
 
@@ -315,29 +314,150 @@ export class FileUploadController {
 
   private async summarizeDocumentV2(sourceText: string) {
     try {
-      // const google = createGoogleGenerativeAI({
-      //   apiKey: EnvironmentVariables.config.geminiApiKey,
+      const google = createGoogleGenerativeAI({
+        apiKey: EnvironmentVariables.config.geminiApiKey,
+      });
+      const { text: summary } = await generateText({
+        model: google('gemini-1.5-flash'),
+        prompt: generateDocumentSummaryPromptV2(sourceText),
+      });
+      // const openai = createOpenAI({
+      //   compatibility: 'strict',
+      //   apiKey: EnvironmentVariables.config.openAiApiKey,
       // });
+
       // const { text: summary } = await generateText({
-      //   model: google('gemini-1.5-flash'),
+      //   model: openai.responses('gpt-4o-mini'),
+      //   maxRetries: 3,
       //   prompt: generateDocumentSummaryPromptV2(sourceText),
       // });
-      const openai = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
-      });
-
-      const { text: summary } = await generateText({
-        model: openai.responses('gpt-4o-mini'),
-        maxRetries: 3,
-        prompt:  generateDocumentSummaryPromptV2(sourceText),
-      });
-
 
       return summary;
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Failed to summarize doc',
+        error.status ?? HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  private batchItems<T>(documentPages: T[]) {
+    const splitChunks: T[][] = [];
+    const maxChunks = 5;
+    for (let i = 0; i < documentPages.length; i += maxChunks) {
+      splitChunks.push(documentPages.slice(i, i + maxChunks));
+    }
+    return splitChunks;
+  }
+
+  private async generateDocumentTopicV3(
+    documentByPages: string[],
+    documentId: string,
+    userId: string,
+  ): Promise<TopicV2Model[]> {
+    try {
+      /**
+       * generate generic topics
+       * batch pages
+       * tag each page within each batch with predefined topics
+       */
+
+      const google = createGoogleGenerativeAI({
+        apiKey: EnvironmentVariables.config.geminiApiKey,
+      });
+
+      const genericTopicsResponse = await generateObject({
+        model: google('gemini-1.5-flash'),
+        maxRetries: 3,
+        mode: 'json',
+        schemaName: 'Topics',
+        schema: TopicsSchema,
+        prompt: generateGenericTopicsPrompt(documentByPages.join('\n')),
+      });
+
+      const genericTopics = genericTopicsResponse.object.topics!;
+      const totalPages = documentByPages.length;
+      const batchedPages = this.batchItems<string>(documentByPages);
+      const taggedPages = await Promise.all(
+        batchedPages.map(async (batch) => {
+          const tagged: string[] = [];
+          let currentIndex = 0;
+
+          for (const pageItem of batch) {
+            const previousPage =
+              currentIndex === 0
+                ? 'Unavailable as page is the first page'
+                : batch[currentIndex - 1];
+            const lastPageIndex = totalPages - 1;
+            const nextPage =
+              currentIndex === lastPageIndex
+                ? 'Unavailable as page is the last page'
+                : batch[currentIndex + 1];
+            if (pageItem.trim().length) {
+              const response = await generateText({
+                model: google('gemini-1.5-flash'),
+                maxRetries: 3,
+                prompt: generateTopicCategorizationPrompt({
+                  genericTopics: genericTopics.map((t) =>
+                    t.topic.toLowerCase(),
+                  ),
+                  nextPageText: nextPage,
+                  pageNumber: currentIndex + 1,
+                  pageText: pageItem,
+                  previousPageText: previousPage,
+                  totalPages,
+                }),
+              });
+              tagged.push(response.text);
+            } else {
+              tagged.push('empty page');
+            }
+
+            currentIndex++;
+          }
+          return tagged;
+        }),
+      );
+
+      const topicsWithStartAndEndPage: TopicV2Model[] = [];
+      const flattenedTopicsArr = taggedPages.flat();
+      flattenedTopicsArr.forEach((topic, index) => {
+        const isFirstPage = index === 0;
+        const shortDescription =
+          genericTopics.find(
+            (gt) =>
+              gt.topic.toLowerCase().trim() === topic.toLowerCase().trim(),
+          )?.shortDescription || null;
+        const topicModel: TopicV2Model = {
+          startPage: index + 1,
+          endPage: index + 1,
+          title: topic.toLowerCase().trim(),
+          shortDescription,
+          documentId,
+          userId,
+        };
+
+        if (isFirstPage) {
+          topicsWithStartAndEndPage.push(topicModel);
+        } else {
+          const isPreviousPageSameTopic =
+            flattenedTopicsArr[index - 1].toLowerCase() === topic.toLowerCase();
+
+          if (isPreviousPageSameTopic) {
+            topicsWithStartAndEndPage[topicsWithStartAndEndPage.length - 1]
+              .endPage++;
+          } else {
+            topicsWithStartAndEndPage.push(topicModel);
+          }
+        }
+      });
+
+      console.log(topicsWithStartAndEndPage)
+
+      return topicsWithStartAndEndPage;
+    } catch (error) {
+      throw new HttpException(
+        error.message ?? 'Failed to generate topics',
         error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
@@ -377,113 +497,6 @@ export class FileUploadController {
         error.message ?? 'Failed to generate topics',
         error.status ?? HttpStatus.BAD_REQUEST,
       );
-    }
-  }
-
-  private async summarizeDocument(fileId: string) {
-    try {
-      const assistantId =
-        EnvironmentVariables.config.documentSummarizationAssistantId;
-
-      const temporaryVectorStoreName = `${generateUUID()}_${new Date().getTime()}`;
-
-      const temporaryVectorStore = await this.examinerService.createVectorStore(
-        temporaryVectorStoreName,
-      );
-
-      const updatedVectorStoreId =
-        await this.examinerService.attachFileToVectorStore(
-          fileId,
-          temporaryVectorStore.id,
-        );
-
-      const thread = await this.examinerService.createThread();
-
-      const updatedThread =
-        await this.examinerService.attachVectorStoreToThread(
-          thread.id,
-          updatedVectorStoreId,
-        );
-
-      await this.examinerService.createThreadMessage(
-        updatedThread.id,
-        generateMessagePrompt({
-          message: summarizeDocumentPrompt,
-          language: 'English',
-          prefix: '',
-          responseFormat: 'summary',
-        }),
-      );
-
-      const run = await this.examinerService.createRun(
-        assistantId,
-        updatedThread.id,
-      );
-
-      const messages = await this.examinerService.retrieveThreadMessages(
-        updatedThread.id,
-        run.id,
-      );
-
-      const text = (messages.data[0].content[0] as any).text.value;
-
-      return { summary: text, threadId: updatedThread.id };
-    } catch (error) {
-      throw new HttpException(
-        'Failed to summarize doc',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  private async generateDocumentTopic(
-    fileId: string,
-    preferredLanguage: string,
-  ) {
-    try {
-      const assistantId =
-        EnvironmentVariables.config.topicExtractionAssistantId;
-
-      const temporaryVectorStoreName = `${generateUUID()}_${new Date().getTime()}`;
-
-      const temporaryVectorStore = await this.examinerService.createVectorStore(
-        temporaryVectorStoreName,
-      );
-
-      const updatedVectorStoreId =
-        await this.examinerService.attachFileToVectorStore(
-          fileId,
-          temporaryVectorStore.id,
-        );
-
-      const thread = await this.examinerService.createThread();
-
-      const updatedThread =
-        await this.examinerService.attachVectorStoreToThread(
-          thread.id,
-          updatedVectorStoreId,
-        );
-
-      await this.examinerService.createThreadMessage(
-        updatedThread.id,
-        generateTopicPromptV2(preferredLanguage),
-      );
-
-      const run = await this.examinerService.createRun(
-        assistantId,
-        updatedThread.id,
-      );
-
-      const messages = await this.examinerService.retrieveThreadMessages(
-        updatedThread.id,
-        run.id,
-      );
-
-      const generatedTopics = extractJSONDataFromMessages(messages) as string[];
-
-      return generatedTopics;
-    } catch (error) {
-      throw new HttpException('Failed to get topics', HttpStatus.BAD_REQUEST);
     }
   }
 }

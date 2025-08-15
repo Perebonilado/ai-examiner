@@ -24,6 +24,7 @@ import { EssayQuestionAnalysisQueryService } from './services/EssayQuestionAnaly
 import { DocumentSummaryQueryService } from './services/DocumentSummaryQueryService';
 import { RelatedVideoQueryService } from './services/RelatedVideoQueryService';
 import { StoredFileQueryService } from './services/StoredFileQueryService';
+import { DocumentReadingProgressQueryService } from './services/DocumentReadingProgressQueryService';
 
 @Module({
   imports: [IntegrationsModule],
@@ -51,7 +52,8 @@ import { StoredFileQueryService } from './services/StoredFileQueryService';
     EssayQuestionAnalysisQueryService,
     DocumentSummaryQueryService,
     RelatedVideoQueryService,
-    StoredFileQueryService
+    StoredFileQueryService,
+    DocumentReadingProgressQueryService
   ],
   exports: [
     UserQueryService,
@@ -76,7 +78,8 @@ import { StoredFileQueryService } from './services/StoredFileQueryService';
     EssayQuestionAnalysisQueryService,
     DocumentSummaryQueryService,
     RelatedVideoQueryService,
-    StoredFileQueryService
+    StoredFileQueryService,
+    DocumentReadingProgressQueryService
   ],
 })
 export class QueryModule {}
