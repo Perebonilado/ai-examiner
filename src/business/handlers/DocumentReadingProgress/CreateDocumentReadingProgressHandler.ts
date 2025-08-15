@@ -2,7 +2,7 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import AbstractRequestHandlerTemplate from '../AbstractRequestHandlerTemplate';
 import { CreateDocumentReadingProgressRequest } from '../request/CreateDocumentReadingProgressRequest';
 import { CommandResponse } from '../response/CommandResponse';
-import { DocumentReadingProgressRepository } from 'src/business/repository/DocumentReadingProgressRepository';
+import { DocumentReadingProgressRepository, documentReadingProgressRepository } from 'src/business/repository/DocumentReadingProgressRepository';
 import { HandlerError } from 'src/error-handlers/business/HandlerError';
 import { DocumentReadingProgressModel } from 'src/infra/db/models/DocumentReadingProgress';
 import { CreateDocumentReadingProgressResponse } from '../response/CreateDocumentReadingProgressResponse';
@@ -13,7 +13,7 @@ export class CreateDocumentReadingProgressHandler extends AbstractRequestHandler
   CreateDocumentReadingProgressResponse
 > {
   constructor(
-    @Inject('DOCUMENT_READING_PROGRESS_REPOSITORY')
+    @Inject(documentReadingProgressRepository)
     private readonly readingProgressRepository: DocumentReadingProgressRepository,
   ) {
     super();

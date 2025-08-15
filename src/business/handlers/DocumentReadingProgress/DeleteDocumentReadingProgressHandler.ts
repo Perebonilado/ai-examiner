@@ -1,7 +1,7 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import AbstractRequestHandlerTemplate from '../AbstractRequestHandlerTemplate';
 import { CommandResponse } from '../response/CommandResponse';
-import { DocumentReadingProgressRepository } from 'src/business/repository/DocumentReadingProgressRepository';
+import { DocumentReadingProgressRepository, documentReadingProgressRepository } from 'src/business/repository/DocumentReadingProgressRepository';
 import { HandlerError } from 'src/error-handlers/business/HandlerError';
 import { DeleteDocumentReadingProgressRequest } from '../request/DeleteDocumentReadingProgressRequest';
 import { DeleteDocumentReadingProgressResponse } from '../response/DeleteDocumentReadingProgressResponse';
@@ -12,7 +12,7 @@ export class DeleteDocumentReadingProgressHandler extends AbstractRequestHandler
   DeleteDocumentReadingProgressResponse
 > {
   constructor(
-    @Inject('DOCUMENT_READING_PROGRESS_REPOSITORY')
+    @Inject(documentReadingProgressRepository)
     private readonly readingProgressRepository: DocumentReadingProgressRepository,
   ) {
     super();

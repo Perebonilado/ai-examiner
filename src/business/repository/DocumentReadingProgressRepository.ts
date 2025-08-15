@@ -1,6 +1,6 @@
 import { DocumentReadingProgressModel } from 'src/infra/db/models/DocumentReadingProgress';
 
-export const DOCUMENT_READING_PROGRESS_REPOSITORY = Symbol(
+export const documentReadingProgressRepository = Symbol(
   'DOCUMENT_READING_PROGRESS_REPOSITORY',
 );
 

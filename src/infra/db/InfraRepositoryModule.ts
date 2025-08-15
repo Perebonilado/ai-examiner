@@ -43,7 +43,7 @@ import { RelatedVideoRepository } from 'src/business/repository/RelatedVideoRepo
 import { RelatedVideoSequelizeRepository } from './repository/RelatedVideoSequelizeRepository';
 import { StoredFileRepository } from 'src/business/repository/StoredFileRepository';
 import { StoredFileSequelizeRepository } from './repository/StoredFileSequelizeRepository';
-import { DOCUMENT_READING_PROGRESS_REPOSITORY } from 'src/business/repository/DocumentReadingProgressRepository';
+import { documentReadingProgressRepository } from 'src/business/repository/DocumentReadingProgressRepository';
 import { DocumentReadingProgressSequelizeRepository } from './repository/DocumentReadingProgressSequelizeRepository';
 
 @Module({
@@ -134,7 +134,7 @@ import { DocumentReadingProgressSequelizeRepository } from './repository/Documen
       useClass: StoredFileSequelizeRepository,
     },
     {
-      provide: DOCUMENT_READING_PROGRESS_REPOSITORY,
+      provide: documentReadingProgressRepository,
       useClass: DocumentReadingProgressSequelizeRepository,
     },
   ],
@@ -160,7 +160,7 @@ import { DocumentReadingProgressSequelizeRepository } from './repository/Documen
     DocumentSummaryRepository,
     RelatedVideoRepository,
     StoredFileRepository,
-    DOCUMENT_READING_PROGRESS_REPOSITORY,
+    documentReadingProgressRepository,
   ],
 })
 export class InfraRepositoryModule {}
