@@ -21,6 +21,7 @@ import { PineconeChunkService } from 'src/integrations/pinecone/services/Pinecon
 import { ExtractTextService } from 'src/integrations/text-extraction/services/ExtractTextService';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import {
+  batchItems,
   extractJSONDataFromMessages,
   generateUUID,
   splitPdfPagesToIndividualFiles,
@@ -246,12 +247,28 @@ export class FileUploadController {
         uploadGoogleDrivePromise,
       ]);
 
+      const savedTopics = await this.createDocumentTopicHandler.handle({
+        payload: topics.map((t) => {
+          return {
+            documentId: createdDocument.data.id,
+            title: t.title,
+            endPage: t.endPage,
+            startPage: t.startPage,
+            shortDescription: t.shortDescription,
+            userId: userToken.sub,
+          };
+        }),
+      });
+
       // return a response here
       res.status(HttpStatus.CREATED).json({
         data: {
           documentId: createdDocument.data.id,
           fileId: 'not yet set',
-          topics,
+          topics: Array.from(
+            new Set(savedTopics.data.data.map((t) => t.title)),
+          ),
+          topicsWithPages: savedTopics.data.data,
           summary: summaryInfo,
         },
         message: 'File uploaded successfully',
@@ -314,23 +331,23 @@ export class FileUploadController {
 
   private async summarizeDocumentV2(sourceText: string) {
     try {
-      const google = createGoogleGenerativeAI({
-        apiKey: EnvironmentVariables.config.geminiApiKey,
-      });
-      const { text: summary } = await generateText({
-        model: google('gemini-1.5-flash'),
-        prompt: generateDocumentSummaryPromptV2(sourceText),
-      });
-      // const openai = createOpenAI({
-      //   compatibility: 'strict',
-      //   apiKey: EnvironmentVariables.config.openAiApiKey,
+      // const google = createGoogleGenerativeAI({
+      //   apiKey: EnvironmentVariables.config.geminiApiKey,
       // });
-
       // const { text: summary } = await generateText({
-      //   model: openai.responses('gpt-4o-mini'),
-      //   maxRetries: 3,
+      //   model: google('gemini-1.5-flash'),
       //   prompt: generateDocumentSummaryPromptV2(sourceText),
       // });
+      const openai = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
+      });
+
+      const { text: summary } = await generateText({
+        model: openai.responses('gpt-4o-mini'),
+        maxRetries: 3,
+        prompt: generateDocumentSummaryPromptV2(sourceText),
+      });
 
       return summary;
     } catch (error) {
@@ -339,15 +356,6 @@ export class FileUploadController {
         error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
-  }
-
-  private batchItems<T>(documentPages: T[]) {
-    const splitChunks: T[][] = [];
-    const maxChunks = 5;
-    for (let i = 0; i < documentPages.length; i += maxChunks) {
-      splitChunks.push(documentPages.slice(i, i + maxChunks));
-    }
-    return splitChunks;
   }
 
   private async generateDocumentTopicV3(
@@ -362,12 +370,16 @@ export class FileUploadController {
        * tag each page within each batch with predefined topics
        */
 
-      const google = createGoogleGenerativeAI({
-        apiKey: EnvironmentVariables.config.geminiApiKey,
+      // const google = createGoogleGenerativeAI({
+      //   apiKey: EnvironmentVariables.config.geminiApiKey,
+      // });
+      const openai = createOpenAI({
+        compatibility: 'strict',
+        apiKey: EnvironmentVariables.config.openAiApiKey,
       });
 
       const genericTopicsResponse = await generateObject({
-        model: google('gemini-1.5-flash'),
+        model: openai.responses('gpt-4o-mini'),
         maxRetries: 3,
         mode: 'json',
         schemaName: 'Topics',
@@ -377,11 +389,11 @@ export class FileUploadController {
 
       const genericTopics = genericTopicsResponse.object.topics!;
       const totalPages = documentByPages.length;
-      const batchedPages = this.batchItems<string>(documentByPages);
+      const batchedPages = batchItems<string>(documentByPages);
+      let currentIndex = 0;
       const taggedPages = await Promise.all(
         batchedPages.map(async (batch) => {
           const tagged: string[] = [];
-          let currentIndex = 0;
 
           for (const pageItem of batch) {
             const previousPage =
@@ -395,7 +407,7 @@ export class FileUploadController {
                 : batch[currentIndex + 1];
             if (pageItem.trim().length) {
               const response = await generateText({
-                model: google('gemini-1.5-flash'),
+                model: openai.responses('gpt-4o-mini'),
                 maxRetries: 3,
                 prompt: generateTopicCategorizationPrompt({
                   genericTopics: genericTopics.map((t) =>
@@ -422,7 +434,6 @@ export class FileUploadController {
       const topicsWithStartAndEndPage: TopicV2Model[] = [];
       const flattenedTopicsArr = taggedPages.flat();
       flattenedTopicsArr.forEach((topic, index) => {
-        const isFirstPage = index === 0;
         const shortDescription =
           genericTopics.find(
             (gt) =>
@@ -437,7 +448,7 @@ export class FileUploadController {
           userId,
         };
 
-        if (isFirstPage) {
+        if (!topicsWithStartAndEndPage.length) {
           topicsWithStartAndEndPage.push(topicModel);
         } else {
           const isPreviousPageSameTopic =
@@ -451,8 +462,6 @@ export class FileUploadController {
           }
         }
       });
-
-      console.log(topicsWithStartAndEndPage)
 
       return topicsWithStartAndEndPage;
     } catch (error) {

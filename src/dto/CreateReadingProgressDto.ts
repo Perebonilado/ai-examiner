@@ -1,4 +1,4 @@
 export interface CreateReadingProgressDto {
-  topicId: number;
+  topicIds: number[];
   documentId: string;
 }

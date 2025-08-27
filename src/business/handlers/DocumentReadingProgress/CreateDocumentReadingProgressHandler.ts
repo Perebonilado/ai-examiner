@@ -2,7 +2,10 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import AbstractRequestHandlerTemplate from '../AbstractRequestHandlerTemplate';
 import { CreateDocumentReadingProgressRequest } from '../request/CreateDocumentReadingProgressRequest';
 import { CommandResponse } from '../response/CommandResponse';
-import { DocumentReadingProgressRepository, documentReadingProgressRepository } from 'src/business/repository/DocumentReadingProgressRepository';
+import {
+  DocumentReadingProgressRepository,
+  documentReadingProgressRepository,
+} from 'src/business/repository/DocumentReadingProgressRepository';
 import { HandlerError } from 'src/error-handlers/business/HandlerError';
 import { DocumentReadingProgressModel } from 'src/infra/db/models/DocumentReadingProgress';
 import { CreateDocumentReadingProgressResponse } from '../response/CreateDocumentReadingProgressResponse';
@@ -23,15 +26,18 @@ export class CreateDocumentReadingProgressHandler extends AbstractRequestHandler
     request: CreateDocumentReadingProgressRequest,
   ): Promise<CommandResponse<CreateDocumentReadingProgressResponse>> {
     try {
-      const modelToCreate = new DocumentReadingProgressModel({
-        topicId: request.topicId,
-        documentId: request.documentId,
+      const modelsToCreate = request.topicIds.map((topicId) => {
+        return {
+          topicId: topicId,
+          documentId: request.documentId,
+        } as DocumentReadingProgressModel;
       });
+
       const createdModel =
-        await this.readingProgressRepository.create(modelToCreate);
+        await this.readingProgressRepository.bulkCreate(modelsToCreate);
 
       return {
-        data: { id: createdModel.id },
+        data: { ids: createdModel.map((m) => m.id) },
         message: 'Progress saved',
         status: HttpStatus.CREATED,
       };

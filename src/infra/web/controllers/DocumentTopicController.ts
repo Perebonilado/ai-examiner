@@ -18,13 +18,17 @@ import { Request, Response } from 'express';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { DocumentTopicQueryService } from 'src/query/services/DocumentTopicQueryService';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
-import { generateTopicPrompt, inactiveSubscriptionStatuses } from 'src/constants';
+import {
+  generateTopicPrompt,
+  inactiveSubscriptionStatuses,
+} from 'src/constants';
 import { extractJSONDataFromMessages, generateUUID } from 'src/utils';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { SubscriptionQueryService } from 'src/query/services/SubscriptionQueryService';
 import { PaystackSubscriptionService } from 'src/integrations/paystack/services/PaystackSubscriptionService';
+import { DocumentTopicModel } from 'src/infra/db/models/DocumentTopicModel';
 
 @Controller('document-topic')
 export class DocumentTopicController {
@@ -58,12 +62,51 @@ export class DocumentTopicController {
           userToken.sub,
         );
 
-      return topics.map((t) => {
-        return {
-          id: t.id,
-          title: t.title,
-        };
-      });
+      const uniqueTopicsMap = new Map<string, { id: number; title: string }>();
+
+      for (const topic of topics) {
+        if (!uniqueTopicsMap.has(topic.title.toLowerCase())) {
+          uniqueTopicsMap.set(topic.title.toLowerCase(), {
+            id: topic.id,
+            title: topic.title,
+          });
+        }
+      }
+
+      const uniqueTopics = Array.from(uniqueTopicsMap.values());
+
+      return uniqueTopics;
+    } catch (error) {
+      throw new HttpException(
+        error?.response ?? 'Failed to find document topics',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  // newer api for topics
+  @UseGuards(AuthGuard)
+  @Get('/:id')
+  public async getAllDocumentTopicsV2(
+    @Param('id') documentId: string,
+    @Req() request: Request,
+  ) {
+    try {
+      const userToken = request['user'] as VerifiedTokenModel;
+      const topics =
+        await this.documentTopicQueryService.findAllDocumentTopicsWithReadingProgress(
+          documentId,
+        );
+
+        const uniqueTopicsMap = new Map<string, typeof topics[number]>();
+
+      topics.forEach((topic)=>{
+        if (!uniqueTopicsMap.has(`${topic.startPage}-${topic.endPage}-${topic.title}`)) {
+          uniqueTopicsMap.set(`${topic.startPage}-${topic.endPage}-${topic.title}`, topic)
+        }
+      })
+
+      return Array.from(uniqueTopicsMap.values());
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to find document topics',
@@ -84,112 +127,4 @@ export class DocumentTopicController {
       );
     }
   }
-
-  // @UseGuards(AuthGuard)
-  // @Post('/generate/:fileId')
-  // public async generateDocumentTopics(
-  //   @Param('fileId') fileId: string,
-  //   @Query('documentId') documentId: string,
-  //   @Req() request: Request,
-  //   @Res() response: Response,
-  // ) {
-  //   try {
-  //     const userToken = request['user'] as VerifiedTokenModel;
-  //     const subscriptionInfo = await this.subscriptionQueryService.findByUserId(
-  //       userToken.sub,
-  //     );
-
-  //     let isUserOnFreePlan = true;
-
-  //     if (subscriptionInfo?.subscriptionCode) {
-  //       const subscriptionDetails =
-  //         await this.paystackSubscriptionService.fetchSubscriptionBySubscriptionCode(
-  //           subscriptionInfo?.subscriptionCode,
-  //         );
-
-  //       if (
-  //         !inactiveSubscriptionStatuses.includes(
-  //           subscriptionDetails.subscrptionInformation.status,
-  //         )
-  //       ) {
-  //         isUserOnFreePlan = false;
-  //       }
-  //     }
-
-  //     const assistantId = isUserOnFreePlan
-  //       ? EnvironmentVariables.config.assistantIdFreePlan
-  //       : EnvironmentVariables.config.assistantIdPaidPlan;
-
-  //     const temporaryVectorStoreName = `${generateUUID()}_${new Date().getTime()}`;
-
-  //     const temporaryVectorStore = await this.examinerService.createVectorStore(
-  //       temporaryVectorStoreName,
-  //     );
-
-  //     const updatedVectorStoreId =
-  //       await this.examinerService.attachFileToVectorStore(
-  //         fileId,
-  //         temporaryVectorStore.id,
-  //       );
-
-  //     const thread = await this.examinerService.createThread();
-
-  //     const updatedThread =
-  //       await this.examinerService.attachVectorStoreToThread(
-  //         thread.id,
-  //         updatedVectorStoreId,
-  //       );
-
-  //     await this.examinerService.createThreadMessage(
-  //       updatedThread.id,
-  //       generateTopicPrompt,
-  //     );
-
-  //     const run = await this.examinerService.createRun(
-  //       assistantId,
-  //       updatedThread.id,
-  //     );
-
-  //     const messages = await this.examinerService.retrieveThreadMessages(
-  //       updatedThread.id,
-  //       run.id,
-  //     );
-
-  //     const generatedTopics = extractJSONDataFromMessages(messages) as string[];
-
-  //     if (documentId && generatedTopics.length) {
-  //       const document =
-  //         await this.courseDocumentQueryService.findCourseDocumentById(
-  //           documentId,
-  //           userToken.sub,
-  //         );
-  //       if (document) {
-  //         const mappedTopics = generatedTopics.map((topic) => {
-  //           return {
-  //             title: topic,
-  //             documentId,
-  //             userId: userToken.sub,
-  //           };
-  //         });
-
-  //         await this.createDocumentTopicHandler.handle({
-  //           payload: mappedTopics,
-  //         });
-  //       }
-  //     }
-
-  //     //return response at this point
-  //     response.status(201).json(Array.from(new Set(generatedTopics)));
-
-  //     /* ===== Delete vectore store, and thread ==== */
-
-  //     await this.examinerService.deleteVectorStore(updatedVectorStoreId);
-  //     await this.examinerService.deleteThread(updatedThread.id);
-  //   } catch (error) {
-  //     throw new HttpException(
-  //       error?.response ?? 'Failed to generate topics for document',
-  //       HttpStatus.BAD_REQUEST,
-  //     );
-  //   }
-  // }
 }

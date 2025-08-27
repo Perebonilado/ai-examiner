@@ -1,3 +1,3 @@
 export interface CreateDocumentReadingProgressResponse {
-  id: number;
+  ids: number[];
 }

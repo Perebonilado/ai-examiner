@@ -14,6 +14,7 @@ import {
 import { CreateDocumentReadingProgressHandler } from 'src/business/handlers/DocumentReadingProgress/CreateDocumentReadingProgressHandler';
 import { DeleteDocumentReadingProgressHandler } from 'src/business/handlers/DocumentReadingProgress/DeleteDocumentReadingProgressHandler';
 import { CreateReadingProgressDto } from 'src/dto/CreateReadingProgressDto';
+import { DeleteReadingProgressDto } from 'src/dto/DeleteReadingProgressDto';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { DocumentReadingProgressQueryService } from 'src/query/services/DocumentReadingProgressQueryService';
 
@@ -34,7 +35,7 @@ export class ReadingProgressController {
     try {
       return await this.createDocumentReadingProgressHandler.handle({
         documentId: dto.documentId,
-        topicId: dto.topicId,
+        topicIds: dto.topicIds,
       });
     } catch (error) {
       throw new HttpException(
@@ -60,10 +61,12 @@ export class ReadingProgressController {
   }
 
   @UseGuards(AuthGuard)
-  @Delete('/:id')
-  public async deleteReadingProgress(@Param('id', ParseIntPipe) id: number) {
+  @Delete()
+  public async deleteReadingProgress(@Body() dto: DeleteReadingProgressDto) {
     try {
-      return await this.deleteDocumentReadingProgressHandler.handle({ id });
+      return await this.deleteDocumentReadingProgressHandler.handle({
+        topicIds: dto.topicIds,
+      });
     } catch (error) {
       throw new HttpException(
         'Failed to delete reading progress',

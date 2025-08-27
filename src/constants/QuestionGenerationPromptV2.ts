@@ -985,11 +985,36 @@ export const generateTopicPromptV2_2 = (sourceText: string) => {
   `;
 };
 
+// export const generateGenericTopicsPrompt = (sourceText: string) => {
+//   return `
+//     Your job is to categorize the source text below into topics. Wholistically look at the source text and break it down into meaningful divisions. Think of yourself as someone writing the glossary for a textbook. Your job is to create this glossary for the below source text. The text might be from a lecture slide and so there may be pages where it might just be the name of the lecturer, you may just group sections like this into the introduction. Your job ultimately is to group the sections of the source text into meaningful topics. Analyze and determine where the source text might have originated from, then categorize it so we can use the information you provide to create a glossary for the text. The text itself might contain a glossary, this might be grouped under introduction as well. Your job is to come up with your own groupings to create a new and better glossary. Each topic should be unique, and for each, write a short one or two liner short description to give a little insight on what that topic might be about.
+
+//     **SOUCE TEXT START**
+//     ${sourceText}
+//     **SOURCE TEXT END**
+//   `;
+// };
+
 export const generateGenericTopicsPrompt = (sourceText: string) => {
   return `
-    Your job is to categorize the source text below into topics. Wholistically look at the source text and break it down into meaningful divisions. Think of yourself as someone writing the glossary for a textbook. Your job is to create this glossary for the below source text. The text might be from a lecture slide and so there may be pages where it might just be the name of the lecturer, you may just group sections like this into the introduction. Your job ultimately is to group the sections of the source text into meaningful topics. Analyze and determine where the source text might have originated from, then categorize it so we can use the information you provide to create a glossary for the text. The text itself might contain a glossary, this might be grouped under introduction as well. Your job is to come up with your own groupings to create a new and better glossary. Each topic should be unique, and for each, write a short one or two liner short description to give a little insight on what that topic might be about.
+    Your job is to categorize the source text below into topics for a comprehensive glossary. Think of yourself as creating chapter-level divisions for a textbook - not too broad to be meaningless, but not so granular that closely related concepts are unnecessarily separated.
 
-    **SOUCE TEXT START**
+    **GROUPING GUIDELINES:**
+    - Group related subtopics under broader umbrella topics (e.g., "epidural infections," "subdural infections," and "nervous system infections" should all be grouped under "Infections")
+    - Aim for 5-12 main topics total, depending on content length and complexity
+    - Each topic should represent a distinct conceptual area that would warrant its own chapter or major section
+    - Avoid creating separate topics for concepts that are variants, subtypes, or closely related aspects of the same broader theme
+    - If the text covers administrative content (lecturer names, course info, etc.), group these under "Introduction" or "Course Information"
+    - If the text contains an existing glossary, group it under "Reference Materials" rather than creating separate topics for each glossary entry
+
+    **TOPIC SCOPE EXAMPLES:**
+    - Good: "Cardiovascular Disorders" (covers heart disease, arrhythmias, blood pressure issues)
+    - Too granular: "Myocardial Infarction," "Cardiac Arrhythmias," "Hypertension" as separate topics
+    - Too broad: "Medical Conditions" (covers everything, not meaningful)
+
+    Analyze the source text to understand its origin and purpose, then create a well-structured glossary with appropriately scoped topics. Each topic should have a unique name and a 1-2 sentence description explaining what that topic encompasses.
+
+    **SOURCE TEXT START**
     ${sourceText}
     **SOURCE TEXT END**
   `;
@@ -1027,45 +1052,106 @@ export const generateTopicCategorizationPrompt = ({
   totalPages,
 }: TopicCategorizationPayload) => {
   return `
-              We are building out the glossary for a source text.
-              This text may have originated from a textbook or lecture slides.
-              Nonetheless, all the possible topics or categories covered in the 
-              text have been provided. Your job is to take a look at the categories
-              and decide which the source text should be placed under. You need to do this
-              with very high accuracy so that a properly ordered glossary can be mapped out.
-              The text might just be an introduction. Introductions are texts that may just contain
-              maybe the lecturer's name of some starting out information. Really aanalyze the source text deeply
-              before categorizing it. This is the final step in crafting out the glossary and we are all counting on you
-              to do this job accurately. After you reason this out, only pick from the list of possible
-              categories, the best fit for the source text and use just that one, VERBATIM, that should be the only information we need, just that category.
-              Also, to give you some more context to predict more accurately the category, you will be provided with the page number and the total pages in the document.
-              You will also be provided with info from the previous page and the page right after except the page in question is the first, last or only page. You may use
-              this info to more accurately predict if the page you are looking for is at the beginning and might be an introductory page or maybe not. Use this information
-              with your discretion to give a more accurate prediction. Note that it is not possible to have an introduction on the last page. Really take a look at the Page
-              number as that is indicative of the source text's page. Very important in helping you decide
+You are an expert document analyst tasked with precisely categorizing a page of content for glossary organization. Your accuracy is critical for creating a well-structured reference document.
 
-              **ALL POSSIBLE CATEGORIES**
-              ${genericTopics.join('\n')}
-              **ALL POSSIBLE CATEGORIES**
+**ANALYSIS FRAMEWORK:**
+Follow this systematic approach:
 
-              **source text start**
-              ${pageText}
-              **source text end**
+1. **Content Analysis**: Examine the primary subject matter, key concepts, and main focus of the page
+2. **Context Integration**: Use previous/next page content and page position to understand the document flow
+3. **Category Matching**: Map the content to the most appropriate category from the provided list
 
-              **meta info**
-              Page number: ${pageNumber}
-              Total Pages: ${totalPages}
-              **meta info**
+**CATEGORIZATION RULES:**
 
-              **Previous Page**
-              ${previousPageText}
-              **Previous Page**
+**Introduction/Administrative Content:**
+- Pages 1-3 containing: author names, course info, table of contents, acknowledgments, abstract, or general overview
+- Exception: If page 1-3 contains substantial subject-matter content, categorize by that content instead
+- Never categorize final pages as "Introduction"
 
-              **Next Page**
-              ${nextPageText}
-              **Next Page**
+**Content Pages:**
+- Focus on the DOMINANT theme (what 70%+ of the content addresses)
+- If multiple topics appear, choose the category that best encompasses the primary focus
+- Consider conceptual hierarchy: specific concepts belong under their broader category umbrella
+- Use context clues from surrounding pages to resolve ambiguity
+
+**Page Position Context:**
+- Early pages (1-10% of document): More likely administrative unless clearly topical
+- Middle pages: Focus purely on content analysis
+- Final pages: Often conclusions, references, or appendices - categorize by dominant content type
+
+**DECISION PROCESS:**
+1. What is the main subject being discussed? (ignore headers, footers, page numbers)
+2. Does this content fit clearly under one category?
+3. If multiple categories seem relevant, which one covers the broadest scope of the content?
+4. Does the page position provide additional context for ambiguous cases?
+
+**AVAILABLE CATEGORIES:**
+${genericTopics.map(topic => `• ${topic}`).join('\n')}
+
+**CURRENT PAGE CONTENT:**
+${pageText}
+
+**CONTEXTUAL INFORMATION:**
+Page: ${pageNumber} of ${totalPages}
+
+Previous Page Content:
+${previousPageText || 'N/A - First page'}
+
+Next Page Content:
+${nextPageText || 'N/A - Last page'}
+
+NOTE: RETURN ONLY THE EXACT CATEOGRY VERBATIM, NOTHING ELSE
   `;
 };
+
+// export const generateTopicCategorizationPrompt = ({
+//   genericTopics,
+//   nextPageText,
+//   pageNumber,
+//   pageText,
+//   previousPageText,
+//   totalPages,
+// }: TopicCategorizationPayload) => {
+//   return `
+//               We are building out the glossary for a source text.
+//               This text may have originated from a textbook or lecture slides.
+//               Nonetheless, all the possible topics or categories covered in the 
+//               text have been provided. Your job is to take a look at the categories
+//               and decide which the source text should be placed under. You need to do this
+//               with very high accuracy so that a properly ordered glossary can be mapped out.
+//               The text might just be an introduction. Introductions are texts that may just contain
+//               maybe the lecturer's name of some starting out information. Really aanalyze the source text deeply
+//               before categorizing it. This is the final step in crafting out the glossary and we are all counting on you
+//               to do this job accurately. After you reason this out, only pick from the list of possible
+//               categories, the best fit for the source text and use just that one, VERBATIM, that should be the only information we need, just that category.
+//               Also, to give you some more context to predict more accurately the category, you will be provided with the page number and the total pages in the document.
+//               You will also be provided with info from the previous page and the page right after except the page in question is the first, last or only page. You may use
+//               this info to more accurately predict if the page you are looking for is at the beginning and might be an introductory page or maybe not. Use this information
+//               with your discretion to give a more accurate prediction. Note that it is not possible to have an introduction on the last page. Really take a look at the Page
+//               number as that is indicative of the source text's page. Very important in helping you decide
+
+//               **ALL POSSIBLE CATEGORIES**
+//               ${genericTopics.join('\n')}
+//               **ALL POSSIBLE CATEGORIES**
+
+//               **source text start**
+//               ${pageText}
+//               **source text end**
+
+//               **meta info**
+//               Page number: ${pageNumber}
+//               Total Pages: ${totalPages}
+//               **meta info**
+
+//               **Previous Page**
+//               ${previousPageText}
+//               **Previous Page**
+
+//               **Next Page**
+//               ${nextPageText}
+//               **Next Page**
+//   `;
+// };
 
 export const translateEnglishToOtherLanguagePrompt = (
   text: string,

@@ -21,4 +21,14 @@ export class DocumentReadingProgressSequelizeRepository
   public async delete(id: number): Promise<void> {
     return await this.documentReadingProgressDbConnector.delete(id);
   }
+
+  public async bulkCreate(
+    models: DocumentReadingProgressModel[],
+  ): Promise<DocumentReadingProgressModel[]> {
+    return await this.documentReadingProgressDbConnector.bulkCreate(models);
+  }
+
+  public async bulkDelete(topicIds: number[]): Promise<void> {
+    await this.documentReadingProgressDbConnector.bulkDelete(topicIds);
+  }
 }

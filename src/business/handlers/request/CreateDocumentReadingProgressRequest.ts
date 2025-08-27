@@ -1,4 +1,4 @@
 export interface CreateDocumentReadingProgressRequest {
-  topicId: number;
+  topicIds: number[];
   documentId: string;
 }

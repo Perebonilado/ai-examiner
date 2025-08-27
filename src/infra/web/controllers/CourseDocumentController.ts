@@ -29,6 +29,7 @@ import {
 } from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import {
+  batchItems,
   createSimplifiedPdf,
   extractJSONDataFromMessages,
   extractPagesTextsFromPDF,
@@ -361,16 +362,27 @@ export class CourseDocumentController {
             : storedFile.currentFileFormat,
         originalName: document.title,
       });
-      const rewordedPages = await Promise.all(
-        pages.map(async (page) => {
-          // open ai call to reword
-          if (page.trim().length) {
-            const res = await this.simplifyTextContent(page, summary.summary);
-            return res;
-          }
-          return [{ text: 'Empty Page', type: 'paragraph' }] as PDFContent[];
-        }),
-      );
+
+      const batchedPages = batchItems(pages, 10);
+      const rewordedBatches = await Promise.all(batchedPages.map(async (pageBatch)=>{
+        const reworded: PDFContent[][] = []
+        for (const page of pageBatch) {
+          const simplifiedContent = await this.simplifyTextContent(page, summary.summary)
+          reworded.push(simplifiedContent);
+        }
+        return reworded
+      }))
+      const rewordedPages = rewordedBatches.flat(1)
+      // const rewordedPages = await Promise.all(
+      //   pages.map(async (page) => {
+      //     // open ai call to reword
+      //     if (page.trim().length) {
+      //       const res = await this.simplifyTextContent(page, summary.summary);
+      //       return res;
+      //     }
+      //     return [{ text: 'Empty Page', type: 'paragraph' }] as PDFContent[];
+      //   }),
+      // );
 
       await this.updateStoredFileHandler.handle({
         id: storedFile.id,

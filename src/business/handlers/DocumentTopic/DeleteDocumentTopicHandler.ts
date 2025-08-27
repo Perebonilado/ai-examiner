@@ -27,7 +27,7 @@ export class DeleteDocumentTopicHandler extends AbstractRequestHandlerTemplate<
     try {
       const documentTopic =
         await this.documentTopicQueryService.findDocumentTopicById(
-          request.payload.id,
+          Number(request.payload.id)
         );
 
       if (documentTopic) {

@@ -691,7 +691,7 @@ export class QuestionsController {
             userId: userToken.sub,
             startPage: null,
             endPage: null,
-            shortDescription: null
+            shortDescription: null,
           }));
 
           const createdDocumentTopics =
@@ -788,27 +788,62 @@ export class QuestionsController {
           String(body.questionType),
           prevQuestionLimit,
         );
-      let topicsToUse: string[] = [];
 
-      if (body.selectedQuestionTopics && body.selectedQuestionTopics.length) {
-        topicsToUse = body.selectedQuestionTopics;
+      let topicTitlesForVectorSearch: string[] = [];
+      let topicPagesForVectorSearch: number[] = [];
+      /**
+       * use the selected topic ids for newer topics with page range
+       * we use the selected quesiton topics which contain titles for backward compatibility for the mobile app
+       */
+      if (body.selectedTopicIds && body.selectedTopicIds.length) {
+        for (const topicId of body.selectedTopicIds) {
+          const topic =
+            await this.documentTopicQueryService.findDocumentTopicById(topicId);
+          if (topic.startPage && topic.endPage) {
+            // get all the pages numbers from page range
+            for (let i: number = topic.startPage; i <= topic.endPage; i++) {
+              topicPagesForVectorSearch.push(i);
+            }
+          }
+        }
+      } else if (
+        body.selectedQuestionTopics &&
+        body.selectedQuestionTopics.length
+      ) {
+        topicTitlesForVectorSearch = body.selectedQuestionTopics;
       } else {
         const savedTopics =
           await this.documentTopicQueryService.findAllByDocumentTopicsByDocumentIdAndUserId(
             documentId,
             userToken.sub,
           );
-        topicsToUse = savedTopics.map((t) => t.title);
+        topicTitlesForVectorSearch = savedTopics.map((t) => t.title);
       }
 
-      const retrievedChunks: string[][] = await Promise.all(
-        topicsToUse.slice(0, 40).map((topic) => {
-          return this.pineconeChunkService.semanticChunkSearch(
-            topic,
-            documentId,
-          );
-        }),
-      );
+      let retrievedChunks: string[] = [];
+
+      if (topicPagesForVectorSearch.length) {
+        retrievedChunks = await Promise.all(
+          topicPagesForVectorSearch.map(async (page) => {
+            const index = page - 1;
+            return await this.pineconeChunkService.chunkByIndexSearch(
+              index,
+              documentId,
+            );
+          }),
+        );
+      } else if (topicTitlesForVectorSearch) {
+        retrievedChunks = (
+          await Promise.all(
+            topicTitlesForVectorSearch.slice(0, 40).map((topic) => {
+              return this.pineconeChunkService.semanticChunkSearch(
+                topic,
+                documentId,
+              );
+            }),
+          )
+        ).flat();
+      }
 
       const shouldUseFileSearch = retrievedChunks.flatMap((c) => c).length < 1;
 
@@ -960,28 +995,6 @@ export class QuestionsController {
           isCaseStudy: body.includeUseCases,
         },
       });
-
-      if (body.selectedQuestionTopics && body.selectedQuestionTopics.length) {
-        const questionTopicsToCreate = await Promise.all(
-          topicsToUse.map(async (t) => {
-            const topic =
-              await this.documentTopicQueryService.findDocumentTopicsByTitleAndDocumentId(
-                t,
-                documentId,
-              );
-
-            return {
-              documentTopicTitle: topic.title,
-              documentTopicId: topic.id,
-              questionId: createdQuestions.data.id,
-            };
-          }),
-        );
-
-        await this.createQuestionTopicHandler.handle({
-          payload: questionTopicsToCreate,
-        });
-      }
 
       return {
         id: createdQuestions.data.id,
@@ -1501,7 +1514,7 @@ export class QuestionsController {
           userId: userToken.sub,
           startPage: null,
           endPage: null,
-          shortDescription: null
+          shortDescription: null,
         }));
 
         const createdDocumentTopics =

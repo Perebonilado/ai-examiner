@@ -22,7 +22,7 @@ export class DeleteDocumentReadingProgressHandler extends AbstractRequestHandler
     request: DeleteDocumentReadingProgressRequest,
   ): Promise<CommandResponse<DeleteDocumentReadingProgressResponse>> {
     try {
-      await this.readingProgressRepository.delete(request.id)
+      await this.readingProgressRepository.bulkDelete(request.topicIds)
 
       return {
         data: undefined,
