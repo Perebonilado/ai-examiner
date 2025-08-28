@@ -37,6 +37,14 @@ export const generateUUID = (): string => {
   return uuidv4();
 };
 
+export function batchItems<T>(items: T[], maxPerBatch = 5) {
+  const splitChunks: T[][] = [];
+  for (let i = 0; i < items.length; i += maxPerBatch) {
+    splitChunks.push(items.slice(i, i + maxPerBatch));
+  }
+  return splitChunks;
+}
+
 export const verifyPassword = async (
   password: string,
   hash: string,

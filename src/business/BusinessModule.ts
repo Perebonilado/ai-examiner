@@ -37,6 +37,8 @@ import { CreateDocumentSummaryHandler } from './handlers/DocumentSummary/CreateD
 import { CreateRelatedVideoHandler } from './handlers/RelatedVideo/CreateRelatedVideoHandler';
 import { UpdateStoredFileHandler } from './handlers/StoredFile/UpdateStoredFileHandler';
 import { CreateStoredFileHandler } from './handlers/StoredFile/CreateStoredFileHandler';
+import { CreateDocumentReadingProgressHandler } from './handlers/DocumentReadingProgress/CreateDocumentReadingProgressHandler';
+import { DeleteDocumentReadingProgressHandler } from './handlers/DocumentReadingProgress/DeleteDocumentReadingProgressHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -76,6 +78,8 @@ import { CreateStoredFileHandler } from './handlers/StoredFile/CreateStoredFileH
     CreateRelatedVideoHandler,
     UpdateStoredFileHandler,
     CreateStoredFileHandler,
+    CreateDocumentReadingProgressHandler,
+    DeleteDocumentReadingProgressHandler
   ],
   exports: [
     CreateUserHandler,
@@ -113,6 +117,8 @@ import { CreateStoredFileHandler } from './handlers/StoredFile/CreateStoredFileH
     CreateRelatedVideoHandler,
     UpdateStoredFileHandler,
     CreateStoredFileHandler,
+    CreateDocumentReadingProgressHandler,
+    DeleteDocumentReadingProgressHandler
   ],
 })
 export class BusinessModule {}

@@ -17,6 +17,7 @@ import { PerformanceTrackingModel } from './PerformanceTrackingModel';
 import { DocumentSummaryModel } from './DocumentSummaryModel';
 import { RelatedVideoModel } from './RelatedVideoModel';
 import { StoredFileModel } from './StoredFileModel';
+import { DocumentReadingProgressModel } from './DocumentReadingProgress';
 
 @Table({ tableName: 'course_document' })
 export class CourseDocumentModel extends Model<CourseDocumentModel> {
@@ -194,6 +195,9 @@ export class CourseDocumentModel extends Model<CourseDocumentModel> {
 
   @HasOne(() => StoredFileModel, 'document_id')
   storedFile: StoredFileModel;
+
+  @HasMany(() => DocumentReadingProgressModel, 'document_id')
+  readingProgress: DocumentReadingProgressModel;
 
   @BeforeCreate
   static addUUID(instance: CourseDocumentModel) {
