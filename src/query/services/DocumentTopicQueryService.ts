@@ -38,7 +38,6 @@ export class DocumentTopicQueryService {
         const userHasReadTopic = await DocumentReadingProgressModel.findOne({
           where: { topicId: topic.id },
         });
-        console.log(topic.id, userHasReadTopic)
 
         return {
           ...topic.get({ plain: true }),
