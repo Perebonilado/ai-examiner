@@ -22,6 +22,8 @@ import { EssayQuestionAnalysisDbConnector } from './connectors/EssayQuestionAnal
 import { DocumentSummaryDbConnector } from './connectors/DocumentSummaryDbConnector';
 import { RelatedVideoDbConnector } from './connectors/RelatedVideoDbConnector';
 import { StoredFileDbConnector } from './connectors/StoredFileDbConnector';
+import { DocumentReadingProgressModel } from './models/DocumentReadingProgress';
+import { DocumentReadingProgressDbConnector } from './connectors/DocumentReadingProgressDbConntector';
 
 @Module({
   imports: [QueryModule],
@@ -47,7 +49,8 @@ import { StoredFileDbConnector } from './connectors/StoredFileDbConnector';
     EssayQuestionAnalysisDbConnector,
     DocumentSummaryDbConnector,
     RelatedVideoDbConnector,
-    StoredFileDbConnector
+    StoredFileDbConnector,
+    DocumentReadingProgressDbConnector,
   ],
   exports: [
     ...databaseProviders,
@@ -71,7 +74,8 @@ import { StoredFileDbConnector } from './connectors/StoredFileDbConnector';
     EssayQuestionAnalysisDbConnector,
     DocumentSummaryDbConnector,
     RelatedVideoDbConnector,
-    StoredFileDbConnector
+    StoredFileDbConnector,
+    DocumentReadingProgressDbConnector,
   ],
 })
 export class InfraDbModule {}

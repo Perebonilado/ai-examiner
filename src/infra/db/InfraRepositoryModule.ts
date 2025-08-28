@@ -43,6 +43,8 @@ import { RelatedVideoRepository } from 'src/business/repository/RelatedVideoRepo
 import { RelatedVideoSequelizeRepository } from './repository/RelatedVideoSequelizeRepository';
 import { StoredFileRepository } from 'src/business/repository/StoredFileRepository';
 import { StoredFileSequelizeRepository } from './repository/StoredFileSequelizeRepository';
+import { documentReadingProgressRepository } from 'src/business/repository/DocumentReadingProgressRepository';
+import { DocumentReadingProgressSequelizeRepository } from './repository/DocumentReadingProgressSequelizeRepository';
 
 @Module({
   imports: [InfraDbModule, QueryModule],
@@ -131,6 +133,10 @@ import { StoredFileSequelizeRepository } from './repository/StoredFileSequelizeR
       provide: StoredFileRepository,
       useClass: StoredFileSequelizeRepository,
     },
+    {
+      provide: documentReadingProgressRepository,
+      useClass: DocumentReadingProgressSequelizeRepository,
+    },
   ],
   exports: [
     UserRepository,
@@ -154,6 +160,7 @@ import { StoredFileSequelizeRepository } from './repository/StoredFileSequelizeR
     DocumentSummaryRepository,
     RelatedVideoRepository,
     StoredFileRepository,
+    documentReadingProgressRepository,
   ],
 })
 export class InfraRepositoryModule {}
