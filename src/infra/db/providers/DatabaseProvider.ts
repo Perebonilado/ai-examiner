@@ -24,6 +24,7 @@ import { EssayQuestionAnalysisModel } from '../models/EssayQuestionAnalysisModel
 import { DocumentSummaryModel } from '../models/DocumentSummaryModel';
 import { RelatedVideoModel } from '../models/RelatedVideoModel';
 import { StoredFileModel } from '../models/StoredFileModel';
+import { DocumentReadingProgressModel } from '../models/DocumentReadingProgress';
 
 export let sequelize: Sequelize;
 
@@ -66,7 +67,8 @@ export const databaseProviders = [
         EssayQuestionAnalysisModel,
         DocumentSummaryModel,
         RelatedVideoModel,
-        StoredFileModel
+        StoredFileModel,
+        DocumentReadingProgressModel
       ]);
 
       try {

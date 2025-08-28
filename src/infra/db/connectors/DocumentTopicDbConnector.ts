@@ -16,22 +16,21 @@ export class DocumentTopicDbConnector {
     try {
       const createdDocumentTopics = await DocumentTopicModel.bulkCreate(
         documentTopics,
-        {
-          updateOnDuplicate: ['title', 'documentId'],
-        },
       );
 
       const documentTopicsWithIds = await Promise.all(
         createdDocumentTopics.map(async (topic) => {
-          return await this.documentTopicQueryService.findDocumentTopicsByTitleAndDocumentId(
+          return await this.documentTopicQueryService.findDocumentTopicsByTitleAndDocumentIdAndStartPage(
             topic.title,
             topic.documentId,
+            topic.startPage
           );
         }),
       );
 
       return documentTopicsWithIds;
     } catch (error) {
+      console.log(error)
       throw new DatabaseError(
         'Failed to bulk create document topics',
       ).InnerError(error);

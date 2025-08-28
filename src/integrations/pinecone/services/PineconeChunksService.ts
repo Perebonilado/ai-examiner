@@ -37,6 +37,21 @@ export class PineconeChunkService extends PineconeClient {
     }
   }
 
+  public async chunkByIndexSearch(index: number, documentId: string) {
+    try {
+      const queryResponse = await this.index.namespace(this.documentsNameSpace).query({
+        id:`${documentId}#chunk${index}`,
+        topK: 1,
+        includeMetadata: true,
+        includeValues: false
+      });;
+
+      return queryResponse.matches[0].metadata['text'] as string
+    } catch (error) {
+      throw new HttpException('Failed to index search', HttpStatus.BAD_REQUEST);
+    }
+  }
+
   public async semanticChunkSearch(
     query: string,
     documentId: string,
