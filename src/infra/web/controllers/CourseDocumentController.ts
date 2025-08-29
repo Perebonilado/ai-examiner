@@ -32,10 +32,8 @@ import {
   batchItems,
   createSimplifiedPdf,
   extractJSONDataFromMessages,
-  extractPagesTextsFromPDF,
   generateHTMLFromContent,
   PDFContent,
-  splitPdfPagesToIndividualFiles,
 } from 'src/utils';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 import { CreateQuestionTopicHandler } from 'src/business/handlers/QuestionTopic/CreateQuestionTopicHandler';
@@ -52,8 +50,6 @@ import {
   generatePromptForQuestions,
 } from 'src/constants/QuestionGenerationPrompt';
 import { DocumentSummaryQueryService } from 'src/query/services/DocumentSummaryQueryService';
-import { createOpenAI } from '@ai-sdk/openai';
-import { generateObject, generateText } from 'ai';
 import { YoutubeKeywordsSchema } from 'src/schemas/YouTubeKeywordsSchema';
 import {
   getGoogleImageQueryPrompt,
@@ -77,6 +73,9 @@ import { ModifiedContentModel } from '../models/ModifiedContentModel';
 import { GoogleSearchService } from 'src/integrations/google/services/GoogleSearchService';
 import { GoogleImageSearchQuerySchema } from 'src/schemas/GoogleImageSearchQuerySchema';
 import { GoogleImageSearchModel } from 'src/integrations/google/models/GoogleSearchModel';
+import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
+import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
+import { AI } from 'src/integrations/vercel-ai/services/AI';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -117,6 +116,8 @@ export class CourseDocumentController {
     private fileConversionService: FileConversionService,
     @Inject(GoogleSearchService)
     private googleSearchService: GoogleSearchService,
+    @Inject(GEMINI_CONN) private readonly geminiConn: AI,
+    @Inject(OPENAI_CONN) private readonly openAIConn: AI,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -364,15 +365,20 @@ export class CourseDocumentController {
       });
 
       const batchedPages = batchItems(pages, 10);
-      const rewordedBatches = await Promise.all(batchedPages.map(async (pageBatch)=>{
-        const reworded: PDFContent[][] = []
-        for (const page of pageBatch) {
-          const simplifiedContent = await this.simplifyTextContent(page, summary.summary)
-          reworded.push(simplifiedContent);
-        }
-        return reworded
-      }))
-      const rewordedPages = rewordedBatches.flat(1)
+      const rewordedBatches = await Promise.all(
+        batchedPages.map(async (pageBatch) => {
+          const reworded: PDFContent[][] = [];
+          for (const page of pageBatch) {
+            const simplifiedContent = await this.simplifyTextContent(
+              page,
+              summary.summary,
+            );
+            reworded.push(simplifiedContent);
+          }
+          return reworded;
+        }),
+      );
+      const rewordedPages = rewordedBatches.flat(1);
       // const rewordedPages = await Promise.all(
       //   pages.map(async (page) => {
       //     // open ai call to reword
@@ -765,7 +771,7 @@ export class CourseDocumentController {
           userId: userToken.sub,
           startPage: null,
           endPage: null,
-          shortDescription: null
+          shortDescription: null,
         }));
 
         const createdDocumentTopicsResponse =
@@ -908,15 +914,7 @@ export class CourseDocumentController {
     summary: string;
   }) {
     try {
-      const openaiClient = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
-      });
-
-      const response = await generateObject({
-        model: openaiClient.responses('gpt-4o-mini'),
-        maxRetries: 3,
-        mode: 'json',
+      const response = await this.openAIConn.generateObject({
         schemaName: 'modifiedQuery',
         schema: GoogleImageSearchQuerySchema,
         messages: [
@@ -939,15 +937,7 @@ export class CourseDocumentController {
 
   private async getYoutubeKeywords(summary: string) {
     try {
-      const openaiClient = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
-      });
-
-      const response = await generateObject({
-        model: openaiClient.responses('gpt-4o-mini'),
-        maxRetries: 3,
-        mode: 'json',
+      const response = await this.openAIConn.generateObject({
         schemaName: 'keywords',
         schema: YoutubeKeywordsSchema,
         messages: [
@@ -974,15 +964,7 @@ export class CourseDocumentController {
 
   private async simplifyTextContent(content: string, summary: string) {
     try {
-      const openaiClient = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
-      });
-
-      const response = await generateObject({
-        model: openaiClient.responses('gpt-4o-mini'),
-        maxRetries: 3,
-        mode: 'json',
+      const response = await this.openAIConn.generateObject({
         schemaName: 'simplified',
         schema: SimplifiedPDFArraySchema,
         messages: [

@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { VapiClient } from '@vapi-ai/server-sdk';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { InitiateCallModel } from '../models/InitiateCallModel';
@@ -7,12 +7,17 @@ import {
   CreateVapiAssistantPayloadModel,
 } from '../models/CreateVapiAssistantModel';
 import { createOpenAI } from '@ai-sdk/openai';
-import { generateText } from 'ai';
 import { translateEnglishToOtherLanguagePrompt } from 'src/constants/QuestionGenerationPromptV2';
+import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
+import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
+import { AI } from 'src/integrations/vercel-ai/services/AI';
 
 @Injectable()
 export class VapiCallingService {
-  constructor() {
+  constructor(
+    @Inject(GEMINI_CONN) private readonly geminiConn: AI,
+    @Inject(OPENAI_CONN) private readonly openAIConn: AI,
+  ) {
     this.client = new VapiClient({
       token: EnvironmentVariables.config.vapiPrivateKey,
     });
@@ -68,22 +73,15 @@ export class VapiCallingService {
 
   public async translateContent(content: string[], language: string) {
     try {
-      const openai = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
-      });
-
       const promises = content.map((c) => {
-        return generateText({
-          model: openai.responses('gpt-4o-mini'),
-          maxRetries: 3,
+        return this.openAIConn.generateText({
           prompt: translateEnglishToOtherLanguagePrompt(c, language),
         });
       });
 
       const translated = await Promise.all(promises);
 
-      return translated.map((tr) => tr.text);
+      return translated.map((tr) => tr);
     } catch (error) {
       throw new HttpException(
         'Failed to translate content',
