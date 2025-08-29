@@ -19,38 +19,23 @@ import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
 import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
 import { ExtractTextService } from 'src/integrations/text-extraction/services/ExtractTextService';
-import { EnvironmentVariables } from 'src/EnvironmentVariables';
-import {
-  batchItems,
-  extractJSONDataFromMessages,
-  generateUUID,
-  splitPdfPagesToIndividualFiles,
-  trimToEstimatedTokens,
-} from 'src/utils';
-import { generateMessagePrompt } from 'src/constants';
+import { batchItems, splitPdfPagesToIndividualFiles } from 'src/utils';
 import { CreateDocumentTopicHandler } from 'src/business/handlers/DocumentTopic/CreateDocumentTopicHandler';
 import {
   generateGenericTopicsPrompt,
   generateTopicCategorizationPrompt,
-  generateTopicPromptV2,
-  generateTopicPromptV2_2,
-  generateTopicPromptV2_3,
 } from 'src/constants/QuestionGenerationPromptV2';
-import {
-  generateDocumentSummaryPromptV2,
-  summarizeDocumentPrompt,
-} from 'src/constants/V2Prompts';
-import { createOpenAI, OpenAIProvider } from '@ai-sdk/openai';
-import { generateObject, generateText } from 'ai';
+import { generateDocumentSummaryPromptV2 } from 'src/constants/V2Prompts';
 import { TopicsSchema } from 'src/schemas/TopicsSchema';
 import { UpdateCourseDocumentHandler } from 'src/business/handlers/CourseDocument/UpdateCourseDocumentHandler';
 import { CreateDocumentSummaryHandler } from 'src/business/handlers/DocumentSummary/CreateDocumentSummaryHandler';
 import { GoogleDriveService } from 'src/integrations/google/services/GoogleDriveService';
 import { CreateStoredFileHandler } from 'src/business/handlers/StoredFile/CreateStoredFileHandler';
 import { ILovePdfService } from 'src/integrations/i-love-pdf/services/ILovePdfService';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { TopicsSchemaV2 } from 'src/schemas/TopicsSchemaV2';
 import { TopicV2Model } from '../models/TopicV2Model';
+import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
+import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
+import { AI } from 'src/integrations/vercel-ai/services/AI';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -71,6 +56,8 @@ export class FileUploadController {
     @Inject(CreateStoredFileHandler)
     private createStoredFileHandler: CreateStoredFileHandler,
     @Inject(ILovePdfService) private iLovePDFService: ILovePdfService,
+    @Inject(GEMINI_CONN) private readonly geminiConn: AI,
+    @Inject(OPENAI_CONN) private readonly openAIConn: AI,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -331,21 +318,7 @@ export class FileUploadController {
 
   private async summarizeDocumentV2(sourceText: string) {
     try {
-      // const google = createGoogleGenerativeAI({
-      //   apiKey: EnvironmentVariables.config.geminiApiKey,
-      // });
-      // const { text: summary } = await generateText({
-      //   model: google('gemini-1.5-flash'),
-      //   prompt: generateDocumentSummaryPromptV2(sourceText),
-      // });
-      const openai = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
-      });
-
-      const { text: summary } = await generateText({
-        model: openai.responses('gpt-4o-mini'),
-        maxRetries: 3,
+      const summary = await this.openAIConn.generateText({
         prompt: generateDocumentSummaryPromptV2(sourceText),
       });
 
@@ -373,18 +346,11 @@ export class FileUploadController {
       // const google = createGoogleGenerativeAI({
       //   apiKey: EnvironmentVariables.config.geminiApiKey,
       // });
-      const openai = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
-      });
-
-      const genericTopicsResponse = await generateObject({
-        model: openai.responses('gpt-4o-mini'),
-        maxRetries: 3,
-        mode: 'json',
+      const genericTopicsResponse = await this.openAIConn.generateObject({
+        prompt: generateGenericTopicsPrompt(documentByPages.join('\n')),
         schemaName: 'Topics',
         schema: TopicsSchema,
-        prompt: generateGenericTopicsPrompt(documentByPages.join('\n')),
+        schemaDescription: 'Topics for study material',
       });
 
       const genericTopics = genericTopicsResponse.object.topics!;
@@ -406,9 +372,7 @@ export class FileUploadController {
                 ? 'Unavailable as page is the last page'
                 : batch[currentIndex + 1];
             if (pageItem.trim().length) {
-              const response = await generateText({
-                model: openai.responses('gpt-4o-mini'),
-                maxRetries: 3,
+              const text = await this.openAIConn.generateText({
                 prompt: generateTopicCategorizationPrompt({
                   genericTopics: genericTopics.map((t) =>
                     t.topic.toLowerCase(),
@@ -420,7 +384,8 @@ export class FileUploadController {
                   totalPages,
                 }),
               });
-              tagged.push(response.text);
+
+              tagged.push(text);
             } else {
               tagged.push('empty page');
             }
@@ -464,43 +429,6 @@ export class FileUploadController {
       });
 
       return topicsWithStartAndEndPage;
-    } catch (error) {
-      throw new HttpException(
-        error.message ?? 'Failed to generate topics',
-        error.status ?? HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  private async generateDocumentTopicsV2(sourceText: string) {
-    try {
-      // const google = createGoogleGenerativeAI({
-      //   apiKey: EnvironmentVariables.config.geminiApiKey,
-      // });
-      // const response = await generateObject({
-      //   model: google('gemini-1.5-flash'),
-      //   maxRetries: 3,
-      //   mode: 'json',
-      //   schemaName: 'Topics',
-      //   schema: TopicsSchema,
-      //   prompt: generateTopicPromptV2_2(sourceText),
-      // });
-
-      const openai = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
-      });
-
-      const response = await generateObject({
-        model: openai.responses('gpt-4o-mini'),
-        maxRetries: 3,
-        mode: 'json',
-        schemaName: 'Topics',
-        schema: TopicsSchema,
-        prompt: generateTopicPromptV2_2(sourceText),
-      });
-
-      return response.object.topics as string[];
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Failed to generate topics',

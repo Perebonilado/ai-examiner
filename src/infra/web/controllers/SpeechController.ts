@@ -1,24 +1,26 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import {
-    Body,
+  Body,
   Controller,
-  Get,
   HttpException,
   HttpStatus,
   Inject,
   Post,
-  Query,
   StreamableFile,
 } from '@nestjs/common';
-import { generateText } from 'ai';
 import { translateEnglishToOtherLanguagePrompt } from 'src/constants/QuestionGenerationPromptV2';
 import { TextToSpeechDto } from 'src/dto/TextToSpeechDto';
-import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { SpeechService } from 'src/integrations/open-ai/services/SpeechService';
+import { AI } from 'src/integrations/vercel-ai/services/AI';
+import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
+import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
 
 @Controller('speech')
 export class SpeechController {
-  constructor(@Inject(SpeechService) private speechService: SpeechService) {}
+  constructor(
+    @Inject(SpeechService) private speechService: SpeechService,
+    @Inject(GEMINI_CONN) private readonly geminiConn: AI,
+    @Inject(OPENAI_CONN) private readonly openAIConn: AI,
+  ) {}
 
   @Post('convert-text')
   public async converText(@Body() body: TextToSpeechDto) {
@@ -26,18 +28,14 @@ export class SpeechController {
       let textToUse = body.text;
 
       if (body?.language?.toLowerCase() !== 'english') {
-        const openai = createOpenAI({
-          compatibility: 'strict',
-          apiKey: EnvironmentVariables.config.openAiApiKey,
+        const text = await this.openAIConn.generateText({
+          prompt: translateEnglishToOtherLanguagePrompt(
+            body.text,
+            body.language,
+          ),
         });
 
-        const { text } = await generateText({
-          model: openai.responses('gpt-4o-mini'),
-          maxRetries: 3,
-          prompt: translateEnglishToOtherLanguagePrompt(body.text, body.language),
-        });
-
-        textToUse = text
+        textToUse = text;
       }
 
       const buffer = await this.speechService.textToSpeech(textToUse);
