@@ -15,15 +15,15 @@ import {
   messagePromptPrefixGenerator,
 } from 'src/constants';
 import { UpdateCourseDocumentHandler } from '../CourseDocument/UpdateCourseDocumentHandler';
-import { createOpenAI } from '@ai-sdk/openai';
-import { generateText } from 'ai';
 import {
   generateDocumentMessagePromptV2,
   getRefinedImagePrompt,
 } from 'src/constants/V2Prompts';
 import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
 import { DocumentSummaryQueryService } from 'src/query/services/DocumentSummaryQueryService';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
+import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
+import { AI } from 'src/integrations/vercel-ai/services/AI';
 
 @Injectable()
 export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate<
@@ -44,6 +44,8 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
     private documentMessageQueryService: DocumentMessageQueryService,
     @Inject(DocumentSummaryQueryService)
     private documentSummaryQueryService: DocumentSummaryQueryService,
+    @Inject(GEMINI_CONN) private readonly geminiConn: AI,
+    @Inject(OPENAI_CONN) private readonly openAIConn: AI,
   ) {
     super();
   }
@@ -378,13 +380,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
       const summary =
         await this.documentSummaryQueryService.findByDocumentId(documentId);
 
-      const openaiClient = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
-      });
-
-      const imageDescription = await generateText({
-        model: openaiClient('gpt-4o-mini'),
+      const imageDescription = await this.openAIConn.generateText({
         messages: [
           {
             role: 'user',
@@ -402,22 +398,16 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         ],
       });
 
-      const refined = await generateText({
-        model: openaiClient('gpt-4o-mini'),
-        messages: [
-          {
-            role: 'user',
-            content: getRefinedImagePrompt({
-              imageDesc: imageDescription.text,
-              initialQuery,
-              summary: summary.summary,
-              relatedContent,
-            }),
-          },
-        ],
+      const refined = await this.openAIConn.generateText({
+        prompt: getRefinedImagePrompt({
+          imageDesc: imageDescription,
+          initialQuery,
+          summary: summary.summary,
+          relatedContent,
+        }),
       });
 
-      return refined.text;
+      return refined;
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Failed to get system response: image description',
@@ -429,26 +419,17 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
   private async getSystemResponseUsingRag(
     message: string,
     sourceText: string,
-    messages: { role: 'system' | 'user' ; content: string }[],
+    messages: { role: 'system' | 'user'; content: string }[],
   ) {
     try {
-      // const openai = createOpenAI({
-      //   compatibility: 'strict',
-      //   apiKey: EnvironmentVariables.config.openAiApiKey,
-      // });
-      const google = createGoogleGenerativeAI({
-        apiKey: EnvironmentVariables.config.geminiApiKey,
-      });
-
-      const prevMessages = messages.map((m)=>{
-        if(m.role =='system') {
-          return {...m, role: 'assistant'}
+      const prevMessages = messages.map((m) => {
+        if (m.role == 'system') {
+          return { ...m, role: 'assistant' };
         }
-        return m
-      }) as { role: 'system' | 'user' ; content: string }[]
+        return m;
+      }) as { role: 'system' | 'user'; content: string }[];
 
-      const { text } = await generateText({
-        model: google('gemini-1.5-flash'),
+      const text = await this.geminiConn.generateText({
         messages: [
           ...prevMessages,
           {
@@ -458,9 +439,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         ],
       });
 
-      const prevResponseId = ''
-      // const prevResponseId = providerMetadata?.openai
-      //   ?.responseId as unknown as string;
+      const prevResponseId = '';
 
       return { text, prevResponseId };
     } catch (error) {

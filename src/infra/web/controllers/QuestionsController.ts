@@ -12,9 +12,7 @@ import {
   ParseIntPipe,
   Post,
   Delete,
-  Res,
 } from '@nestjs/common';
-import { Response } from 'express';
 import * as moment from 'moment';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { Request } from 'express';
@@ -63,9 +61,7 @@ import { UserQueryService } from 'src/query/services/UserQueryService';
 import { QuestionProgressStatusType } from '../models/QuestionProgressStatusType';
 import { OralQuestionAnalysisQueryService } from 'src/query/services/OralQuestionAnalysisQueryService';
 import { GenerateQuestionDto } from 'src/dto/GenerateQuestionDto';
-import { createOpenAI } from '@ai-sdk/openai';
 import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
-import { generateObject, generateText } from 'ai';
 import { McqSchema } from 'src/schemas/McqSchema';
 import { MCQModel } from 'src/integrations/open-ai/models/MCQModel';
 import { MultipleTrueFalseSchema } from 'src/schemas/MultipleTrueFasleSchema';
@@ -81,7 +77,6 @@ import {
   generateSourceInfoPromptV2,
 } from 'src/constants/V2Prompts';
 import { CallCreditsQueryService } from 'src/query/services/CallCreditsQueryService';
-import { PreferredLanguageQueryService } from 'src/query/services/PreferredLanguageQueryService';
 import { EssaySchema } from 'src/schemas/EssaySchema';
 import { CreateEssayQuestionAnalysisHandler } from 'src/business/handlers/EssayQuestionAnalysis/CreateEssayQuestionAnalysisHandler';
 import { UpdateEssayQuestionAnalysisHandler } from 'src/business/handlers/EssayQuestionAnalysis/UpdateEssayQuestionAnalysisHandler';
@@ -90,7 +85,9 @@ import { UpdateEssayQuestionAnalysisRequest } from 'src/business/handlers/reques
 import { EssayAnalysisSchema } from 'src/schemas/EssayAnalysisSchema';
 import { EssayQuestionAnalysisStatus } from '../models/EssayQuestionAnalysisStatus';
 import { EssayQuestionAnalysisQueryService } from 'src/query/services/EssayQuestionAnalysisQueryService';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
+import { AI } from 'src/integrations/vercel-ai/services/AI';
+import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
 
 @Controller('questions')
 export class QuestionsController {
@@ -139,6 +136,8 @@ export class QuestionsController {
     private updateEssayQuestionAnalysisHandler: UpdateEssayQuestionAnalysisHandler,
     @Inject(EssayQuestionAnalysisQueryService)
     private essayQuestionAnalysisQueryService: EssayQuestionAnalysisQueryService,
+    @Inject(GEMINI_CONN) private readonly geminiConn: AI,
+    @Inject(OPENAI_CONN) private readonly openAIConn: AI,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -417,7 +416,6 @@ export class QuestionsController {
     @Req() request: Request,
   ) {
     try {
-      const userToken = request['user'] as VerifiedTokenModel;
       const relevantChunks =
         await this.pineconeChunkService.semanticChunkSearch(
           body.question,
@@ -425,14 +423,7 @@ export class QuestionsController {
           5,
         );
 
-      const openai = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
-      });
-
-      const { text } = await generateText({
-        model: openai.responses('gpt-4o-mini'),
-        maxRetries: 3,
+      const text = await this.openAIConn.generateText({
         prompt: generateSourceInfoPromptV2(
           body.question,
           relevantChunks.join('\n'),
@@ -769,14 +760,6 @@ export class QuestionsController {
   ) {
     try {
       const userToken = request['user'] as VerifiedTokenModel;
-
-      const openai = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
-      });
-      // const google = createGoogleGenerativeAI({
-      //   apiKey: EnvironmentVariables.config.geminiApiKey,
-      // });
       const prevQuestionLimit = 20;
       const previousQuestions =
         await this.questionQueryService.findPreviousQuestionsByConfig(
@@ -936,28 +919,17 @@ export class QuestionsController {
       }
 
       const languageToUse = 'English';
-
+      const questionSchema = z.object({
+        questions: z
+          .array(
+            this.getZodQuestionValidator(questionTypeName.title.toLowerCase()),
+          )
+          .describe(
+            getAnswerVariationRule(questionTypeName.title as QuestionType),
+          ),
+      });
       const questionPromises = questionsPerBatch.map((batchSize, index) =>
-        generateObject({
-          // model: google('gemini-1.5-flash'),
-          model: openai.responses('gpt-4o-mini'),
-          maxRetries: 3,
-          mode: 'json',
-          schemaName: 'Questions',
-          schemaDescription: 'Questions from study document',
-          temperature: 0.8,
-          topP: 0.7,
-          schema: z.object({
-            questions: z
-              .array(
-                this.getZodQuestionValidator(
-                  questionTypeName.title.toLowerCase(),
-                ),
-              )
-              .describe(
-                getAnswerVariationRule(questionTypeName.title as QuestionType),
-              ),
-          }),
+        this.openAIConn.generateObject<typeof questionSchema>({
           prompt: generatePromptForQuestionsV2({
             difficulty: body.difficulty,
             includeCaseStudies: body.includeUseCases,
@@ -967,6 +939,9 @@ export class QuestionsController {
             previousQuestions,
             preferredLanguage: languageToUse,
           }),
+          schema: questionSchema,
+          schemaDescription: 'Questions from study document',
+          schemaName: 'Questions',
         }),
       );
 
@@ -975,8 +950,8 @@ export class QuestionsController {
       const generatedQuestions: MCQModel[] = [];
 
       results.forEach((r) => {
-        if (r.object.questions) {
-          const mapped = r.object.questions.map((q) => ({
+        if (r) {
+          const mapped = r.object.questions?.map((q) => ({
             ...q,
             id: generateUUID(), // Assign a unique ID
           })) as MCQModel[];
@@ -1227,12 +1202,6 @@ export class QuestionsController {
         });
       }
 
-      // analyze test
-      const openai = createOpenAI({
-        compatibility: 'strict',
-        apiKey: EnvironmentVariables.config.openAiApiKey,
-      });
-
       const toBeGraded = stagedForAnalysis.map(async (staged) => {
         if (!staged.answer.trim().length) {
           return {
@@ -1251,18 +1220,15 @@ export class QuestionsController {
 
         const joinedChunk = chunks.join('\n');
 
-        const analyzed = await generateObject({
-          model: openai.responses('gpt-4o-mini'),
-          maxRetries: 3,
-          mode: 'json',
-          schemaName: 'Analysis',
-          schemaDescription: 'Analysis for student response',
-          schema: EssayAnalysisSchema,
+        const analyzed = await this.openAIConn.generateObject({
           prompt: generateEssayAnalysisPrompt({
             question: staged.question,
             sourceText: joinedChunk,
             answer: staged.answer,
           }),
+          schemaName: 'Analysis',
+          schemaDescription: 'Analysis for student response',
+          schema: EssayAnalysisSchema,
         });
 
         staged.analysis = analyzed.object.analysis;

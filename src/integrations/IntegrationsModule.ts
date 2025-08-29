@@ -15,6 +15,7 @@ import { TextExtractionModule } from './text-extraction/TextExtractionModule';
 import { GoogleModule } from './google/GoogleModule';
 import { RapidModule } from './rapid/RapidModule';
 import { AsposeModule } from './aspose/AsposeModule';
+import { VercelAIModule } from './vercel-ai/VercelAIModule';
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { AsposeModule } from './aspose/AsposeModule';
     TextExtractionModule,
     GoogleModule,
     RapidModule,
-    AsposeModule
+    AsposeModule,
+    VercelAIModule,
   ],
   exports: [
     OpenAiModule,
@@ -51,7 +53,8 @@ import { AsposeModule } from './aspose/AsposeModule';
     TextExtractionModule,
     GoogleModule,
     RapidModule,
-    AsposeModule
+    AsposeModule,
+    VercelAIModule,
   ],
 })
 export class IntegrationsModule {}
