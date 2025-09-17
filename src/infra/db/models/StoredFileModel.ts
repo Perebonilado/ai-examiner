@@ -33,6 +33,13 @@ export class StoredFileModel extends Model<StoredFileModel> {
   modifiedContent: string;
 
   @Column({
+    type: DataType.JSON,
+    allowNull: true,
+    field: 'sprint_read_content',
+  })
+  sprintReadContent: string;
+
+  @Column({
     type: DataType.TEXT('long'),
     field: 'original_file_content_structured',
     allowNull: true,

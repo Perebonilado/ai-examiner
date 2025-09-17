@@ -23,6 +23,7 @@ export class StoredFileDbConnector {
           'originalFileId',
           'currentFileFormat',
           'originalFileContentStructured',
+          'sprintReadContent'
         ],
       });
 

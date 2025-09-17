@@ -16,11 +16,11 @@ export class DocumentTopicQueryService {
 
   public async findAllByDocumentTopicsByDocumentIdAndUserId(
     documentId: string,
-    userId: string,
+    userId?: string,
   ) {
     try {
       return await DocumentTopicModel.findAll({
-        where: { documentId, userId },
+        where: { documentId, ...(userId ? { userId } : {}) },
       });
     } catch (error) {
       throw new QueryError(
