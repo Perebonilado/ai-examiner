@@ -1,3 +1,4 @@
+import { GroupedContent } from 'src/business/handlers/StoredFile/CreateSprintReadContentHandler';
 import {
   HighlightToPrompt,
   NotSureQuestion,
@@ -14,7 +15,7 @@ export const saltRounds = 10;
 export const maxNumberOfQuestionGenerationForFreePlanTier = 1;
 
 export const USRegionFreeTimeMs = 7_200_000;
-export const AfricanFreeTimeMs = 180000
+export const AfricanFreeTimeMs = 180000;
 
 export const inactiveSubscriptionStatuses = [
   'completed',
@@ -22,8 +23,90 @@ export const inactiveSubscriptionStatuses = [
   'attention',
 ];
 
-export const googlePresentationFileFormat = 'application/vnd.google-apps.presentation';
+export const googlePresentationFileFormat =
+  'application/vnd.google-apps.presentation';
 export const pdfMimeType = 'application/pdf';
+
+export const getKeypointPrompt = (docSummary: string, content: string) => {
+  return `
+You are a personal tutor helping a student prepare for an exam in a few hours. 
+The student has very limited time and only needs to focus on the most important, exam-relevant information.  
+
+Your role:
+- Read the document summary and the given section of content.
+- Identify the **key points, facts, and concepts** the student must learn and remember in order to pass a quiz based on this section.
+- Filter out unnecessary details, filler, and less likely-to-be-tested material.
+- Present the information in a **clear, concise, bullet-point format** so the student can review it quickly.
+
+Document Summary:
+${docSummary}
+
+Content to analyze:
+${content}
+
+Now, extract and present ONLY the **essential key points** the student should study.
+  `;
+};
+
+export const getSprintReadContentPrompt = (
+  content: GroupedContent,
+  keypoints: string,
+  summary: string,
+  isFirstChunk: boolean,
+  previousContent?: string
+) => {
+  let nonRepeatContent = `
+  VERY VERY IMPORTANT DETAIL (DO NOT REPEAT ANY INFO THAT ALREADY EXISTS BELOW)
+  The content below has already been rewritten and summarized. Do not repeat any info that has already been covered below. Only rewrite content that has not been covered.
+  Think of this like a packed summary but written with cohesive languge. I dont have time to read the whole material, I want the important stuff written out for me in plain simple language.
+  Consider that I have never read the material before, I need you to give introductions to things and explain stuff well.
+
+  **No need to repeat this information in your output**
+   ${previousContent}
+  **No need to repeat this information in your output**
+  `
+  return `
+  I have got limited time to study, I need you to rewrite the content in plain simple english, preserve key words though. Also, do not repeat any information that I already have.
+  I provide you with this if need be. I need to filter out the noise and less likely to be asked info and have this rewritten in a cohesive manner. DO NOT REPEAT INFO I ALREADY HAVE, very important. I need
+  to read this overnight and go in to the exam and get an A+''
+  
+1. **Simplify, But Preserve Keywords**  
+   • Some terms must stay as-is because they’re essential for exams (e.g. “abdomen,” “neuron,” “mitosis”).  
+   • If simplifying for clarity, use: simpler term (original term)  
+     👉 Example: "the belly (abdomen)"  
+   • Only do this if the simple word aids comprehension. Otherwise, leave the keyword untouched.
+
+2. **Rewrite for Clarity**  
+   • Improve sentence flow, fix awkward phrasing, and simplify structure.  
+   • Break up long sentences into shorter, cleaner ones.
+
+3. **Explain Confusing or Dense Ideas**  
+   • Use in-line explanations with analogies where helpful.  
+   • Prefer casual, relatable phrasing: like explaining to a peer who knows the basics but is struggling to grasp the details.
+
+4. **Keep All Facts, Figures, and Terminology**  
+   • Never remove important numbers, names, or keywords.  
+   • If a study is mentioned, simplify what it means without removing the data.
+
+5. **Tone: Clear, Confident, and Friendly**  
+   • Be supportive, focused, and clear—like a helpful study partner.
+
+----------------------------------------------------------------------------------
+(This summary is to provide you a general idea of what the material is about, do not rewrite it or summarize it)
+**summary start**
+${summary}
+**summary end**
+
+**Content so simplify start**
+${content.content}
+**Content so simplify end**
+
+${!isFirstChunk ? nonRepeatContent : ''}
+
+Remember: Write like the author of "Biology for Dummies"—clear, friendly, approachable sentences that make hard stuff easy to understand and remember.
+`
+}
+
 
 export const generateQuestionsPrompt = (
   questionCount: number = 5,

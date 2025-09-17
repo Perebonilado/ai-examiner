@@ -565,3 +565,184 @@ const styles = `
       }
     </style>
   `;
+
+[
+  [
+    { type: 'headingOne', text: 'Jaundice: The Yellowing Mystery' },
+    {
+      type: 'paragraph',
+      text: "Imagine your whites of your eyes and skin turning yellow. That's jaundice, and it's a sign, not a disease itself. It happens when there's too much bilirubin, a yellowish substance, in your blood.",
+    },
+    {
+      type: 'paragraph',
+      text: "Normally, bilirubin levels are low. But when they get high enough (above 3 mg/dl), you'll notice that yellowing, starting in the whites of your eyes.  The skin follows, going from pale yellow to a deeper, sometimes greenish hue (thanks to biliverdin).  It's important to note that this yellowing might be harder to spot in people with darker skin.",
+    },
+    { type: 'headingTwo', text: 'What Causes Jaundice?' },
+    { type: 'bullet', text: 'Too much bilirubin being made' },
+    { type: 'bullet', text: 'Problems getting rid of bilirubin' },
+    {
+      type: 'paragraph',
+      text: "Think of it like this:  Bilirubin is a waste product. Your body makes it when it breaks down old red blood cells.  If you make too much, or your liver (which processes bilirubin) isn't working right, or your bile ducts (which carry bilirubin away) are blocked, bilirubin builds up, causing jaundice.",
+    },
+    { type: 'headingTwo', text: "Figuring Out What's Wrong" },
+    {
+      type: 'paragraph',
+      text: 'A doctor will ask about your symptoms, check your skin and eyes, and likely run some blood tests to measure your bilirubin levels and check your liver function.  Imaging tests, like ultrasounds, might be needed to see if there are any blockages.',
+    },
+    { type: 'headingTwo', text: 'Treatment' },
+    {
+      type: 'paragraph',
+      text: "Treatment depends on the cause.  If it's a liver problem, medication might help.  If there's a blockage, surgery or other procedures might be necessary.  The key is to find and fix the underlying issue.",
+    },
+    { type: 'headingTwo', text: 'Teamwork Makes the Dream Work' },
+    {
+      type: 'paragraph',
+      text: 'Managing jaundice often involves a team of healthcare professionals—doctors, nurses, and specialists—working together to provide the best possible care and improve outcomes.',
+    },
+  ],
+  [
+    { type: 'headingOne', text: "Jaundice: The Dummies' Guide" },
+    { type: 'headingTwo', text: 'What is Jaundice?' },
+    {
+      type: 'paragraph',
+      text: "Jaundice is when your skin and eyes turn yellow because of a bilirubin buildup.  Bilirubin is a byproduct of old red blood cells.  Think of it like your body's recycling system getting clogged.",
+    },
+    { type: 'headingTwo', text: 'Types of Jaundice' },
+    {
+      type: 'bullet',
+      text: 'Pre-hepatic:  Problem *before* the liver.  Bilirubin levels are mildly elevated (5-17 µmol/L). Think of it like a traffic jam before a highway entrance.',
+    },
+    {
+      type: 'bullet',
+      text: 'Intra-hepatic: Problem *in* the liver itself. Bilirubin levels are moderately elevated (50-350 µmol/L).  This is like a traffic jam *on* the highway.',
+    },
+    {
+      type: 'bullet',
+      text: 'Post-hepatic: Problem *after* the liver, usually a blockage. Bilirubin levels are significantly elevated (100-750 µmol/L). This is like a complete highway closure.',
+    },
+    { type: 'headingTwo', text: 'Who Gets Jaundice?' },
+    {
+      type: 'paragraph',
+      text: 'Newborns and older adults are most commonly affected.  Newborns often have it due to their immature livers.  In older adults, it can be caused by many things, including gallstones and liver disease.',
+    },
+    { type: 'headingTwo', text: 'Causes of Jaundice' },
+    {
+      type: 'paragraph',
+      text: "The cause depends on whether the problem is with unconjugated (indirect) or conjugated (direct) bilirubin.  Unconjugated is when the liver hasn't processed the bilirubin yet; conjugated is when the liver has processed it but it can't be excreted.",
+    },
+    {
+      type: 'headingTwo',
+      text: 'Causes of Unconjugated Hyperbilirubinemia (Too Much Unconjugated Bilirubin)',
+    },
+    {
+      type: 'bullet',
+      text: 'Hemolytic anemia (body destroys red blood cells too fast)',
+    },
+    {
+      type: 'bullet',
+      text: "Gilbert's syndrome (genetic condition affecting bilirubin processing)",
+    },
+    {
+      type: 'bullet',
+      text: 'Crigler-Najjar syndrome (rare genetic condition)',
+    },
+    {
+      type: 'headingTwo',
+      text: 'Causes of Conjugated Hyperbilirubinemia (Too Much Conjugated Bilirubin)',
+    },
+    {
+      type: 'bullet',
+      text: 'Liver diseases (hepatitis, cirrhosis, etc.)',
+    },
+    { type: 'bullet', text: 'Gallstones' },
+    { type: 'bullet', text: 'Pancreatitis' },
+    { type: 'bullet', text: 'Cancer (pancreatic, bile duct)' },
+    { type: 'bullet', text: 'Medications' },
+    { type: 'headingTwo', text: 'Symptoms of Jaundice' },
+    { type: 'bullet', text: 'Yellow skin and eyes' },
+    { type: 'bullet', text: 'Dark urine' },
+    { type: 'bullet', text: 'Light-colored stools' },
+    { type: 'bullet', text: 'Itchiness' },
+    { type: 'bullet', text: 'Abdominal pain' },
+    { type: 'bullet', text: 'Nausea and vomiting' },
+    { type: 'headingTwo', text: 'Diagnosing Jaundice' },
+    {
+      type: 'paragraph',
+      text: 'Your doctor will ask about your symptoms, medical history, and medications.  Blood tests will check bilirubin levels and liver function.  Imaging tests (ultrasound, CT scan) may be needed to look for blockages.',
+    },
+    { type: 'headingTwo', text: 'Treatment of Jaundice' },
+    {
+      type: 'paragraph',
+      text: 'Treatment depends on the cause. It might involve medication, surgery (for blockages), or managing underlying conditions.',
+    },
+  ],
+  [
+    { type: 'headingOne', text: 'Jaundice: The Dummies Guide' },
+    { type: 'headingTwo', text: 'What is Jaundice?' },
+    {
+      type: 'paragraph',
+      text: "Jaundice is yellowing of the skin and whites of your eyes. It happens when there's too much bilirubin, a yellow substance, in your blood.  Think of it like a traffic jam – bilirubin can't get processed and cleared out properly.",
+    },
+    { type: 'headingTwo', text: 'Types of Jaundice' },
+    {
+      type: 'bullet',
+      text: 'Hepatocellular: Problem with the liver itself',
+    },
+    {
+      type: 'bullet',
+      text: 'Cholestatic: Problem with bile flow from the liver',
+    },
+    { type: 'bullet', text: 'Mixed: A bit of both' },
+    { type: 'headingTwo', text: 'Causes of Jaundice' },
+    {
+      type: 'paragraph',
+      text: 'Many things can cause jaundice, from harmless stuff like a bruise to serious liver problems.  Your doctor will figure out the cause through tests and your medical history.',
+    },
+    { type: 'headingTwo', text: 'Diagnosing Jaundice' },
+    {
+      type: 'paragraph',
+      text: "Diagnosis often starts with a physical exam and a good chat about your health.  Blood tests will measure bilirubin levels.  Imaging tests like ultrasounds might be needed to see what's going on inside your liver and gallbladder.",
+    },
+    { type: 'headingTwo', text: 'Treating Jaundice' },
+    {
+      type: 'paragraph',
+      text: 'Treatment depends entirely on the cause.  It might involve fixing an underlying problem like a blocked bile duct, treating an infection, or managing a liver disease.  Sometimes, no treatment is needed, and things clear up on their own.',
+    },
+    { type: 'headingTwo', text: 'Specific Jaundice Conditions' },
+    {
+      type: 'bullet',
+      text: 'Carotenoderma: Yellowing from eating too many carrots (it spares the whites of your eyes!).',
+    },
+    {
+      type: 'bullet',
+      text: 'Cholestasis:  Itchy skin due to backed-up bile. Treatment might include medication or even a liver transplant in severe cases.',
+    },
+    {
+      type: 'bullet',
+      text: 'Neonatal Jaundice:  Common in newborns, often resolves on its own.  Sometimes, phototherapy or blood transfusions are needed.',
+    },
+    {
+      type: 'bullet',
+      text: 'Autoimmune Hepatitis:  Inflammation of the liver due to the body attacking itself. Steroids and other medications can help.',
+    },
+    {
+      type: 'bullet',
+      text: 'Viral Hepatitis (HBV, HCV):  Infections that can cause liver damage.  Treatment includes interferon and, in severe cases, a liver transplant.',
+    },
+    { type: 'headingTwo', text: 'Complications of Jaundice' },
+    {
+      type: 'paragraph',
+      text: "High bilirubin levels can be harmful, especially to newborns whose blood-brain barrier isn't fully developed.  It can lead to brain damage (kernicterus).",
+    },
+    { type: 'headingTwo', text: 'Prevention' },
+    {
+      type: 'paragraph',
+      text: 'Many cases of jaundice are preventable. Avoid alcohol, risky drugs, and unnecessary medications. Get vaccinated and practice safe sex.',
+    },
+    { type: 'headingTwo', text: 'The Bottom Line' },
+    {
+      type: 'paragraph',
+      text: 'Jaundice is a symptom, not a disease. Finding the underlying cause is key to treatment.  Talk to your doctor if you notice yellowing of your skin or eyes.',
+    },
+  ],
+];
