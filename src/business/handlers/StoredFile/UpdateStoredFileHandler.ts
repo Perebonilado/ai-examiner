@@ -41,6 +41,9 @@ export class UpdateStoredFileHandler extends AbstractRequestHandlerTemplate<
         id: existingModel.id,
         originalFileId: request?.originalFileId ?? existingModel.originalFileId,
         modifiedContent: JSON.stringify(request.modifiedContent),
+        sprintReadContent: request?.sprintReadContent
+          ? JSON.stringify(request.sprintReadContent)
+          : existingModel.sprintReadContent,
         documentId: existingModel.documentId,
         currentFileFormat:
           request?.currentFileFormat ?? existingModel.currentFileFormat,

@@ -28,6 +28,9 @@ export class CreateStoredFileHandler extends AbstractRequestHandlerTemplate<
         modifiedContent: request?.modifiedContent,
         documentId: request.documentId,
         currentFileFormat: request.currentFileFormat,
+        sprintReadContent: request?.sprintReadContent
+          ? JSON.stringify(request.sprintReadContent)
+          : null,
       } as StoredFileModel;
 
       const created = await this.storedFileRepository.create(modelToCreate);

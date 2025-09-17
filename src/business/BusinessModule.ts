@@ -39,6 +39,7 @@ import { UpdateStoredFileHandler } from './handlers/StoredFile/UpdateStoredFileH
 import { CreateStoredFileHandler } from './handlers/StoredFile/CreateStoredFileHandler';
 import { CreateDocumentReadingProgressHandler } from './handlers/DocumentReadingProgress/CreateDocumentReadingProgressHandler';
 import { DeleteDocumentReadingProgressHandler } from './handlers/DocumentReadingProgress/DeleteDocumentReadingProgressHandler';
+import { CreateSprintReadContentHandler } from './handlers/StoredFile/CreateSprintReadContentHandler';
 
 @Module({
   imports: [QueryModule, InfraRepositoryModule, IntegrationsModule],
@@ -79,7 +80,8 @@ import { DeleteDocumentReadingProgressHandler } from './handlers/DocumentReading
     UpdateStoredFileHandler,
     CreateStoredFileHandler,
     CreateDocumentReadingProgressHandler,
-    DeleteDocumentReadingProgressHandler
+    DeleteDocumentReadingProgressHandler,
+    CreateSprintReadContentHandler
   ],
   exports: [
     CreateUserHandler,
@@ -118,7 +120,8 @@ import { DeleteDocumentReadingProgressHandler } from './handlers/DocumentReading
     UpdateStoredFileHandler,
     CreateStoredFileHandler,
     CreateDocumentReadingProgressHandler,
-    DeleteDocumentReadingProgressHandler
+    DeleteDocumentReadingProgressHandler,
+    CreateSprintReadContentHandler
   ],
 })
 export class BusinessModule {}

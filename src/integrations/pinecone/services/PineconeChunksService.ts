@@ -46,8 +46,9 @@ export class PineconeChunkService extends PineconeClient {
         includeValues: false
       });;
 
-      return queryResponse.matches[0].metadata['text'] as string
+      return queryResponse.matches[0]?.metadata['text'] as string
     } catch (error) {
+      console.log(error)
       throw new HttpException('Failed to index search', HttpStatus.BAD_REQUEST);
     }
   }
