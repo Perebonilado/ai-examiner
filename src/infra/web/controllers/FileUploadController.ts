@@ -318,7 +318,7 @@ export class FileUploadController {
 
   private async summarizeDocumentV2(sourceText: string) {
     try {
-      const summary = await this.geminiConn.generateText({
+      const summary = await this.openAIConn.generateText({
         prompt: generateDocumentSummaryPromptV2(sourceText),
       });
 
@@ -343,7 +343,7 @@ export class FileUploadController {
        * tag each page within each batch with predefined topics
        */
 
-      const genericTopicsResponse = await this.geminiConn.generateObject({
+      const genericTopicsResponse = await this.openAIConn.generateObject({
         prompt: generateGenericTopicsPrompt(documentByPages.join('\n')),
         schemaName: 'Topics',
         schema: TopicsSchema,

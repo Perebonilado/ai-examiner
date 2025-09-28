@@ -429,7 +429,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         return m;
       }) as { role: 'system' | 'user'; content: string }[];
 
-      const text = await this.geminiConn.generateText({
+      const text = await this.openAIConn.generateText({
         messages: [
           ...prevMessages,
           {
