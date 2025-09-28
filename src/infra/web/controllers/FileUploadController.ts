@@ -318,9 +318,12 @@ export class FileUploadController {
 
   private async summarizeDocumentV2(sourceText: string) {
     try {
-      const summary = await this.openAIConn.generateText({
-        prompt: generateDocumentSummaryPromptV2(sourceText),
-      });
+      const summary = await this.openAIConn.generateText(
+        {
+          prompt: generateDocumentSummaryPromptV2(sourceText),
+        },
+        { model: 'gpt-4.1-nano' },
+      );
 
       return summary;
     } catch (error) {
@@ -348,7 +351,7 @@ export class FileUploadController {
         schemaName: 'Topics',
         schema: TopicsSchema,
         schemaDescription: 'Topics for study material',
-      });
+      }, {model: 'gpt-4.1-nano'});
 
       const genericTopics = genericTopicsResponse.object.topics!;
       const totalPages = documentByPages.length;
