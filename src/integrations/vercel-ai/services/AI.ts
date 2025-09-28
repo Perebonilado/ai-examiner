@@ -6,7 +6,7 @@ export interface GenerateObjectModel<T extends ZodTypeAny> {
   schemaDescription?: string;
   schema: T;
   prompt?: string;
-  messages?: CoreMessage[] | Omit<Message, "id">[]
+  messages?: CoreMessage[] | Omit<Message, 'id'>[];
 }
 
 export type GenerateObjectResult<TSchema extends ZodTypeAny> = {
@@ -18,9 +18,14 @@ export type GenerateTextModel = Omit<
   'schemaName' | 'schemaDescription' | 'schema' | 'schemaKey'
 >;
 
+export interface ModelOptions {
+  model?: string;
+}
+
 export interface AI {
   generateObject<SchemaType extends ZodTypeAny>(
     args: GenerateObjectModel<SchemaType>,
+    options?: ModelOptions
   ): Promise<GenerateObjectResult<SchemaType>>;
-  generateText(args: GenerateTextModel): Promise<string>;
+  generateText(args: GenerateTextModel, options?: ModelOptions): Promise<string>;
 }

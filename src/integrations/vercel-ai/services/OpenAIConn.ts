@@ -4,6 +4,7 @@ import {
   GenerateObjectModel,
   GenerateObjectResult,
   GenerateTextModel,
+  ModelOptions,
 } from './AI';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { generateObject, generateText } from 'ai';
@@ -25,10 +26,11 @@ export class OpenAIConn implements AI {
 
   public async generateObject<SchemaType extends ZodTypeAny>(
     args: GenerateObjectModel<SchemaType>,
+    options: ModelOptions,
   ): Promise<GenerateObjectResult<SchemaType>> {
     try {
       const res = await generateObject({
-        model: this.model.responses('gpt-4o-mini'),
+        model: this.model.responses(options?.model || 'gpt-4o-mini'),
         maxRetries: 3,
         mode: 'json',
         schemaName: args.schemaName,
@@ -49,10 +51,13 @@ export class OpenAIConn implements AI {
     }
   }
 
-  public async generateText(args: GenerateTextModel): Promise<string> {
+  public async generateText(
+    args: GenerateTextModel,
+    options: ModelOptions,
+  ): Promise<string> {
     try {
       const { text } = await generateText({
-        model: this.model.responses('gpt-4o-mini'),
+        model: this.model.responses(options?.model || 'gpt-4o-mini'),
         maxRetries: 3,
         prompt: args.prompt,
         messages: args.messages,

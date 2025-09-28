@@ -4,6 +4,7 @@ import {
   GenerateObjectModel,
   GenerateObjectResult,
   GenerateTextModel,
+  ModelOptions,
 } from './AI';
 import {
   createGoogleGenerativeAI,
@@ -27,19 +28,20 @@ export class GeminiConn implements AI {
 
   public async generateObject<SchemaType extends ZodTypeAny>(
     args: GenerateObjectModel<SchemaType>,
+    options: ModelOptions,
   ): Promise<GenerateObjectResult<SchemaType>> {
     try {
       const res = await generateObject({
-        model: this.model('gemini-1.5-flash'),
+        model: this.model(options?.model || 'gemini-1.5-flash'),
         maxRetries: 3,
         mode: 'json',
-        schemaName: args.schemaName, 
+        schemaName: args.schemaName,
         schemaDescription: args.schemaDescription,
         temperature: 0.8,
         topP: 0.7,
         schema: args.schema,
         prompt: args.prompt,
-        messages: args.messages
+        messages: args.messages,
       });
 
       return res;
@@ -51,13 +53,16 @@ export class GeminiConn implements AI {
     }
   }
 
-  public async generateText(args: GenerateTextModel): Promise<string> {
+  public async generateText(
+    args: GenerateTextModel,
+    options: ModelOptions,
+  ): Promise<string> {
     try {
       const { text } = await generateText({
-        model: this.model('gemini-1.5-flash'),
+        model: this.model(options?.model || 'gemini-1.5-flash'),
         maxRetries: 3,
         prompt: args.prompt,
-        messages: args.messages
+        messages: args.messages,
       });
 
       return text;
