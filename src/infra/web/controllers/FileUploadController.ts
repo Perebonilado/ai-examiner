@@ -281,7 +281,7 @@ export class FileUploadController {
     } catch (error) {
       console.log(error);
       throw new HttpException(
-        error ?? 'V2: Failed to upload file',
+        error?.message ?? 'V2: Failed to upload file',
         HttpStatus.BAD_REQUEST,
       );
     }
