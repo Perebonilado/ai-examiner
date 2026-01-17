@@ -281,7 +281,7 @@ export class FileUploadController {
     } catch (error) {
       console.log(error);
       throw new HttpException(
-        error ?? 'V2: Failed to upload file',
+        error?.message ?? 'V2: Failed to upload file',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -318,9 +318,12 @@ export class FileUploadController {
 
   private async summarizeDocumentV2(sourceText: string) {
     try {
-      const summary = await this.openAIConn.generateText({
-        prompt: generateDocumentSummaryPromptV2(sourceText),
-      });
+      const summary = await this.openAIConn.generateText(
+        {
+          prompt: generateDocumentSummaryPromptV2(sourceText),
+        },
+        { model: 'gpt-4.1-nano' },
+      );
 
       return summary;
     } catch (error) {
@@ -343,15 +346,12 @@ export class FileUploadController {
        * tag each page within each batch with predefined topics
        */
 
-      // const google = createGoogleGenerativeAI({
-      //   apiKey: EnvironmentVariables.config.geminiApiKey,
-      // });
       const genericTopicsResponse = await this.openAIConn.generateObject({
         prompt: generateGenericTopicsPrompt(documentByPages.join('\n')),
         schemaName: 'Topics',
         schema: TopicsSchema,
         schemaDescription: 'Topics for study material',
-      });
+      }, {model: 'gpt-4.1-nano'});
 
       const genericTopics = genericTopicsResponse.object.topics!;
       const totalPages = documentByPages.length;

@@ -76,6 +76,7 @@ import { GoogleImageSearchModel } from 'src/integrations/google/models/GoogleSea
 import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
 import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
 import { AI } from 'src/integrations/vercel-ai/services/AI';
+import { CreateSprintReadContentHandler } from 'src/business/handlers/StoredFile/CreateSprintReadContentHandler';
 
 @Controller('course-document')
 export class CourseDocumentController {
@@ -118,6 +119,8 @@ export class CourseDocumentController {
     private googleSearchService: GoogleSearchService,
     @Inject(GEMINI_CONN) private readonly geminiConn: AI,
     @Inject(OPENAI_CONN) private readonly openAIConn: AI,
+    @Inject(CreateSprintReadContentHandler)
+    private createSprintReadContentHandler: CreateSprintReadContentHandler,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -379,16 +382,6 @@ export class CourseDocumentController {
         }),
       );
       const rewordedPages = rewordedBatches.flat(1);
-      // const rewordedPages = await Promise.all(
-      //   pages.map(async (page) => {
-      //     // open ai call to reword
-      //     if (page.trim().length) {
-      //       const res = await this.simplifyTextContent(page, summary.summary);
-      //       return res;
-      //     }
-      //     return [{ text: 'Empty Page', type: 'paragraph' }] as PDFContent[];
-      //   }),
-      // );
 
       await this.updateStoredFileHandler.handle({
         id: storedFile.id,
@@ -510,6 +503,38 @@ export class CourseDocumentController {
         error.status ?? HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  // @UseGuards(AuthGuard)
+  @Get('/sprint-read/:documentId')
+  public async getSprintReadContent(
+    @Param('documentId') documentId: string,
+  ) {
+    const existingSprintRead =
+      await this.storedFileQueryService.findByDocumentId(documentId);
+    let content: string[];
+    let totalPages: number;
+    if (existingSprintRead.sprintReadContent) {
+      const sprintReadContent = JSON.parse(
+        existingSprintRead.sprintReadContent,
+      ) as PDFContent[][];
+      content = sprintReadContent.map((c) => {
+        return generateHTMLFromContent([c]);
+      });
+      totalPages = sprintReadContent.length;
+    } else {
+      const createdSprintReadContent =
+        await this.createSprintReadContentHandler.handle({ documentId });
+      content = createdSprintReadContent.data.data.map((c) => {
+        return generateHTMLFromContent([c]);
+      });
+      totalPages = createdSprintReadContent.data.data.length;
+    }
+
+    return {
+      content,
+      totalPages,
+    };
   }
 
   @UseGuards(AuthGuard)
