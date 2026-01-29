@@ -44,6 +44,7 @@ export class PaystackSubscriptionService {
       email: payload.email,
       amount: '50',
       plan: payload.plan,
+      channels: ['card'],
       metadata: {
         cancel_action: `${EnvironmentVariables.config.frontendBaseUrl}/pricing`,
         purchase_type: 'subscription'
