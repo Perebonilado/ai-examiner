@@ -137,7 +137,6 @@ export class SubscriptionController {
         status: HttpStatus.OK,
       };
     } catch (error) {
-      console.log(error)
       throw new HttpException(
         error?.response ??
           'An Error occured while trying to create a subscription',
