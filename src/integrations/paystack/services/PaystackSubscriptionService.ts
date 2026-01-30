@@ -42,9 +42,8 @@ export class PaystackSubscriptionService {
     */
     const body = {
       email: payload.email,
-      amount: '50',
+      amount: '5000',
       plan: payload.plan,
-      channels: ['card'],
       metadata: {
         cancel_action: `${EnvironmentVariables.config.frontendBaseUrl}/pricing`,
         purchase_type: 'subscription'
@@ -99,7 +98,7 @@ export class PaystackSubscriptionService {
           amount,
           email,
           currency,
-          channels: ['bank_transfer', 'bank', 'ussd', 'card'],
+          channels: ['bank_transfer', 'bank', 'ussd'],
           metadata: {
             plan_code: planCode,
             purchase_type: 'subscription',
