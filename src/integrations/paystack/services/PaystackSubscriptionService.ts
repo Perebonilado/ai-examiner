@@ -99,7 +99,7 @@ export class PaystackSubscriptionService {
           amount,
           email,
           currency,
-          channels: ['bank_transfer', 'bank', 'ussd'],
+          channels: ['bank_transfer', 'bank', 'ussd', 'card'],
           metadata: {
             plan_code: planCode,
             purchase_type: 'subscription',
