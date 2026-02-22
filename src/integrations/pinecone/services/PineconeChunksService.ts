@@ -31,7 +31,7 @@ export class PineconeChunkService extends PineconeClient {
       return await this.index.describeIndexStats();
     } catch (error) {
       throw new HttpException(
-        error ?? 'Failed to upsert chunks',
+        error?.message ?? 'Failed to upsert chunks',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -48,7 +48,6 @@ export class PineconeChunkService extends PineconeClient {
 
       return queryResponse.matches[0]?.metadata['text'] as string
     } catch (error) {
-      console.log(error)
       throw new HttpException('Failed to index search', HttpStatus.BAD_REQUEST);
     }
   }
@@ -75,7 +74,6 @@ export class PineconeChunkService extends PineconeClient {
         return hit.fields['text'] as string;
       });
     } catch (error) {
-      console.log(error);
       throw new HttpException(
         'Failed to perform semantic query',
         HttpStatus.BAD_REQUEST,
