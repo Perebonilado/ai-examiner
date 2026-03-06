@@ -268,7 +268,7 @@ export class ExaminerService {
       return uploadedFile;
     } catch (error) {
       throw new HttpException(
-        error || 'Failed to upload file',
+        error?.message || 'Failed to upload file',
         HttpStatus.BAD_GATEWAY,
       );
     }
