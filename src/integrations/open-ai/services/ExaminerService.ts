@@ -267,9 +267,11 @@ export class ExaminerService {
 
       return uploadedFile;
     } catch (error) {
+      console.error('Upload error full object:', JSON.stringify(error, null, 2));
+
       throw new HttpException(
-        error?.message || 'Failed to upload file',
-        HttpStatus.BAD_GATEWAY,
+        'Failed to upload file',
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
