@@ -68,9 +68,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
           userId,
         );
 
-      const useRag =
-        courseDocument.openAiFileId === 'not yet set' ||
-        request.payload?.highlightToPrompt;
+      const useRag = true;
 
       /* might have to switch to this completely once the conversational flow for it is better. Use it when the file has not been uploaded
       to open ai
@@ -145,6 +143,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         });
         const { text: systemResponse } = await this.getSystemResponseUsingRag(
           messagePromptPrefixGenerator({
+            question: request.payload.notSureQuestion,
             highlightToPrompt: request.payload.highlightToPrompt,
           }) || userMessage,
           relevantChunks.join('\n'),
