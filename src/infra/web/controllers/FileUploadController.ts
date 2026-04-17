@@ -262,24 +262,26 @@ export class FileUploadController {
         status: HttpStatus.CREATED,
       });
 
-      setImmediate(async () => {
-        const uploadedOpenAiFile = await this.examinerService.uploadFile(
-          file,
-          pdfPageRange,
-        );
+      // no need to upload file to open ai anymore
 
-        await Promise.all([
-          this.updateCourseDocumentHandler.handle({
-            data: {
-              openAiFileId: uploadedOpenAiFile.id,
-              id: createdDocument.data.id,
-            },
-            userId: userToken.sub,
-          }),
-        ]);
-      });
+      // setImmediate(async () => {
+      //   const uploadedOpenAiFile = await this.examinerService.uploadFile(
+      //     file,
+      //     pdfPageRange,
+      //   );
+
+      //   await Promise.all([
+      //     this.updateCourseDocumentHandler.handle({
+      //       data: {
+      //         openAiFileId: uploadedOpenAiFile.id,
+      //         id: createdDocument.data.id,
+      //       },
+      //       userId: userToken.sub,
+      //     }),
+      //   ]);
+      // });
     } catch (error) {
-      console.log(error);
+      console.log(error)
       throw new HttpException(
         error?.message ?? 'V2: Failed to upload file',
         HttpStatus.BAD_REQUEST,
