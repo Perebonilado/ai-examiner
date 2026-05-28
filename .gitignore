@@ -54,3 +54,6 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Google service account credentials (load via GOOGLE_SERVICE_ACCOUNT_BASE64 env var)
+src/integrations/google/config/*.json
