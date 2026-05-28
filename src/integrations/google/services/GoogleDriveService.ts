@@ -12,12 +12,16 @@ import { EnvironmentVariables } from 'src/EnvironmentVariables';
 @Injectable()
 export class GoogleDriveService {
   constructor() {
+    const credentials = JSON.parse(
+      Buffer.from(
+        EnvironmentVariables.config.googleServiceAccountBase64,
+        'base64',
+      ).toString('utf-8'),
+    );
+
     //service acc
     const auth = new google.auth.GoogleAuth({
-      keyFile: path.join(
-        __dirname,
-        '../config/service-account-google-drive.json',
-      ),
+      credentials,
       scopes: ['https://www.googleapis.com/auth/drive'],
     });
 
@@ -25,10 +29,8 @@ export class GoogleDriveService {
 
     //ws acc
     const authWs = new google.auth.JWT({
-      keyFile: path.join(
-        __dirname,
-        '../config/service-account-google-drive.json',
-      ),
+      email: credentials.client_email,
+      key: credentials.private_key,
       scopes: ['https://www.googleapis.com/auth/drive'],
       subject: this.workSpaceEmail, // Workspace user email to impersonate
     });
