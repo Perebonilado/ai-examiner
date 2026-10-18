@@ -9,14 +9,14 @@ import {
 import { createOpenAI } from '@ai-sdk/openai';
 import { translateEnglishToOtherLanguagePrompt } from 'src/constants/QuestionGenerationPromptV2';
 import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
-import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
+import { CLAUDE_CONN } from 'src/integrations/vercel-ai/services/ClaudeConn';
 import { AI } from 'src/integrations/vercel-ai/services/AI';
 
 @Injectable()
 export class VapiCallingService {
   constructor(
     @Inject(GEMINI_CONN) private readonly geminiConn: AI,
-    @Inject(OPENAI_CONN) private readonly openAIConn: AI,
+    @Inject(CLAUDE_CONN) private readonly claudeConn: AI,
   ) {
     this.client = new VapiClient({
       token: EnvironmentVariables.config.vapiPrivateKey,
@@ -74,7 +74,7 @@ export class VapiCallingService {
   public async translateContent(content: string[], language: string) {
     try {
       const promises = content.map((c) => {
-        return this.openAIConn.generateText({
+        return this.claudeConn.generateText({
           prompt: translateEnglishToOtherLanguagePrompt(c, language),
         });
       });

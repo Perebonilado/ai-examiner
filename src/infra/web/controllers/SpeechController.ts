@@ -12,14 +12,14 @@ import { TextToSpeechDto } from 'src/dto/TextToSpeechDto';
 import { SpeechService } from 'src/integrations/open-ai/services/SpeechService';
 import { AI } from 'src/integrations/vercel-ai/services/AI';
 import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
-import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
+import { CLAUDE_CONN } from 'src/integrations/vercel-ai/services/ClaudeConn';
 
 @Controller('speech')
 export class SpeechController {
   constructor(
     @Inject(SpeechService) private speechService: SpeechService,
     @Inject(GEMINI_CONN) private readonly geminiConn: AI,
-    @Inject(OPENAI_CONN) private readonly openAIConn: AI,
+    @Inject(CLAUDE_CONN) private readonly claudeConn: AI,
   ) {}
 
   @Post('convert-text')
@@ -28,7 +28,7 @@ export class SpeechController {
       let textToUse = body.text;
 
       if (body?.language?.toLowerCase() !== 'english') {
-        const text = await this.openAIConn.generateText({
+        const text = await this.claudeConn.generateText({
           prompt: translateEnglishToOtherLanguagePrompt(
             body.text,
             body.language,

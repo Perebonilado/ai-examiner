@@ -22,7 +22,7 @@ import {
 import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
 import { DocumentSummaryQueryService } from 'src/query/services/DocumentSummaryQueryService';
 import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
-import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
+import { CLAUDE_CONN } from 'src/integrations/vercel-ai/services/ClaudeConn';
 import { AI } from 'src/integrations/vercel-ai/services/AI';
 
 @Injectable()
@@ -45,7 +45,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
     @Inject(DocumentSummaryQueryService)
     private documentSummaryQueryService: DocumentSummaryQueryService,
     @Inject(GEMINI_CONN) private readonly geminiConn: AI,
-    @Inject(OPENAI_CONN) private readonly openAIConn: AI,
+    @Inject(CLAUDE_CONN) private readonly claudeConn: AI,
   ) {
     super();
   }
@@ -379,7 +379,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
       const summary =
         await this.documentSummaryQueryService.findByDocumentId(documentId);
 
-      const imageDescription = await this.openAIConn.generateText({
+      const imageDescription = await this.claudeConn.generateText({
         messages: [
           {
             role: 'user',
@@ -388,16 +388,13 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
               {
                 type: 'image',
                 image: image,
-                providerOptions: {
-                  openai: { imageDetail: 'high' },
-                },
               },
             ],
           },
         ],
       });
 
-      const refined = await this.openAIConn.generateText({
+      const refined = await this.claudeConn.generateText({
         prompt: getRefinedImagePrompt({
           imageDesc: imageDescription,
           initialQuery,
@@ -428,7 +425,7 @@ export class CreateDocumentMessageHandler extends AbstractRequestHandlerTemplate
         return m;
       }) as { role: 'system' | 'user'; content: string }[];
 
-      const text = await this.openAIConn.generateText({
+      const text = await this.claudeConn.generateText({
         messages: [
           ...prevMessages,
           {

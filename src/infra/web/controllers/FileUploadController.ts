@@ -34,7 +34,7 @@ import { CreateStoredFileHandler } from 'src/business/handlers/StoredFile/Create
 import { ILovePdfService } from 'src/integrations/i-love-pdf/services/ILovePdfService';
 import { TopicV2Model } from '../models/TopicV2Model';
 import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
-import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
+import { CLAUDE_CONN } from 'src/integrations/vercel-ai/services/ClaudeConn';
 import { AI } from 'src/integrations/vercel-ai/services/AI';
 
 @Controller('file-upload')
@@ -57,7 +57,7 @@ export class FileUploadController {
     private createStoredFileHandler: CreateStoredFileHandler,
     @Inject(ILovePdfService) private iLovePDFService: ILovePdfService,
     @Inject(GEMINI_CONN) private readonly geminiConn: AI,
-    @Inject(OPENAI_CONN) private readonly openAIConn: AI,
+    @Inject(CLAUDE_CONN) private readonly claudeConn: AI,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -320,12 +320,9 @@ export class FileUploadController {
 
   private async summarizeDocumentV2(sourceText: string) {
     try {
-      const summary = await this.openAIConn.generateText(
-        {
-          prompt: generateDocumentSummaryPromptV2(sourceText),
-        },
-        { model: 'gpt-4.1-nano' },
-      );
+      const summary = await this.claudeConn.generateText({
+        prompt: generateDocumentSummaryPromptV2(sourceText),
+      });
 
       return summary;
     } catch (error) {
@@ -348,12 +345,12 @@ export class FileUploadController {
        * tag each page within each batch with predefined topics
        */
 
-      const genericTopicsResponse = await this.openAIConn.generateObject({
+      const genericTopicsResponse = await this.claudeConn.generateObject({
         prompt: generateGenericTopicsPrompt(documentByPages.join('\n')),
         schemaName: 'Topics',
         schema: TopicsSchema,
         schemaDescription: 'Topics for study material',
-      }, {model: 'gpt-4.1-nano'});
+      });
 
       const genericTopics = genericTopicsResponse.object.topics!;
       const totalPages = documentByPages.length;
@@ -374,7 +371,7 @@ export class FileUploadController {
                 ? 'Unavailable as page is the last page'
                 : batch[currentIndex + 1];
             if (pageItem.trim().length) {
-              const text = await this.openAIConn.generateText({
+              const text = await this.claudeConn.generateText({
                 prompt: generateTopicCategorizationPrompt({
                   genericTopics: genericTopics.map((t) =>
                     t.topic.toLowerCase(),

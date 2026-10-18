@@ -7,7 +7,7 @@ import { HandlerError } from 'src/error-handlers/business/HandlerError';
 import { DocumentTopicQueryService } from 'src/query/services/DocumentTopicQueryService';
 import { PineconeChunkService } from 'src/integrations/pinecone/services/PineconeChunksService';
 import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
-import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
+import { CLAUDE_CONN } from 'src/integrations/vercel-ai/services/ClaudeConn';
 import { AI } from 'src/integrations/vercel-ai/services/AI';
 import { batchItems, PDFContent } from 'src/utils';
 import { getKeypointPrompt, getSprintReadContentPrompt } from 'src/constants';
@@ -32,7 +32,7 @@ export class CreateSprintReadContentHandler extends AbstractRequestHandlerTempla
     @Inject(PineconeChunkService)
     private readonly pineconeService: PineconeChunkService,
     @Inject(GEMINI_CONN) private readonly geminiConn: AI,
-    @Inject(OPENAI_CONN) private readonly openAIConn: AI,
+    @Inject(CLAUDE_CONN) private readonly claudeConn: AI,
     @Inject(DocumentSummaryQueryService)
     private readonly documentSummaryQueryService: DocumentSummaryQueryService,
     @Inject(UpdateStoredFileHandler)
