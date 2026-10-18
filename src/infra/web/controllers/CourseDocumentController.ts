@@ -74,7 +74,7 @@ import { GoogleSearchService } from 'src/integrations/google/services/GoogleSear
 import { GoogleImageSearchQuerySchema } from 'src/schemas/GoogleImageSearchQuerySchema';
 import { GoogleImageSearchModel } from 'src/integrations/google/models/GoogleSearchModel';
 import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
-import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
+import { CLAUDE_CONN } from 'src/integrations/vercel-ai/services/ClaudeConn';
 import { AI } from 'src/integrations/vercel-ai/services/AI';
 import { CreateSprintReadContentHandler } from 'src/business/handlers/StoredFile/CreateSprintReadContentHandler';
 
@@ -118,7 +118,7 @@ export class CourseDocumentController {
     @Inject(GoogleSearchService)
     private googleSearchService: GoogleSearchService,
     @Inject(GEMINI_CONN) private readonly geminiConn: AI,
-    @Inject(OPENAI_CONN) private readonly openAIConn: AI,
+    @Inject(CLAUDE_CONN) private readonly claudeConn: AI,
     @Inject(CreateSprintReadContentHandler)
     private createSprintReadContentHandler: CreateSprintReadContentHandler,
   ) {}
@@ -939,7 +939,7 @@ export class CourseDocumentController {
     summary: string;
   }) {
     try {
-      const response = await this.openAIConn.generateObject({
+      const response = await this.claudeConn.generateObject({
         schemaName: 'modifiedQuery',
         schema: GoogleImageSearchQuerySchema,
         messages: [
@@ -962,7 +962,7 @@ export class CourseDocumentController {
 
   private async getYoutubeKeywords(summary: string) {
     try {
-      const response = await this.openAIConn.generateObject({
+      const response = await this.claudeConn.generateObject({
         schemaName: 'keywords',
         schema: YoutubeKeywordsSchema,
         messages: [
@@ -989,7 +989,7 @@ export class CourseDocumentController {
 
   private async simplifyTextContent(content: string, summary: string) {
     try {
-      const response = await this.openAIConn.generateObject({
+      const response = await this.claudeConn.generateObject({
         schemaName: 'simplified',
         schema: SimplifiedPDFArraySchema,
         messages: [

@@ -87,7 +87,7 @@ import { EssayQuestionAnalysisStatus } from '../models/EssayQuestionAnalysisStat
 import { EssayQuestionAnalysisQueryService } from 'src/query/services/EssayQuestionAnalysisQueryService';
 import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
 import { AI } from 'src/integrations/vercel-ai/services/AI';
-import { OPENAI_CONN } from 'src/integrations/vercel-ai/services/OpenAIConn';
+import { CLAUDE_CONN } from 'src/integrations/vercel-ai/services/ClaudeConn';
 
 @Controller('questions')
 export class QuestionsController {
@@ -137,7 +137,7 @@ export class QuestionsController {
     @Inject(EssayQuestionAnalysisQueryService)
     private essayQuestionAnalysisQueryService: EssayQuestionAnalysisQueryService,
     @Inject(GEMINI_CONN) private readonly geminiConn: AI,
-    @Inject(OPENAI_CONN) private readonly openAIConn: AI,
+    @Inject(CLAUDE_CONN) private readonly claudeConn: AI,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -423,7 +423,7 @@ export class QuestionsController {
           5,
         );
 
-      const text = await this.openAIConn.generateText({
+      const text = await this.claudeConn.generateText({
         prompt: generateSourceInfoPromptV2(
           body.question,
           relevantChunks.join('\n'),
@@ -929,7 +929,7 @@ export class QuestionsController {
           ),
       });
       const questionPromises = questionsPerBatch.map((batchSize, index) =>
-        this.openAIConn.generateObject<typeof questionSchema>({
+        this.claudeConn.generateObject<typeof questionSchema>({
           prompt: generatePromptForQuestionsV2({
             difficulty: body.difficulty,
             includeCaseStudies: body.includeUseCases,
@@ -1220,7 +1220,7 @@ export class QuestionsController {
 
         const joinedChunk = chunks.join('\n');
 
-        const analyzed = await this.openAIConn.generateObject({
+        const analyzed = await this.claudeConn.generateObject({
           prompt: generateEssayAnalysisPrompt({
             question: staged.question,
             sourceText: joinedChunk,

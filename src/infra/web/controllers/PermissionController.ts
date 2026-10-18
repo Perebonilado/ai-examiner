@@ -138,6 +138,8 @@ export class PermissionController {
       await this.questionQueryService.getUserQuestionsCountForCurrentMonth(
         userId,
       );
+    
+    // const numberOfEasyReadDocumentsConverted 
 
     const modifiedPermissions = permission.permissions
       ? (permission.permissions as any)

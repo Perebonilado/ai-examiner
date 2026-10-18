@@ -44,6 +44,7 @@ export interface Config {
   asposeClientId: string;
   asposeClientSecret: string;
   geminiApiKey: string;
+  anthropicApiKey: string;
   adminEmail: string;
   googleServiceAccountBase64: string;
 }
@@ -95,6 +96,7 @@ export default (): Config => ({
   asposeClientId: process.env.ASPOSE_CLIENT_ID,
   asposeClientSecret: process.env.ASPOSE_CLIENT_SECRET,
   geminiApiKey: process.env.GEMINI_API_KEY,
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   adminEmail: process.env.ADMIN_EMAIL,
   googleServiceAccountBase64: process.env.GOOGLE_SERVICE_ACCOUNT_BASE64,
 });
