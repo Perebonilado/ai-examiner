@@ -1,3 +1,4 @@
+import { EasyReadAllowanceService } from '../services/EasyReadAllowanceService';
 import {
   Controller,
   Inject,
@@ -121,7 +122,33 @@ export class CourseDocumentController {
     @Inject(CLAUDE_CONN) private readonly claudeConn: AI,
     @Inject(CreateSprintReadContentHandler)
     private createSprintReadContentHandler: CreateSprintReadContentHandler,
+    @Inject(EasyReadAllowanceService)
+    private easyReadAllowanceService: EasyReadAllowanceService,
   ) {}
+
+  /** 404 unless the document belongs to the signed-in user. */
+  private async assertOwnsDocument(documentId: string, userId: string) {
+    const document =
+      await this.courseDocumentQueryService.findCourseDocumentById(
+        documentId,
+        userId,
+      );
+    if (!document) {
+      throw new HttpException('Document not found', HttpStatus.NOT_FOUND);
+    }
+    return document;
+  }
+
+  /**
+   * Easy Read endpoints: the document must be the user's own, and free-plan users must have
+   * Easy Read time left this month (403 EASY_READ_LIMIT_REACHED otherwise). Runs before any
+   * file download or AI call.
+   */
+  private async assertCanOpenInEasyRead(documentId: string, request: Request) {
+    const userToken = request['user'] as VerifiedTokenModel;
+    await this.assertOwnsDocument(documentId, userToken.sub);
+    await this.easyReadAllowanceService.assertCanUseEasyRead(userToken.sub);
+  }
 
   @UseGuards(AuthGuard)
   @Get('')
@@ -193,6 +220,7 @@ export class CourseDocumentController {
     @Res() res: Response,
     @Req() request: Request,
   ) {
+    await this.assertCanOpenInEasyRead(documentId, request);
     try {
       const userToken = request['user'] as VerifiedTokenModel;
       const storedFile =
@@ -317,6 +345,7 @@ export class CourseDocumentController {
     @Param('documentId') documentId: string,
     @Req() request: Request,
   ): Promise<ModifiedContentModel> {
+    await this.assertCanOpenInEasyRead(documentId, request);
     try {
       const userToken = request['user'] as VerifiedTokenModel;
       const storedFile =
@@ -413,6 +442,7 @@ export class CourseDocumentController {
     @Req() request: Request,
     @Res() res: Response,
   ) {
+    await this.assertCanOpenInEasyRead(documentId, request);
     try {
       const userToken = request['user'] as VerifiedTokenModel;
       const storedFile =
@@ -505,11 +535,14 @@ export class CourseDocumentController {
     }
   }
 
-  // @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard)
   @Get('/sprint-read/:documentId')
   public async getSprintReadContent(
     @Param('documentId') documentId: string,
+    @Req() request: Request,
   ) {
+    const userToken = request['user'] as VerifiedTokenModel;
+    await this.assertOwnsDocument(documentId, userToken.sub);
     const existingSprintRead =
       await this.storedFileQueryService.findByDocumentId(documentId);
     let content: string[];

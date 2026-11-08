@@ -17,6 +17,7 @@ import { QuestionProgressModel } from '../models/QuestionProgressModel';
 import { PerformanceTrackingModel } from '../models/PerformanceTrackingModel';
 import { OralQuestionAnalysisModel } from '../models/OralQuestionAnalysisModel';
 import { CallCreditsModel } from '../models/CallCreditsModel';
+import { EasyReadUsageModel } from '../models/EasyReadUsageModel';
 import { FlaggedQuestionModel } from '../models/FlaggedQuestionsModel';
 import { FlaggedDocumentMessageModel } from '../models/FlaggedDocumentMessageModel';
 import { PreferredLanguageModel } from '../models/PreferredLanguageModel';
@@ -61,6 +62,7 @@ export const databaseProviders = [
         PerformanceTrackingModel,
         OralQuestionAnalysisModel,
         CallCreditsModel,
+        EasyReadUsageModel,
         FlaggedQuestionModel,
         FlaggedDocumentMessageModel,
         PreferredLanguageModel,

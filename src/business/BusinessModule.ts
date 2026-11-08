@@ -27,6 +27,7 @@ import { DeleteUserDataHandler } from './handlers/User/DeleteUserDataHandler';
 import { CreateOralQuestionAnalysisHandler } from './handlers/OralQuestionAnalysis/CreateOralQuestionAnalysisHandler';
 import { CreateCallCreditsHandler } from './handlers/CallCredits/CreateCallCreditsHandler';
 import { UpdateCallCreditsHandler } from './handlers/CallCredits/UpdateCallCreditsHandler';
+import { RecordEasyReadUsageHandler } from './handlers/EasyReadUsage/RecordEasyReadUsageHandler';
 import { CreateFlaggedQuestionHandler } from './handlers/FlaggedQuestion/CreateFlaggedQuestionHandler';
 import { CreateFlaggedMessageHandler } from './handlers/FlaggedDocumentMessage/CreateFlaggedDocumentMessageHandler';
 import { CreatePreferredLanguageHandler } from './handlers/PreferredLanguage/CreatePreferredLanguageHandler';
@@ -69,6 +70,7 @@ import { CreateSprintReadContentHandler } from './handlers/StoredFile/CreateSpri
     CreateOralQuestionAnalysisHandler,
     CreateCallCreditsHandler,
     UpdateCallCreditsHandler,
+    RecordEasyReadUsageHandler,
     CreateFlaggedQuestionHandler,
     CreateFlaggedMessageHandler,
     CreatePreferredLanguageHandler,
@@ -109,6 +111,7 @@ import { CreateSprintReadContentHandler } from './handlers/StoredFile/CreateSpri
     CreateOralQuestionAnalysisHandler,
     CreateCallCreditsHandler,
     UpdateCallCreditsHandler,
+    RecordEasyReadUsageHandler,
     CreateFlaggedQuestionHandler,
     CreateFlaggedMessageHandler,
     CreatePreferredLanguageHandler,
