@@ -31,6 +31,8 @@ import { CallCreditsRepository } from 'src/business/repository/CallCreditsReposi
 import { CallCreditsSequelizeRepository } from './repository/CallCreditsSequelizeRepository';
 import { EasyReadUsageRepository } from 'src/business/repository/EasyReadUsageRepository';
 import { EasyReadUsageSequelizeRepository } from './repository/EasyReadUsageSequelizeRepository';
+import { SimplifiedPageRepository } from 'src/business/repository/SimplifiedPageRepository';
+import { SimplifiedPageSequelizeRepository } from './repository/SimplifiedPageSequelizeRepository';
 import { FlaggedQuestionRepository } from 'src/business/repository/FlaggedQuestionRepository';
 import { FlaggedQuestionSequelizeRepository } from './repository/FlaggedQuestionSequelizeRepository';
 import { FlaggedDocumentMessageRepository } from 'src/business/repository/FlaggedDocumentMessageRepository';
@@ -112,6 +114,10 @@ import { DocumentReadingProgressSequelizeRepository } from './repository/Documen
       useClass: EasyReadUsageSequelizeRepository,
     },
     {
+      provide: SimplifiedPageRepository,
+      useClass: SimplifiedPageSequelizeRepository,
+    },
+    {
       provide: FlaggedQuestionRepository,
       useClass: FlaggedQuestionSequelizeRepository,
     },
@@ -160,6 +166,7 @@ import { DocumentReadingProgressSequelizeRepository } from './repository/Documen
     OralQuestionAnalysisRepository,
     CallCreditsRepository,
     EasyReadUsageRepository,
+    SimplifiedPageRepository,
     FlaggedQuestionRepository,
     FlaggedDocumentMessageRepository,
     PreferredLanguageRepository,

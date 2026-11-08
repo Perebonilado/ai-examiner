@@ -27,6 +27,9 @@ import { PreferredLanguageController } from './controllers/PreferredLanguageCont
 import { ReadingProgressController } from './controllers/ReadingProgressController';
 import { EasyReadController } from './controllers/EasyReadController';
 import { EasyReadAllowanceService } from './services/EasyReadAllowanceService';
+import { DocumentPdfService } from './services/easy-read/DocumentPdfService';
+import { EasyReadSimplificationService } from './services/easy-read/EasyReadSimplificationService';
+import { InfraRepositoryModule } from '../db/InfraRepositoryModule';
 
 @Module({
   imports: [
@@ -36,12 +39,16 @@ import { EasyReadAllowanceService } from './services/EasyReadAllowanceService';
     IntegrationsModule,
     BusinessModule,
     QueryModule,
+    // The Easy Read simplification service writes page rows directly.
+    InfraRepositoryModule,
   ],
   providers: [
     AuthService,
     GoogleStrategy,
     GoogleAuthService,
     EasyReadAllowanceService,
+    DocumentPdfService,
+    EasyReadSimplificationService,
   ],
   controllers: [
     QuestionsController,
