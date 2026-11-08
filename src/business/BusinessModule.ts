@@ -14,7 +14,6 @@ import { CreateQuestionTopicHandler } from './handlers/QuestionTopic/CreateQuest
 import { UpdateUserHandler } from './handlers/User/UpdateUserHandler';
 import { CreateSubscriptionHandler } from './handlers/Subscription/CreateSubscriptionHandler';
 import { UpdateSubscriptionHandler } from './handlers/Subscription/UpdateSubscriptionHandler';
-import { CreateDocumentMessageHandler } from './handlers/DocumentMessage/CreateDocumentMessageHandler';
 import { DeleteScoreHandler } from './handlers/Score/DeleteScoreHandler';
 import { DeleteQuestionTopicHandler } from './handlers/QuestionTopic/DeleteQuestionTopicHandler';
 import { DeleteQuestionHandler } from './handlers/Question/DeleteQuestionHandler';
@@ -57,7 +56,6 @@ import { CreateSprintReadContentHandler } from './handlers/StoredFile/CreateSpri
     UpdateUserHandler,
     CreateSubscriptionHandler,
     UpdateSubscriptionHandler,
-    CreateDocumentMessageHandler,
     DeleteScoreHandler,
     DeleteQuestionTopicHandler,
     DeleteQuestionHandler,
@@ -98,7 +96,6 @@ import { CreateSprintReadContentHandler } from './handlers/StoredFile/CreateSpri
     UpdateUserHandler,
     CreateSubscriptionHandler,
     UpdateSubscriptionHandler,
-    CreateDocumentMessageHandler,
     DeleteScoreHandler,
     DeleteQuestionTopicHandler,
     DeleteQuestionHandler,

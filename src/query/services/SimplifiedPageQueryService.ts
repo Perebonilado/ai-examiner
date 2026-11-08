@@ -18,6 +18,19 @@ export class SimplifiedPageQueryService {
     }
   }
 
+  /** Every page's text, in page order (document chat). */
+  public async findPageTexts(documentId: string) {
+    try {
+      return await SimplifiedPageModel.findAll({
+        where: { documentId },
+        attributes: ['pageNumber', 'sourceText'],
+        order: [['pageNumber', 'ASC']],
+      });
+    } catch (error) {
+      throw new QueryError('Failed to find page text').InnerError(error);
+    }
+  }
+
   public async findSourceTextById(id: string) {
     try {
       return await SimplifiedPageModel.findOne({

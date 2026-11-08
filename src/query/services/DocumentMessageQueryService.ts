@@ -18,6 +18,26 @@ export class DocumentMessageQueryService {
     }
   }
 
+  /** The newest messages of a chat, oldest first (for the prompt). */
+  public async findRecentMessages(courseDocumentId: string, limit: number) {
+    try {
+      const messages = await DocumentMessageModel.findAll({
+        where: { courseDocumentId },
+        attributes: ['sender', 'message', 'createdOn'],
+        order: [['createdOn', 'DESC']],
+        limit,
+      });
+      return messages.reverse().map((m) => ({
+        sender: m.sender as string,
+        message: m.message,
+      }));
+    } catch (error) {
+      throw new QueryError(
+        'Failed to find recent document messages',
+      ).InnerError(error);
+    }
+  }
+
   public async findDocumentMessagesByCourseDocumentId({
     courseDocumentId,
     limit = 5,

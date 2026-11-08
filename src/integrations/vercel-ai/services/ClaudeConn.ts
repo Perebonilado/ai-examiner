@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic, { APIUserAbortError } from '@anthropic-ai/sdk';
 import {
   AI,
   GenerateObjectModel,
@@ -15,6 +15,31 @@ export const CLAUDE_CONN = Symbol('CLAUDE_CONN');
 
 const DEFAULT_MODEL = 'claude-sonnet-5-5';
 const MAX_TOKENS = 16000;
+// Re-runs the request on a fallback model if Claude declines it.
+const FALLBACK_BETA = 'server-side-fallback-2026-07-01';
+
+export interface StreamTextArgs {
+  system?: string;
+  /** Cache the system prompt (worth it when it is long and reused, e.g. a whole document). */
+  cacheSystem?: boolean;
+  messages: Anthropic.Beta.BetaMessageParam[];
+  effort?: 'low' | 'medium' | 'high';
+  maxTokens?: number;
+  /** Aborting stops generation (and billing) straight away. */
+  signal?: AbortSignal;
+  onText: (text: string) => void;
+  /** Called when the model starts thinking before it writes. */
+  onThinking?: () => void;
+}
+
+export interface StreamTextResult {
+  text: string;
+  /** end_turn, max_tokens, refusal, ...; null when aborted. */
+  stopReason: string | null;
+  aborted: boolean;
+  model?: string;
+  usage?: Anthropic.Beta.BetaUsage;
+}
 
 @Injectable()
 export class ClaudeConn implements AI {
@@ -65,6 +90,67 @@ export class ClaudeConn implements AI {
     }
   }
 
+  /**
+   * Streams a reply, calling onText for each piece as it is written. Resolves once the reply is
+   * complete or aborted; throws on API errors.
+   */
+  public async streamText(args: StreamTextArgs): Promise<StreamTextResult> {
+    let text = '';
+    const stream = this.client.beta.messages.stream(
+      {
+        model: DEFAULT_MODEL,
+        max_tokens: args.maxTokens ?? MAX_TOKENS,
+        betas: [FALLBACK_BETA],
+        fallbacks: 'default',
+        system: args.system
+          ? [
+              {
+                type: 'text',
+                text: args.system,
+                ...(args.cacheSystem
+                  ? { cache_control: { type: 'ephemeral' as const } }
+                  : {}),
+              },
+            ]
+          : undefined,
+        messages: args.messages,
+        ...(args.effort ? { output_config: { effort: args.effort } } : {}),
+      },
+      { signal: args.signal },
+    );
+
+    try {
+      for await (const event of stream) {
+        if (
+          event.type === 'content_block_start' &&
+          event.content_block.type === 'thinking'
+        ) {
+          args.onThinking?.();
+        } else if (
+          event.type === 'content_block_delta' &&
+          event.delta.type === 'text_delta' &&
+          event.delta.text
+        ) {
+          text += event.delta.text;
+          args.onText(event.delta.text);
+        }
+      }
+      const final = await stream.finalMessage();
+      return {
+        text,
+        stopReason: final.stop_reason,
+        aborted: false,
+        model: final.model,
+        usage: final.usage,
+      };
+    } catch (error) {
+      if (error instanceof APIUserAbortError || args.signal?.aborted) {
+        return { text, stopReason: null, aborted: true };
+      }
+      throw error;
+    }
+  }
+
   private async createMessage(
     args: GenerateTextModel,
     options?: ModelOptions,
@@ -76,7 +162,7 @@ export class ClaudeConn implements AI {
       model: options?.model || DEFAULT_MODEL,
       max_tokens: MAX_TOKENS,
       // Re-runs the request on a fallback model if Claude declines it.
-      betas: ['server-side-fallback-2026-07-01'],
+      betas: [FALLBACK_BETA],
       fallbacks: 'default',
       system: system || undefined,
       messages,
