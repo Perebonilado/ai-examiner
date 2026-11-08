@@ -14,6 +14,11 @@ export const saltRounds = 10;
 
 export const maxNumberOfQuestionGenerationForFreePlanTier = 1;
 
+/** Free plan: minutes of Easy Read per calendar month (UTC), in seconds. */
+export const freePlanEasyReadSecondsPerMonth = 600;
+/** The most one Easy Read usage report can add (the app reports about every 15 seconds). */
+export const maxEasyReadSecondsPerReport = 60;
+
 export const USRegionFreeTimeMs = 7_200_000;
 export const AfricanFreeTimeMs = 180000;
 

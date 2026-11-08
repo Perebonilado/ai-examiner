@@ -25,6 +25,8 @@ import { CallCreditsController } from './controllers/CallCreditsController';
 import { FlagContentController } from './controllers/FlagContentController';
 import { PreferredLanguageController } from './controllers/PreferredLanguageController';
 import { ReadingProgressController } from './controllers/ReadingProgressController';
+import { EasyReadController } from './controllers/EasyReadController';
+import { EasyReadAllowanceService } from './services/EasyReadAllowanceService';
 
 @Module({
   imports: [
@@ -35,7 +37,12 @@ import { ReadingProgressController } from './controllers/ReadingProgressControll
     BusinessModule,
     QueryModule,
   ],
-  providers: [AuthService, GoogleStrategy, GoogleAuthService],
+  providers: [
+    AuthService,
+    GoogleStrategy,
+    GoogleAuthService,
+    EasyReadAllowanceService,
+  ],
   controllers: [
     QuestionsController,
     AuthController,
@@ -55,7 +62,8 @@ import { ReadingProgressController } from './controllers/ReadingProgressControll
     CallCreditsController,
     FlagContentController,
     PreferredLanguageController,
-    ReadingProgressController
+    ReadingProgressController,
+    EasyReadController,
   ],
 })
 export class InfraWebModule {}
