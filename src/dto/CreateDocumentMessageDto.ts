@@ -14,9 +14,13 @@ export interface CreateDocumentMessageDto {
     documentId: string;
     threadId: string;
   };
-   imageDescriptionData?: {
+  imageDescriptionData?: {
     imageUrl: string;
-   }
+  };
+  /** Google Translate language code the app is shown in (e.g. "es"). */
+  language?: string;
+  /** Resending a message whose reply failed: the message itself is already saved. */
+  retry?: boolean;
 }
 
 export interface NotSureQuestion {

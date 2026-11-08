@@ -30,6 +30,7 @@ import { EasyReadAllowanceService } from './services/EasyReadAllowanceService';
 import { DocumentPdfService } from './services/easy-read/DocumentPdfService';
 import { EasyReadSimplificationService } from './services/easy-read/EasyReadSimplificationService';
 import { InfraRepositoryModule } from '../db/InfraRepositoryModule';
+import { DocumentChatService } from './services/document-chat/DocumentChatService';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { InfraRepositoryModule } from '../db/InfraRepositoryModule';
     EasyReadAllowanceService,
     DocumentPdfService,
     EasyReadSimplificationService,
+    DocumentChatService,
   ],
   controllers: [
     QuestionsController,

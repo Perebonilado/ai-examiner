@@ -1,11 +1,60 @@
-import { HttpException, HttpStatus, Injectable, Inject } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { PineconeClient } from './PineconeClient';
-import { IntegratedRecord, RecordMetadata } from '@pinecone-database/pinecone';
+import {
+  Errors,
+  IntegratedRecord,
+  RecordMetadata,
+} from '@pinecone-database/pinecone';
+
+const RERANK_MODEL = 'bge-reranker-v2-m3';
 
 @Injectable()
 export class PineconeChunkService extends PineconeClient {
+  private readonly logger = new Logger(PineconeChunkService.name);
+  /** Turned off for this process if the index rejects reranking (no retrying a request that can't work). */
+  private rerankAvailable = true;
+
   constructor() {
     super();
+  }
+
+  /**
+   * The best `topN` passages for a question: takes twice as many candidates by meaning, then
+   * reranks them against the question. Falls back to the plain search if reranking fails.
+   */
+  public async searchPassages(query: string, documentId: string, topN = 8) {
+    if (this.rerankAvailable) {
+      try {
+        const response = await this.index
+          .namespace(this.documentsNameSpace)
+          .searchRecords({
+            query: {
+              topK: topN * 2,
+              inputs: { text: query },
+              filter: { documentId },
+            },
+            fields: ['text'],
+            rerank: {
+              model: RERANK_MODEL,
+              rankFields: ['text'],
+              topN,
+              // Pages can be longer than the reranker's input; rank on their start.
+              parameters: { truncate: 'END' },
+            },
+          });
+        return response.result.hits.map((hit) => hit.fields['text'] as string);
+      } catch (error) {
+        const permanent =
+          error instanceof Errors.PineconeBadRequestError ||
+          error instanceof Errors.PineconeNotFoundError ||
+          error instanceof Errors.PineconeAuthorizationError;
+        if (permanent) this.rerankAvailable = false;
+        this.logger.warn(
+          `Rerank failed (${permanent ? 'turned off' : 'once'}): ${error?.message ?? error}`,
+        );
+      }
+    }
+    return this.semanticChunkSearch(query, documentId, topN);
   }
 
   public async upsertChunks(
