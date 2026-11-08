@@ -1,4 +1,10 @@
 import { EasyReadAllowanceService } from '../services/EasyReadAllowanceService';
+import { DocumentPdfService } from '../services/easy-read/DocumentPdfService';
+import {
+  EasyReadSimplificationService,
+  SimplifiedPagesResponse,
+} from '../services/easy-read/EasyReadSimplificationService';
+import { parsePageList } from '../services/easy-read/pageWork';
 import {
   Controller,
   Inject,
@@ -23,14 +29,9 @@ import { CreateCourseDocumentDto } from 'src/dto/CreateCourseDocumentDto';
 import { CourseDocumentQueryService } from 'src/query/services/CourseDocumentQueryService';
 import { CreateQuestionHandler } from 'src/business/handlers/Question/CreateQuestionHandler';
 import { ExaminerService } from 'src/integrations/open-ai/services/ExaminerService';
-import {
-  googlePresentationFileFormat,
-  inactiveSubscriptionStatuses,
-  pdfMimeType,
-} from 'src/constants';
+import { inactiveSubscriptionStatuses } from 'src/constants';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import {
-  batchItems,
   createSimplifiedPdf,
   extractJSONDataFromMessages,
   generateHTMLFromContent,
@@ -54,7 +55,6 @@ import { DocumentSummaryQueryService } from 'src/query/services/DocumentSummaryQ
 import { YoutubeKeywordsSchema } from 'src/schemas/YouTubeKeywordsSchema';
 import {
   getGoogleImageQueryPrompt,
-  getTextSimplificationPrompt,
   YoutubeKeyWordPrompt,
 } from 'src/constants/QuestionGenerationPromptV2';
 import { YoutubeSearchService } from 'src/integrations/rapid/services/YoutubeSearchService';
@@ -62,14 +62,11 @@ import { YoutubeSearchModelRapid } from 'src/integrations/rapid/models/YoutubeSe
 import { CreateRelatedVideoHandler } from 'src/business/handlers/RelatedVideo/CreateRelatedVideoHandler';
 import { RelatedVideoQueryService } from 'src/query/services/RelatedVideoQueryService';
 import { GoogleDriveService } from 'src/integrations/google/services/GoogleDriveService';
-import { SimplifiedPDFArraySchema } from 'src/schemas/SimplifiedPDFSchema';
-import { DocumentFileModel } from '../models/DocumentFileModel';
 import { StoredFileQueryService } from 'src/query/services/StoredFileQueryService';
 import { ExtractTextService } from 'src/integrations/text-extraction/services/ExtractTextService';
 import { UpdateStoredFileHandler } from 'src/business/handlers/StoredFile/UpdateStoredFileHandler';
 import { StoredFileUrlModel } from '../models/StoredFileModel';
 import { FileConversionService } from 'src/integrations/aspose/services/FileConversionService';
-import { ExportFormat } from 'asposeslidescloud';
 import { ModifiedContentModel } from '../models/ModifiedContentModel';
 import { GoogleSearchService } from 'src/integrations/google/services/GoogleSearchService';
 import { GoogleImageSearchQuerySchema } from 'src/schemas/GoogleImageSearchQuerySchema';
@@ -124,6 +121,10 @@ export class CourseDocumentController {
     private createSprintReadContentHandler: CreateSprintReadContentHandler,
     @Inject(EasyReadAllowanceService)
     private easyReadAllowanceService: EasyReadAllowanceService,
+    @Inject(DocumentPdfService)
+    private documentPdfService: DocumentPdfService,
+    @Inject(EasyReadSimplificationService)
+    private easyReadSimplificationService: EasyReadSimplificationService,
   ) {}
 
   /** 404 unless the document belongs to the signed-in user. */
@@ -213,6 +214,11 @@ export class CourseDocumentController {
     }
   }
 
+  /**
+   * The document as a PDF, for Easy Read's Original view. Cached by the browser (private,
+   * keyed by the stored file), so reopening a document doesn't download it again. Non-PDF files
+   * are converted on the fly and then stored as PDF once.
+   */
   @UseGuards(AuthGuard)
   @Get('/original-document-file/:documentId')
   public async getOriginalDocumentFile(
@@ -225,120 +231,95 @@ export class CourseDocumentController {
       const userToken = request['user'] as VerifiedTokenModel;
       const storedFile =
         await this.storedFileQueryService.findByDocumentId(documentId);
-      const document =
-        await this.courseDocumentQueryService.findCourseDocumentById(
-          documentId,
-          userToken.sub,
+      if (!storedFile?.originalFileId) {
+        throw new HttpException(
+          'Document file not found',
+          HttpStatus.NOT_FOUND,
         );
-
-      let fileToSend: Buffer;
-
-      if (storedFile.currentFileFormat === googlePresentationFileFormat) {
-        fileToSend = await this.googleDriveService.exportFileAsPDF(
-          storedFile.originalFileId,
-        );
-      } else if (storedFile.currentFileFormat === pdfMimeType) {
-        fileToSend = await this.googleDriveService.getFile(
-          storedFile.originalFileId,
-        );
-      } else {
-        // convert file to pdf
-        switch (storedFile.currentFileFormat) {
-          case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': {
-            const fileToConvert = await this.googleDriveService.getFile(
-              storedFile.originalFileId,
-            );
-            fileToSend = await this.fileConversionService.convertDocument({
-              buffer: fileToConvert,
-              extension: 'docx',
-              convertTo: 'pdf',
-            });
-            break;
-          }
-          case 'text/plain': {
-            const fileToConvert = await this.googleDriveService.getFile(
-              storedFile.originalFileId,
-            );
-            fileToSend = await this.fileConversionService.convertDocument({
-              buffer: fileToConvert,
-              extension: 'txt',
-              convertTo: 'Pdf',
-            });
-            break;
-          }
-          case 'application/vnd.ms-powerpoint': {
-            const fileToConvert = await this.googleDriveService.getFile(
-              storedFile.originalFileId,
-            );
-            fileToSend = await this.fileConversionService.convertSlide({
-              buffer: fileToConvert,
-              extension: 'ppt',
-              convertTo: ExportFormat['Pdf'],
-            });
-            break;
-          }
-          case 'application/vnd.openxmlformats-officedocument.presentationml.presentation': {
-            const fileToConvert = await this.googleDriveService.getFile(
-              storedFile.originalFileId,
-            );
-            fileToSend = await this.fileConversionService.convertSlide({
-              buffer: fileToConvert,
-              extension: 'pptx',
-              convertTo: ExportFormat['Pdf'],
-            });
-            break;
-          }
-          default: {
-            throw new HttpException(
-              'File format not supported for viewing',
-              HttpStatus.BAD_REQUEST,
-            );
-          }
-        }
       }
+
+      const etag = `"${storedFile.originalFileId}"`;
+      res.set({
+        'Cache-Control': 'private, max-age=604800',
+        ETag: etag,
+      });
+      if (request.headers['if-none-match'] === etag) {
+        res.status(HttpStatus.NOT_MODIFIED).end();
+        return;
+      }
+
+      const pdf = await this.documentPdfService.getPdf(storedFile);
 
       res.set({
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'inline; filename="file.pdf"',
       });
-      res.send(fileToSend);
+      res.send(pdf);
 
-      // update file if the type is not a pdf
-      if (storedFile.currentFileFormat !== pdfMimeType) {
-        setTimeout(async () => {
-          const newFileUploaded = await this.googleDriveService.uploadFile({
-            file: fileToSend,
-            mimetype: pdfMimeType,
-            originalFileName: document.title,
-            mimeTypeToSaveAs: pdfMimeType,
-          });
-
-          const storedFileContent =
-            await this.storedFileQueryService.findByDocumentId(documentId);
-
-          await this.updateStoredFileHandler.handle({
-            id: storedFile.id,
-            modifiedContent:
-              (storedFileContent.modifiedContent as unknown as PDFContent[][]) ||
-              [],
-            currentFileFormat: pdfMimeType,
-            originalFileId: newFileUploaded.fileId,
-          });
-
-          await this.googleDriveService.deleteFile(storedFile.originalFileId);
-        }, 500);
+      if (!this.documentPdfService.isPdf(storedFile)) {
+        const document =
+          await this.courseDocumentQueryService.findCourseDocumentById(
+            documentId,
+            userToken.sub,
+          );
+        void this.documentPdfService.persistAsPdf(
+          storedFile,
+          pdf,
+          document?.title ?? 'document',
+        );
       }
-
-      return;
     } catch (error) {
       console.log(error);
+      if (res.headersSent) return;
       throw new HttpException(
-        'Failed to get original file',
-        HttpStatus.BAD_REQUEST,
+        error?.status === HttpStatus.NOT_FOUND
+          ? 'Document file not found'
+          : 'Failed to get original file',
+        error?.status === HttpStatus.NOT_FOUND
+          ? HttpStatus.NOT_FOUND
+          : HttpStatus.BAD_REQUEST,
       );
     }
   }
 
+  /**
+   * Easy Read's simplified pages, as they're ready. Starts simplifying (or moves the page being
+   * read to the front) and returns at once with each page's status and the HTML of finished pages
+   * the app doesn't have yet. The app asks again every couple of seconds until status is "ready".
+   *   ?priority=<page being read>  &have=<pages the app already has, e.g. "1-4,7">
+   */
+  @UseGuards(AuthGuard)
+  @Get('/simplified-pages/:documentId')
+  public async getSimplifiedPages(
+    @Param('documentId') documentId: string,
+    @Query('priority') priority: string,
+    @Query('have') have: string,
+    @Req() request: Request,
+  ): Promise<SimplifiedPagesResponse> {
+    await this.assertCanOpenInEasyRead(documentId, request);
+    const userToken = request['user'] as VerifiedTokenModel;
+    const document =
+      await this.courseDocumentQueryService.findCourseDocumentById(
+        documentId,
+        userToken.sub,
+      );
+    try {
+      return await this.easyReadSimplificationService.getProgress(
+        documentId,
+        document?.title ?? 'document',
+        Math.max(1, Number(priority) || 1),
+        parsePageList(have, 100_000),
+      );
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(
+        error?.message ?? 'Failed to get simplified pages',
+        error?.status ?? HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  /** Every simplified page at once (older clients). Waits until all pages are done. */
   @UseGuards(AuthGuard)
   @Get('/modified-content/:documentId')
   public async getModifiedContent(
@@ -348,80 +329,18 @@ export class CourseDocumentController {
     await this.assertCanOpenInEasyRead(documentId, request);
     try {
       const userToken = request['user'] as VerifiedTokenModel;
-      const storedFile =
-        await this.storedFileQueryService.findByDocumentId(documentId);
-
-      if (
-        storedFile.originalFileId &&
-        storedFile.modifiedContent &&
-        JSON.parse(storedFile.modifiedContent).length
-      ) {
-        const htmlContent = (
-          JSON.parse(storedFile.modifiedContent) as PDFContent[][]
-        ).map((content) => {
-          const contentPerPage = generateHTMLFromContent([content]);
-          return contentPerPage;
-        });
-
-        return {
-          content: htmlContent,
-          pageCount: htmlContent.length,
-        };
-      }
-
-      let originalFile: Buffer;
-      if (storedFile.currentFileFormat === googlePresentationFileFormat) {
-        originalFile = await this.googleDriveService.exportFileAsPDF(
-          storedFile.originalFileId,
-        );
-      } else {
-        originalFile = await this.googleDriveService.getFile(
-          storedFile.originalFileId,
-        );
-      }
-
-      const [document, summary] = await Promise.all([
-        this.courseDocumentQueryService.findCourseDocumentById(
+      const document =
+        await this.courseDocumentQueryService.findCourseDocumentById(
           documentId,
           userToken.sub,
-        ),
-        this.documentSummaryQueryService.findByDocumentId(documentId),
-      ]);
-      const pages = await this.extractTextService.getChunksBasedOnFileMimeType({
-        buffer: originalFile,
-        mimetype:
-          storedFile.currentFileFormat === googlePresentationFileFormat
-            ? pdfMimeType
-            : storedFile.currentFileFormat,
-        originalName: document.title,
-      });
-
-      const batchedPages = batchItems(pages, 10);
-      const rewordedBatches = await Promise.all(
-        batchedPages.map(async (pageBatch) => {
-          const reworded: PDFContent[][] = [];
-          for (const page of pageBatch) {
-            const simplifiedContent = await this.simplifyTextContent(
-              page,
-              summary.summary,
-            );
-            reworded.push(simplifiedContent);
-          }
-          return reworded;
-        }),
+        );
+      const pages = await this.easyReadSimplificationService.getWholeDocument(
+        documentId,
+        document?.title ?? 'document',
       );
-      const rewordedPages = rewordedBatches.flat(1);
-
-      await this.updateStoredFileHandler.handle({
-        id: storedFile.id,
-        modifiedContent: rewordedPages,
-      });
-
-      const htmlContent = rewordedPages.map((content) => {
-        const contentPerPage = generateHTMLFromContent([content]);
-        return contentPerPage;
-      });
-
+      const htmlContent = pages.map((content) =>
+        generateHTMLFromContent([content]),
+      );
       return {
         content: htmlContent,
         pageCount: htmlContent.length,
@@ -435,6 +354,7 @@ export class CourseDocumentController {
     }
   }
 
+  /** The simplified document as a PDF. Waits until all pages are done. */
   @UseGuards(AuthGuard)
   @Get('/modified-document-file/:documentId')
   public async getModifiedDocumentFile(
@@ -445,67 +365,22 @@ export class CourseDocumentController {
     await this.assertCanOpenInEasyRead(documentId, request);
     try {
       const userToken = request['user'] as VerifiedTokenModel;
-      const storedFile =
-        await this.storedFileQueryService.findByDocumentId(documentId);
-
-      if (storedFile.originalFileId && storedFile.modifiedContent) {
-        const newPdf = await createSimplifiedPdf(
-          JSON.parse(storedFile.modifiedContent),
-        );
-        res.set({
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': 'inline; filename="file.pdf"',
-        });
-        res.send(newPdf);
-
-        return;
-      }
-
-      let originalFile: Buffer;
-      if (storedFile.currentFileFormat === googlePresentationFileFormat) {
-        originalFile = await this.googleDriveService.exportFileAsPDF(
-          storedFile.originalFileId,
-        );
-      } else {
-        originalFile = await this.googleDriveService.getFile(
-          storedFile.originalFileId,
-        );
-      }
-
-      const [document, summary] = await Promise.all([
-        this.courseDocumentQueryService.findCourseDocumentById(
+      const document =
+        await this.courseDocumentQueryService.findCourseDocumentById(
           documentId,
           userToken.sub,
-        ),
-        this.documentSummaryQueryService.findByDocumentId(documentId),
-      ]);
-      const pages = await this.extractTextService.getChunksBasedOnFileMimeType({
-        buffer: originalFile,
-        mimetype:
-          storedFile.currentFileFormat === googlePresentationFileFormat
-            ? pdfMimeType
-            : storedFile.currentFileFormat,
-        originalName: document.title,
-      });
-      const rewordedPages = await Promise.all(
-        pages.map(async (page) => {
-          // open ai call to reword
-          if (page.trim().length) {
-            const res = await this.simplifyTextContent(page, summary.summary);
-            return res;
-          }
-          return [{ text: 'Empty Page', type: 'paragraph' }] as PDFContent[];
-        }),
+        );
+      const pages = await this.easyReadSimplificationService.getWholeDocument(
+        documentId,
+        document?.title ?? 'document',
       );
-
-      const [newPdf, _] = await Promise.all([
-        createSimplifiedPdf(rewordedPages),
-        this.updateStoredFileHandler.handle({
-          id: storedFile.id,
-          modifiedContent: rewordedPages,
-        }),
-      ]);
-
+      const newPdf = await createSimplifiedPdf(
+        pages.map((page) =>
+          page.length
+            ? page
+            : ([{ text: 'Empty Page', type: 'paragraph' }] as PDFContent[]),
+        ),
+      );
       res.set({
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'inline; filename="file.pdf"',
@@ -1015,33 +890,6 @@ export class CourseDocumentController {
     } catch (error) {
       throw new HttpException(
         error.message ?? 'Failed to get keywords',
-        error.status ?? HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
-
-  private async simplifyTextContent(content: string, summary: string) {
-    try {
-      const response = await this.claudeConn.generateObject({
-        schemaName: 'simplified',
-        schema: SimplifiedPDFArraySchema,
-        messages: [
-          { role: 'system', content: getTextSimplificationPrompt(summary) },
-          {
-            role: 'user',
-            content: `
-            **source text start**
-            ${content}
-            **source text end**
-            `,
-          },
-        ],
-      });
-
-      return response.object.simplifiedContent as PDFContent[];
-    } catch (error) {
-      throw new HttpException(
-        error.message ?? 'Failed to simplify content',
         error.status ?? HttpStatus.BAD_REQUEST,
       );
     }

@@ -65,10 +65,22 @@ export class EasyReadAllowanceService {
     return moment(now).utc().add(1, 'month').startOf('month').toISOString();
   }
 
+  // Opening Easy Read checks the plan from several requests at once: share one lookup.
+  private readonly paidPlanInFlight = new Map<string, Promise<boolean>>();
+
   public async hasActivePaidPlan(userId: string): Promise<boolean> {
     const cached = this.paidPlanCache.get(userId);
     if (cached && cached.until > Date.now()) return cached.paid;
+    const inFlight = this.paidPlanInFlight.get(userId);
+    if (inFlight) return inFlight;
+    const lookup = this.lookUpPaidPlan(userId).finally(() =>
+      this.paidPlanInFlight.delete(userId),
+    );
+    this.paidPlanInFlight.set(userId, lookup);
+    return lookup;
+  }
 
+  private async lookUpPaidPlan(userId: string): Promise<boolean> {
     let paid = false;
     try {
       const oneTime =

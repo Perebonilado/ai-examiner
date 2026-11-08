@@ -16,6 +16,7 @@ import { PerformanceTrackingDbConnector } from './connectors/PerformanceTracking
 import { OralQuestionAnalysisDbConnector } from './connectors/OralQuestionAnalysisDbConnector';
 import { CallCreditsDbConnector } from './connectors/CallCreditsDbConnector';
 import { EasyReadUsageDbConnector } from './connectors/EasyReadUsageDbConnector';
+import { SimplifiedPageDbConnector } from './connectors/SimplifiedPageDbConnector';
 import { FlaggedQuestionDbConnector } from './connectors/FlaggedQuestionDbConnector';
 import { FlaggedDocumentMessageDbConnector } from './connectors/FlaggedDocumentMessageModelDbConnector';
 import { PreferredLanguageDbConnector } from './connectors/PreferredLanguageDbConnector';
@@ -45,6 +46,7 @@ import { DocumentReadingProgressDbConnector } from './connectors/DocumentReading
     OralQuestionAnalysisDbConnector,
     CallCreditsDbConnector,
     EasyReadUsageDbConnector,
+    SimplifiedPageDbConnector,
     FlaggedQuestionDbConnector,
     FlaggedDocumentMessageDbConnector,
     PreferredLanguageDbConnector,
@@ -71,6 +73,7 @@ import { DocumentReadingProgressDbConnector } from './connectors/DocumentReading
     OralQuestionAnalysisDbConnector,
     CallCreditsDbConnector,
     EasyReadUsageDbConnector,
+    SimplifiedPageDbConnector,
     FlaggedQuestionDbConnector,
     FlaggedDocumentMessageDbConnector,
     PreferredLanguageDbConnector,

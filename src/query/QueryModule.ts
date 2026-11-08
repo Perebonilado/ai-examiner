@@ -18,6 +18,7 @@ import { OralQuestionAnalysisQueryService } from './services/OralQuestionAnalysi
 import { IntegrationsModule } from 'src/integrations/IntegrationsModule';
 import { CallCreditsQueryService } from './services/CallCreditsQueryService';
 import { EasyReadUsageQueryService } from './services/EasyReadUsageQueryService';
+import { SimplifiedPageQueryService } from './services/SimplifiedPageQueryService';
 import { FlaggedQuestionQueryService } from './services/FlaggedQuestionQueryService';
 import { FlaggedDocumentMessageQueryService } from './services/FlaggedDocumentMessageQueryService';
 import { PreferredLanguageQueryService } from './services/PreferredLanguageQueryService';
@@ -48,6 +49,7 @@ import { DocumentReadingProgressQueryService } from './services/DocumentReadingP
     OralQuestionAnalysisQueryService,
     CallCreditsQueryService,
     EasyReadUsageQueryService,
+    SimplifiedPageQueryService,
     FlaggedQuestionQueryService,
     FlaggedDocumentMessageQueryService,
     PreferredLanguageQueryService,
@@ -76,6 +78,7 @@ import { DocumentReadingProgressQueryService } from './services/DocumentReadingP
     OralQuestionAnalysisQueryService,
     CallCreditsQueryService,
     EasyReadUsageQueryService,
+    SimplifiedPageQueryService,
     FlaggedDocumentMessageQueryService,
     PreferredLanguageQueryService,
     EssayQuestionAnalysisQueryService,

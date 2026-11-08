@@ -36,6 +36,10 @@ import { TopicV2Model } from '../models/TopicV2Model';
 import { GEMINI_CONN } from 'src/integrations/vercel-ai/services/GeminiConn';
 import { CLAUDE_CONN } from 'src/integrations/vercel-ai/services/ClaudeConn';
 import { AI } from 'src/integrations/vercel-ai/services/AI';
+import { googlePresentationFileFormat, pdfMimeType } from 'src/constants';
+import { StoredFileQueryService } from 'src/query/services/StoredFileQueryService';
+import { DocumentPdfService } from '../services/easy-read/DocumentPdfService';
+import { EasyReadSimplificationService } from '../services/easy-read/EasyReadSimplificationService';
 
 @Controller('file-upload')
 export class FileUploadController {
@@ -58,7 +62,53 @@ export class FileUploadController {
     @Inject(ILovePdfService) private iLovePDFService: ILovePdfService,
     @Inject(GEMINI_CONN) private readonly geminiConn: AI,
     @Inject(CLAUDE_CONN) private readonly claudeConn: AI,
+    @Inject(StoredFileQueryService)
+    private storedFileQueryService: StoredFileQueryService,
+    @Inject(DocumentPdfService) private documentPdfService: DocumentPdfService,
+    @Inject(EasyReadSimplificationService)
+    private easyReadSimplificationService: EasyReadSimplificationService,
   ) {}
+
+  /**
+   * Easy Read: store each page's text now, so the first open doesn't download and read the file
+   * again (no AI calls; pages are simplified only when Easy Read is opened). Only for files stored
+   * as PDF, whose pages match the Original view. Never fails the upload.
+   */
+  private async savePagesForEasyRead(documentId: string, pages: string[]) {
+    try {
+      await this.easyReadSimplificationService.savePageText(documentId, pages);
+    } catch (error) {
+      console.log('Easy Read: could not save page text', error?.message);
+    }
+  }
+
+  /**
+   * Easy Read, after the upload has answered: files stored as Google Slides are exported to PDF
+   * (free, via Drive), stored as PDF, and their page text saved. The first Easy Read open then
+   * skips the conversion and the text extraction. Other formats keep converting on first view.
+   */
+  private async preparePdfForEasyRead(documentId: string, title: string) {
+    try {
+      const storedFile =
+        await this.storedFileQueryService.findByDocumentId(documentId);
+      if (
+        !storedFile ||
+        storedFile.currentFileFormat !== googlePresentationFileFormat
+      ) {
+        return;
+      }
+      const pdf = await this.documentPdfService.getPdf(storedFile);
+      await this.documentPdfService.persistAsPdf(storedFile, pdf, title);
+      const pages = await this.extractTextService.getChunksBasedOnFileMimeType({
+        buffer: pdf,
+        mimetype: pdfMimeType,
+        originalName: title,
+      });
+      await this.easyReadSimplificationService.savePageText(documentId, pages);
+    } catch (error) {
+      console.log('Easy Read: could not prepare PDF', error?.message);
+    }
+  }
 
   @UseGuards(AuthGuard)
   @Post('')
@@ -229,9 +279,13 @@ export class FileUploadController {
         ]);
       }
 
+      const storedAsPdf = fileFormatToSaveFile === pdfMimeType;
       const [summaryInfo] = await Promise.all([
         summaryCreationPromise,
         uploadGoogleDrivePromise,
+        storedAsPdf
+          ? this.savePagesForEasyRead(createdDocument.data.id, chunks)
+          : Promise.resolve(),
       ]);
 
       const savedTopics = await this.createDocumentTopicHandler.handle({
@@ -262,6 +316,15 @@ export class FileUploadController {
         status: HttpStatus.CREATED,
       });
 
+      if (!storedAsPdf) {
+        setImmediate(() =>
+          this.preparePdfForEasyRead(
+            createdDocument.data.id,
+            file.originalname,
+          ),
+        );
+      }
+
       // no need to upload file to open ai anymore
 
       // setImmediate(async () => {
@@ -281,7 +344,7 @@ export class FileUploadController {
       //   ]);
       // });
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new HttpException(
         error?.message ?? 'V2: Failed to upload file',
         HttpStatus.BAD_REQUEST,
