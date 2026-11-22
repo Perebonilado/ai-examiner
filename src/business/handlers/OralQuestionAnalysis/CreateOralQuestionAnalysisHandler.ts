@@ -17,6 +17,10 @@ import { extractJSONDataFromMessages } from 'src/utils';
 import { getOralExaminationTranscriptAnalysisPrompt } from 'src/constants/QuestionGenerationPrompt';
 import { OralQuestionAnalysisQueryService } from 'src/query/services/OralQuestionAnalysisQueryService';
 import { MailerService } from 'src/integrations/mailer/services/MailerService';
+import {
+  vivaMarkingEmail,
+  vivaResultsEmail,
+} from 'src/integrations/mailer/templates/emails';
 
 @Injectable()
 export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTemplate<
@@ -47,18 +51,7 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
     try {
       const { customerEmail, questionId } = request.data.message.assistant
         .metadata as unknown as any;
-
-      try {
-        await this.mailerService.sendEmail({
-          receiverEmail: customerEmail,
-          subject: 'Your oral test is being graded',
-          text: `
-          Your oral test is currently being analyzed and graded. Please, do not retake the test. A follow up email will be sent with a link to your assessment result
-          `,
-        });
-      } catch (error) {
-        console.error(error);
-      }
+      const takenOn = new Date();
 
       const user = await this.userQueryService.findOne(customerEmail);
 
@@ -72,6 +65,22 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
 
       if (analysisExists) {
         throw new HandlerError('This call has already been analyzed');
+      }
+
+      // Sent once per call: a repeated webhook for the same call stops above.
+      try {
+        const email = vivaMarkingEmail({
+          firstName: user?.firstName,
+          documentTitle: question?.documentTitle,
+        });
+        await this.mailerService.sendEmail({
+          receiverEmail: customerEmail,
+          subject: email.subject,
+          text: email.text,
+          html: email.html,
+        });
+      } catch (error) {
+        console.error(error);
       }
 
       const analysis = await this.transcriptAnalysis(
@@ -96,15 +105,17 @@ export class CreateOralQuestionAnalysisHandler extends AbstractRequestHandlerTem
       }
 
       try {
+        const email = vivaResultsEmail({
+          firstName: user?.firstName,
+          documentTitle: question?.documentTitle,
+          takenOn,
+          resultsUrl: testUrl,
+        });
         await this.mailerService.sendEmail({
           receiverEmail: customerEmail,
-          subject: 'Your Test Assessment is Ready!',
-          text: `
-          Your oral test result is ready. Follow the link below to view your assessment.
-          \n
-          \n
-          Link - ${testUrl}
-          `,
+          subject: email.subject,
+          text: email.text,
+          html: email.html,
         });
       } catch (error) {
         console.error(error);

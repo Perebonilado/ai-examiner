@@ -27,6 +27,7 @@ import { ForgotPasswordDto } from 'src/dto/ForgotPasswordDto';
 import { ForgotPasswordValidationSchema } from '../zod-validation-schemas/ForgotPasswordValidationSchema';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { MailerService } from 'src/integrations/mailer/services/MailerService';
+import { resetPasswordEmail } from 'src/integrations/mailer/templates/emails';
 import { ResetPasswordValidationSchema } from '../zod-validation-schemas/ResetPasswordValidationSchema';
 import { ResetPasswordDto } from 'src/dto/ResetPasswordDto';
 import { UpdateUserHandler } from 'src/business/handlers/User/UpdateUserHandler';
@@ -171,18 +172,16 @@ export class AuthController {
         });
         const resetPasswordLink = `${EnvironmentVariables.config.frontendBaseUrl}auth/reset-password?token=${token}`;
 
-        const email = `
-          Hi ${user.firstName},
-
-          Please follow the link below to reset your password :)
-
-          Link: ${resetPasswordLink}
-        `;
+        const email = resetPasswordEmail({
+          firstName: user.firstName,
+          resetUrl: resetPasswordLink,
+        });
 
         await this.mailerService.sendEmail({
-          subject: 'Reset Password',
+          subject: email.subject,
           receiverEmail: user.email,
-          text: email,
+          text: email.text,
+          html: email.html,
         });
 
         return {
