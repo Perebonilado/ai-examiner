@@ -1,3 +1,5 @@
+import { UserModel } from 'src/infra/db/models/UserModel';
+import { EmailConfirmationService } from 'src/infra/auth/services/EmailConfirmationService';
 import {
   Controller,
   Get,
@@ -29,6 +31,8 @@ export class UserController {
     @Inject(UpdateUserHandler) private updateUserHandler: UpdateUserHandler,
     @Inject(FloDeskMailerService)
     private floDeskMailerService: FloDeskMailerService,
+    @Inject(EmailConfirmationService)
+    private confirmations: EmailConfirmationService,
   ) {}
 
   @UseGuards(AuthGuard)
@@ -90,9 +94,26 @@ export class UserController {
         segment_ids: [FloDeskSegments.newSubscribers.id],
       });
 
-      return updatedUserInfo;
+      // The new address needs confirming before it can be used to log in (this session carries on).
+      const upgraded = await UserModel.findByPk(existingGuestAccount.id);
+      if (upgraded) {
+        await upgraded.update({
+          emailConfirmed: false,
+          emailConfirmedOn: null,
+        });
+        await this.confirmations
+          .send(upgraded, { force: true })
+          .catch((error) =>
+            console.error(
+              'upgrade: confirmation email not sent',
+              error?.message,
+            ),
+          );
+      }
+
+      return { ...(updatedUserInfo as object), needsConfirmation: true };
     } catch (error) {
-      console.log(error)
+      console.log(error);
       throw new HttpException(
         error?.response ?? 'Failed to upgrade guest account',
         HttpStatus.BAD_REQUEST,

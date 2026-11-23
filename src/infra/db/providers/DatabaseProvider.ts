@@ -107,8 +107,50 @@ export const databaseProviders = [
       } catch (error) {
         console.log(error);
       }
+      await addEmailConfirmationColumns(sequelize);
 
       return sequelize;
     },
   },
 ];
+
+/**
+ * sync() never changes an existing table, so the email-confirmation columns are added here, once.
+ * The column defaults to 1 (confirmed): every existing account, and any account made by code that
+ * doesn't know about confirmation, counts as confirmed. Only email sign-ups set it to 0.
+ */
+async function addEmailConfirmationColumns(sequelize: Sequelize) {
+  try {
+    const [rows] = (await sequelize.query(
+      `SELECT COLUMN_NAME AS name FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user' AND COLUMN_NAME IN ('email_confirmed', 'email_confirmed_on')`,
+    )) as [{ name: string }[], unknown];
+    const have = new Set(rows.map((r) => r.name));
+    const run = async (sql: string) => {
+      try {
+        await sequelize.query(sql);
+      } catch (error) {
+        // Another instance added it first.
+        if (!/Duplicate column/i.test(String(error?.message))) throw error;
+      }
+    };
+    if (!have.has('email_confirmed'))
+      await run(
+        'ALTER TABLE `user` ADD COLUMN `email_confirmed` TINYINT(1) NOT NULL DEFAULT 1',
+      );
+    if (!have.has('email_confirmed_on'))
+      await run(
+        'ALTER TABLE `user` ADD COLUMN `email_confirmed_on` DATETIME NULL',
+      );
+    if (!have.has('email_confirmed') || !have.has('email_confirmed_on'))
+      await sequelize.query(
+        'UPDATE `user` SET `email_confirmed_on` = COALESCE(`created_on`, UTC_TIMESTAMP()) WHERE `email_confirmed` = 1 AND `email_confirmed_on` IS NULL',
+      );
+    console.log('Email confirmation columns ready');
+  } catch (error) {
+    console.error(
+      'Could not add the email confirmation columns',
+      error?.message,
+    );
+  }
+}

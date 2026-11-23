@@ -6,6 +6,27 @@ const greeting = (firstName?: string | null) =>
   firstName && firstName.trim() ? `Hi ${firstName.trim()},` : 'Hi there,';
 
 /** Forgot password. The reset link is valid for 10 minutes. */
+/** Sent after an email-and-password sign-up: the account opens once the address is confirmed. */
+export const confirmEmailEmail = ({
+  firstName,
+  confirmUrl,
+}: {
+  firstName?: string | null;
+  confirmUrl: string;
+}): RenderedEmail =>
+  renderEmail({
+    subject: 'Confirm your email for AI Examiner',
+    preheader: 'One tap and your account is ready.',
+    heading: ['Confirm your ', { mark: 'email' }],
+    paragraphs: [
+      greeting(firstName),
+      'Thanks for signing up to AI Examiner. Tap the button below to confirm this is your email address, and your account will be ready to use.',
+    ],
+    button: { label: 'Confirm my email', url: confirmUrl },
+    note: "This link works for 7 days. If you didn't sign up for AI Examiner, you can ignore this email.",
+    fallbackUrl: confirmUrl,
+  });
+
 export const resetPasswordEmail = ({
   firstName,
   resetUrl,
@@ -36,7 +57,8 @@ export const vivaMarkingEmail = ({
 }): RenderedEmail =>
   renderEmail({
     subject: 'Your oral viva is being marked',
-    preheader: "We'll email you a link to your results as soon as they're ready.",
+    preheader:
+      "We'll email you a link to your results as soon as they're ready.",
     heading: ['Your viva is being ', { mark: 'marked' }],
     paragraphs: [
       greeting(firstName),
@@ -45,9 +67,21 @@ export const vivaMarkingEmail = ({
         : 'Thanks for taking your oral viva. Our examiner is going through your answers now.',
     ],
     steps: [
-      { state: 'done', title: 'Viva taken', text: 'Your conversation with the examiner is saved.' },
-      { state: 'now', title: 'Marking', text: 'Each answer is scored out of 10, with feedback.' },
-      { state: 'next', title: 'Your results', text: "We'll email you a link as soon as they're ready." },
+      {
+        state: 'done',
+        title: 'Viva taken',
+        text: 'Your conversation with the examiner is saved.',
+      },
+      {
+        state: 'now',
+        title: 'Marking',
+        text: 'Each answer is scored out of 10, with feedback.',
+      },
+      {
+        state: 'next',
+        title: 'Your results',
+        text: "We'll email you a link as soon as they're ready.",
+      },
     ],
     note: "Please don't retake this viva while it's being marked.",
   });

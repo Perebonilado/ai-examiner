@@ -50,7 +50,14 @@ export class CreateUserHandler extends AbstractRequestHandlerTemplate<
             : await hashPassword(request.payload.password),
           institution: '',
           role: request.payload.role,
+          // Email-and-password sign-ups confirm by email; Google and guest accounts don't need to.
+          emailConfirmed:
+            request.payload.emailConfirmed ??
+            (request.payload.role === UserRole.Guest ||
+              !request.payload.password),
         };
+        if (payload.emailConfirmed)
+          (payload as any).emailConfirmedOn = new Date();
         const savedUser = await this.userRepository.create(
           payload as UserModel,
         );

@@ -1,3 +1,9 @@
+import { hashPassword } from 'src/utils';
+import {
+  EmailConfirmationService,
+  passwordMark,
+} from 'src/infra/auth/services/EmailConfirmationService';
+import { UserModel } from 'src/infra/db/models/UserModel';
 import {
   Controller,
   Post,
@@ -25,7 +31,6 @@ import { JwtService } from '@nestjs/jwt';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { ForgotPasswordDto } from 'src/dto/ForgotPasswordDto';
 import { ForgotPasswordValidationSchema } from '../zod-validation-schemas/ForgotPasswordValidationSchema';
-import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { MailerService } from 'src/integrations/mailer/services/MailerService';
 import { resetPasswordEmail } from 'src/integrations/mailer/templates/emails';
 import { ResetPasswordValidationSchema } from '../zod-validation-schemas/ResetPasswordValidationSchema';
@@ -49,7 +54,22 @@ export class AuthController {
     @Inject(GoogleAuthService) private googleAuthService: GoogleAuthService,
     private jwtService: JwtService,
     @Inject(ActivityService) private activity: ActivityService,
+    @Inject(EmailConfirmationService)
+    private confirmations: EmailConfirmationService,
   ) {}
+
+  /** Password-reset links use their own key, never the sign-in key. */
+  private get resetSecret() {
+    return `${EnvironmentVariables.config.jwtSecret}:reset-password`;
+  }
+
+  private pendingConfirmation(email: string) {
+    return {
+      status: HttpStatus.CREATED,
+      message: 'Check your email to confirm your account',
+      data: { needsConfirmation: true, email },
+    };
+  }
 
   /** The user id inside a sign-in token we just issued (for the activity log). */
   private userIdFromToken(token?: string): string | null {
@@ -66,9 +86,28 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(SignUpValidationSchema))
   public async signUp(@Body() body: CreateUserDto) {
     try {
-      return await this.createUserHandler.handle({
-        payload: { ...body, role: UserRole.User },
+      const existing = await this.userQueryService.findOne(body.email);
+      if (EmailConfirmationService.waiting(existing)) {
+        // Never confirmed: the latest sign-up replaces it, and older links stop working.
+        await existing!.update({
+          firstName: body.firstName,
+          lastName: body.lastName,
+          password: await hashPassword(body.password),
+        });
+        await this.confirmations.send(existing!, { force: true });
+        return this.pendingConfirmation(existing!.email);
+      }
+      await this.createUserHandler.handle({
+        payload: { ...body, role: UserRole.User, emailConfirmed: false },
       });
+      const user = await this.userQueryService.findOne(body.email);
+      try {
+        await this.confirmations.send(user!, { force: true });
+      } catch (error) {
+        // The account exists; "Send it again" on the next screen retries.
+        console.error('sign-up: confirmation email not sent', error?.message);
+      }
+      return this.pendingConfirmation(user!.email);
     } catch (error) {
       throw new HttpException(
         error?._innerError ?? 'Failed to create new user',
@@ -104,7 +143,17 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(LoginValidationSchema))
   public async login(@Body() body: LoginUserDto, @Req() req: Request) {
     try {
-      const result = await this.authService.signIn(body);
+      const result = await this.authService
+        .signIn(body)
+        .catch(async (error) => {
+          // Right password, address not confirmed yet: send the link again (once a minute at most).
+          if (error?.response?.code === 'EMAIL_NOT_CONFIRMED') {
+            const user = await this.userQueryService.findOne(body.email);
+            if (user)
+              await this.confirmations.send(user).catch(() => undefined);
+          }
+          throw error;
+        });
       const device = describeDevice(req.headers['user-agent']);
       this.activity.record(
         this.userIdFromToken(result?.data?.token),
@@ -134,6 +183,10 @@ export class AuthController {
       const user = await this.userQueryService.findOne(email);
 
       if (user) {
+        // Google has checked the address.
+        await this.confirmations.markConfirmed(user.id, {
+          dropUnconfirmedPassword: true,
+        });
         const token = this.jwtService.sign(
           {
             sub: user.id,
@@ -184,6 +237,18 @@ export class AuthController {
     }
   }
 
+  /** The link in the confirmation email: confirms the address and signs the student in. */
+  @Post('/confirm-email')
+  public async confirmEmail(@Body() body: { token?: string }) {
+    return this.confirmations.confirm(String(body?.token ?? ''));
+  }
+
+  /** "Send it again" (answers the same whether or not the address has an account). */
+  @Post('/resend-confirmation')
+  public async resendConfirmation(@Body() body: { email?: string }) {
+    return this.confirmations.resend(String(body?.email ?? ''));
+  }
+
   @Post('/forgot-password')
   @UsePipes(new ZodValidationPipe(ForgotPasswordValidationSchema))
   public async forgotPasswword(@Body() body: ForgotPasswordDto) {
@@ -191,15 +256,17 @@ export class AuthController {
       const user = await this.userQueryService.findOne(body.email);
 
       if (user) {
-        const payload: VerifiedTokenModel = {
-          sub: user.id,
-          email: user.email,
-        };
-
-        const token = await this.jwtService.signAsync(payload, {
-          secret: EnvironmentVariables.config.jwtSecret,
-          expiresIn: '10m',
-        });
+        // Reset links have their own key (they can't be used to sign in) and stop working once
+        // the password changes, so each works once.
+        const token = await this.jwtService.signAsync(
+          {
+            p: 'reset_password',
+            sub: user.id,
+            email: user.email,
+            pw: passwordMark(user.password),
+          },
+          { secret: this.resetSecret, expiresIn: '10m' },
+        );
         const resetPasswordLink = `${EnvironmentVariables.config.frontendBaseUrl}auth/reset-password?token=${token}`;
 
         const email = resetPasswordEmail({
@@ -236,13 +303,34 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(ResetPasswordValidationSchema))
   public async resetPassword(@Body() body: ResetPasswordDto) {
     try {
-      const { sub } = (await this.jwtService.verifyAsync(body.token, {
-        secret: EnvironmentVariables.config.jwtSecret,
-      })) as VerifiedTokenModel;
+      let claims: { p?: string; sub?: string; pw?: string };
+      try {
+        claims = await this.jwtService.verifyAsync(body.token, {
+          secret: this.resetSecret,
+        });
+      } catch {
+        throw new HttpException(
+          'This reset link has expired. Ask for a new one.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      const user =
+        claims?.p === 'reset_password' && claims.sub
+          ? await UserModel.findByPk(claims.sub)
+          : null;
+      if (!user || passwordMark(user.password) !== claims.pw)
+        throw new HttpException(
+          'This reset link has already been used. Ask for a new one.',
+          HttpStatus.BAD_REQUEST,
+        );
+      const sub = user.id;
 
-      return await this.updateUserHandler.handle({
+      const result = await this.updateUserHandler.handle({
         payload: { id: sub, password: body.password },
       });
+      // Opening the reset email proves they own the address.
+      await this.confirmations.markConfirmed(sub);
+      return result;
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to handle reset password',
@@ -270,6 +358,10 @@ export class AuthController {
       const user = await this.userQueryService.findOne(email);
 
       if (user) {
+        // Google has checked the address.
+        await this.confirmations.markConfirmed(user.id, {
+          dropUnconfirmedPassword: true,
+        });
         const token = this.jwtService.sign(
           {
             sub: user.id,

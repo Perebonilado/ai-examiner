@@ -82,6 +82,23 @@ export class UserModel extends Model<UserModel> {
   })
   createdOn: Date;
 
+  /**
+   * False while an email-and-password account waits for its owner to confirm the address.
+   * Google and guest accounts don't need confirming; accounts from before confirmation existed
+   * were all marked confirmed.
+   */
+  @Column({
+    type: DataType.BOOLEAN,
+    field: 'email_confirmed',
+    allowNull: false,
+    // Confirmed unless a sign-up by email says otherwise (it always does, explicitly).
+    defaultValue: true,
+  })
+  emailConfirmed: boolean;
+
+  @Column({ type: DataType.DATE, field: 'email_confirmed_on', allowNull: true })
+  emailConfirmedOn: Date | null;
+
   @Column({ type: DataType.DATE, field: 'modified_on', allowNull: true })
   modifiedOn: Date;
 

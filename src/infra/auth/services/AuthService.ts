@@ -19,6 +19,16 @@ export class AuthService {
       const isMatch = await verifyPassword(payload.password, user.password);
 
       if (isMatch) {
+        if (user.password && user.emailConfirmed === false)
+          throw new HttpException(
+            {
+              message:
+                'Please confirm your email first. We sent a link to your inbox.',
+              code: 'EMAIL_NOT_CONFIRMED',
+              email: user.email,
+            },
+            HttpStatus.FORBIDDEN,
+          );
         const { id, email } = user;
         const payload: VerifiedTokenModel = {
           sub: id,

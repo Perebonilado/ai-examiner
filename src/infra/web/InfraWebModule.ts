@@ -1,3 +1,4 @@
+import { EmailConfirmationService } from '../auth/services/EmailConfirmationService';
 import { Module } from '@nestjs/common';
 import { IntegrationsModule } from 'src/integrations/IntegrationsModule';
 import { QuestionsController } from './controllers/QuestionsController';
@@ -45,6 +46,7 @@ import { DocumentChatService } from './services/document-chat/DocumentChatServic
   ],
   providers: [
     AuthService,
+    EmailConfirmationService,
     GoogleStrategy,
     GoogleAuthService,
     EasyReadAllowanceService,

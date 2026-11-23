@@ -462,6 +462,7 @@ export class AdminStatsService {
     ] = await Promise.all([
       select(
         `SELECT u.id, u.first_name, u.last_name, u.email, u.role, u.institution, u.created_on,
+                u.email_confirmed,
                 p.last_seen_at, p.doing, ${LAST_ACTIVE_SQL} AS last_active,
                 CASE WHEN ${IS_PAID_SQL} THEN 1 ELSE 0 END AS paid,
                 COALESCE(qf.n, 0) AS tests, COALESCE(df.n, 0) AS documents,
@@ -571,6 +572,9 @@ export class AdminStatsService {
         role,
         plan: role === 'guest' ? 'guest' : Number(u.paid) ? 'paid' : 'free',
         planName,
+        /** False while an email sign-up waits for its confirmation link to be opened. */
+        emailConfirmed:
+          u.email_confirmed === undefined ? true : !!Number(u.email_confirmed),
         createdOn: iso(u.created_on),
         online: !!now,
         doing: now?.doing ?? null,
