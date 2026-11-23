@@ -17,7 +17,14 @@ export type SimplifiedPageStatus = 'pending' | 'running' | 'done' | 'failed';
  */
 @Table({
   tableName: 'simplified_page',
-  indexes: [{ unique: true, fields: ['document_id', 'page_number'] }],
+  indexes: [
+    { unique: true, fields: ['document_id', 'page_number'] },
+    // The admin overview counts documents opened in Easy Read over a date range.
+    {
+      name: 'simplified_page_created_on_document_id',
+      fields: ['created_on', 'document_id'],
+    },
+  ],
 })
 export class SimplifiedPageModel extends Model<SimplifiedPageModel> {
   @Column({

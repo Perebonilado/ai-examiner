@@ -15,7 +15,20 @@ import { OralQuestionAnalysisModel } from './OralQuestionAnalysisModel';
 import { DifficultyType } from 'src/constants/QuestionGenerationPrompt';
 import { FlaggedQuestionModel } from './FlaggedQuestionsModel';
 
-@Table({ tableName: 'question' })
+// For the admin pages: (user_id, created_on) counts each person's tests and finds their latest
+// one from the index alone; (created_on, user_id) reads a date range of activity;
+// (created_on, question_type_id, user_id) counts each kind of test over a date range.
+@Table({
+  tableName: 'question',
+  indexes: [
+    { name: 'question_user_id_created_on', fields: ['user_id', 'created_on'] },
+    { name: 'question_created_on_user_id', fields: ['created_on', 'user_id'] },
+    {
+      name: 'question_created_on_type_user',
+      fields: ['created_on', 'question_type_id', 'user_id'],
+    },
+  ],
+})
 export class QuestionModel extends Model<QuestionModel> {
   @Column({
     type: DataType.STRING,

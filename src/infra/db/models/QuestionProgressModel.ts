@@ -13,7 +13,25 @@ import { UserModel } from './UserModel';
 import { QuestionModel } from './QuestionModel';
 import { QuestionProgressStatusType } from 'src/infra/web/models/QuestionProgressStatusType';
 
-@Table({ tableName: 'question_progress' })
+// For the admin pages: each person's latest answer from the index alone, and date ranges of activity.
+@Table({
+  tableName: 'question_progress',
+  indexes: [
+    {
+      name: 'question_progress_user_id_modified_on',
+      fields: ['user_id', 'modified_on'],
+    },
+    {
+      name: 'question_progress_modified_on_user_id',
+      fields: ['modified_on', 'user_id'],
+    },
+    // The admin's test pages find each test's attempts.
+    {
+      name: 'question_progress_question_id_user_id',
+      fields: ['question_id', 'user_id'],
+    },
+  ],
+})
 export class QuestionProgressModel extends Model<QuestionProgressModel> {
   @Column({
     type: DataType.STRING,

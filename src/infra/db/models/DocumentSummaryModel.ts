@@ -11,7 +11,16 @@ import { UserModel } from './UserModel';
 import { CourseDocumentModel } from './CourseDocumentModel';
 import * as moment from 'moment';
 
-@Table({ tableName: 'document_summary' })
+// (created_on, user_id): the admin overview counts summaries over a date range.
+@Table({
+  tableName: 'document_summary',
+  indexes: [
+    {
+      name: 'document_summary_created_on_user_id',
+      fields: ['created_on', 'user_id'],
+    },
+  ],
+})
 export class DocumentSummaryModel extends Model<DocumentSummaryModel> {
   @Column({
     type: DataType.STRING,

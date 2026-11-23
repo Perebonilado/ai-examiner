@@ -10,7 +10,11 @@ import { QuestionModel } from './QuestionModel';
 import * as moment from 'moment';
 import { EssayQuestionAnalysisStatus } from 'src/infra/web/models/EssayQuestionAnalysisStatus';
 
-@Table({ tableName: 'essay_question_analysis' })
+// question_id: the admin shows each essay test's marked answers.
+@Table({
+  tableName: 'essay_question_analysis',
+  indexes: [{ name: 'essay_question_analysis_question_id', fields: ['question_id'] }],
+})
 export class EssayQuestionAnalysisModel extends Model<EssayQuestionAnalysisModel> {
   @Column({
     type: DataType.BIGINT,

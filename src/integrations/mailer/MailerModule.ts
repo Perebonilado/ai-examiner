@@ -9,7 +9,9 @@ import { EnvironmentVariables } from 'src/EnvironmentVariables';;
       useFactory: () => ({
         transport: {
           host: EnvironmentVariables.config.emailHost,
-          secure: true,
+          // Defaults keep production as it was (implicit TLS); a local mail catcher can turn it off.
+          secure: process.env.Email_secure !== 'false',
+          ...(process.env.Email_port ? { port: Number(process.env.Email_port) } : {}),
           auth: {
             user: EnvironmentVariables.config.emailUser,
             pass: EnvironmentVariables.config.emailPass,

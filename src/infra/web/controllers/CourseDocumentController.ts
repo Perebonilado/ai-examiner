@@ -1,3 +1,4 @@
+import { ActivityService } from 'src/admin/services/ActivityService';
 import { EasyReadAllowanceService } from '../services/EasyReadAllowanceService';
 import { DocumentPdfService } from '../services/easy-read/DocumentPdfService';
 import {
@@ -79,6 +80,7 @@ import { CreateSprintReadContentHandler } from 'src/business/handlers/StoredFile
 @Controller('course-document')
 export class CourseDocumentController {
   constructor(
+    @Inject(ActivityService) private activity: ActivityService,
     @Inject(CreateCourseDocumentHandler)
     private createCourseDocumentHander: CreateCourseDocumentHandler,
     @Inject(CourseDocumentQueryService)
@@ -229,6 +231,7 @@ export class CourseDocumentController {
     await this.assertCanOpenInEasyRead(documentId, request);
     try {
       const userToken = request['user'] as VerifiedTokenModel;
+      this.activity.recordEasyRead(userToken.sub, documentId);
       const storedFile =
         await this.storedFileQueryService.findByDocumentId(documentId);
       if (!storedFile?.originalFileId) {

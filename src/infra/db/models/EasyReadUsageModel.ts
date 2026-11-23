@@ -15,7 +15,14 @@ import { generateUUID } from 'src/utils';
  */
 @Table({
   tableName: 'easy_read_usage',
-  indexes: [{ unique: true, fields: ['user_id', 'month'] }],
+  indexes: [
+    { unique: true, fields: ['user_id', 'month'] },
+    // For the admin pages: who has been reading recently.
+    {
+      name: 'easy_read_usage_last_active_on_user_id',
+      fields: ['last_active_on', 'user_id'],
+    },
+  ],
 })
 export class EasyReadUsageModel extends Model<EasyReadUsageModel> {
   @Column({
