@@ -35,6 +35,8 @@ import { MobileGoogleValidationSchema } from '../zod-validation-schemas/MobileGo
 import { GoogleAuthService } from 'src/infra/auth/services/GoogleAuthService';
 import { UserRole } from '../models/UserRole';
 import { generateUUID } from 'src/utils';
+import { ActivityService } from 'src/admin/services/ActivityService';
+import { describeDevice } from 'src/admin/time';
 
 @Controller('auth')
 export class AuthController {
@@ -46,7 +48,19 @@ export class AuthController {
     @Inject(UpdateUserHandler) private updateUserHandler: UpdateUserHandler,
     @Inject(GoogleAuthService) private googleAuthService: GoogleAuthService,
     private jwtService: JwtService,
+    @Inject(ActivityService) private activity: ActivityService,
   ) {}
+
+  /** The user id inside a sign-in token we just issued (for the activity log). */
+  private userIdFromToken(token?: string): string | null {
+    try {
+      return token
+        ? ((this.jwtService.decode(token) as { sub?: string })?.sub ?? null)
+        : null;
+    } catch {
+      return null;
+    }
+  }
 
   @Post('/sign-up')
   @UsePipes(new ZodValidationPipe(SignUpValidationSchema))
@@ -88,9 +102,17 @@ export class AuthController {
 
   @Post('/login')
   @UsePipes(new ZodValidationPipe(LoginValidationSchema))
-  public async login(@Body() body: LoginUserDto) {
+  public async login(@Body() body: LoginUserDto, @Req() req: Request) {
     try {
-      return await this.authService.signIn(body);
+      const result = await this.authService.signIn(body);
+      const device = describeDevice(req.headers['user-agent']);
+      this.activity.record(
+        this.userIdFromToken(result?.data?.token),
+        'sign_in',
+        `signed in with email${device ? ` on ${device.replace(' · ', ', ')}` : ''}`,
+        { device },
+      );
+      return result;
     } catch (error) {
       throw new HttpException(
         error?.response ?? 'Failed to login user',
@@ -118,6 +140,14 @@ export class AuthController {
             email: user.email,
           },
           { secret: EnvironmentVariables.config.jwtSecret },
+        );
+        this.activity.record(
+          user.id,
+          'sign_in',
+          'signed in with Google in the app',
+          {
+            device: 'Android app',
+          },
         );
 
         return {
@@ -246,6 +276,13 @@ export class AuthController {
             email: user.email,
           },
           { secret: EnvironmentVariables.config.jwtSecret },
+        );
+        const device = describeDevice(req.headers['user-agent']);
+        this.activity.record(
+          user.id,
+          'sign_in',
+          `signed in with Google${device ? ` on ${device.replace(' · ', ', ')}` : ''}`,
+          { device },
         );
 
         response.redirect(

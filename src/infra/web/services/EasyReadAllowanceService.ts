@@ -15,6 +15,7 @@ import { SubscriptionQueryService } from 'src/query/services/SubscriptionQuerySe
 import { OneTimeSubscriptionQueryService } from 'src/query/services/OneTimeSubscriptionQueryService';
 import { EasyReadUsageQueryService } from 'src/query/services/EasyReadUsageQueryService';
 import { RecordEasyReadUsageHandler } from 'src/business/handlers/EasyReadUsage/RecordEasyReadUsageHandler';
+import { recordReadingTime } from 'src/admin/readingTime';
 
 export const EASY_READ_LIMIT_REACHED = 'EASY_READ_LIMIT_REACHED';
 
@@ -132,7 +133,17 @@ export class EasyReadAllowanceService {
   public async recordUsage(
     userId: string,
     seconds: number,
+    documentId = '',
   ): Promise<EasyReadAllowance> {
+    // Reading time for the admin dashboard, on every plan. It never blocks the allowance.
+    try {
+      await recordReadingTime(userId, documentId, seconds);
+    } catch (error) {
+      this.logger.error(
+        `Could not record reading time for ${userId}`,
+        error?.stack,
+      );
+    }
     if (await this.hasActivePaidPlan(userId)) return this.getAllowance(userId);
 
     const now = new Date();

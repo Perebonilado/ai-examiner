@@ -14,7 +14,20 @@ import { MessageSenderModel } from 'src/infra/web/models/MessageSenderModel';
 import * as moment from 'moment';
 import { FlaggedDocumentMessageModel } from './FlaggedDocumentMessageModel';
 
-@Table({ tableName: 'document_message' })
+// For the admin pages: each person's latest one from the index alone, and date ranges of activity.
+@Table({
+  tableName: 'document_message',
+  indexes: [
+    {
+      name: 'document_message_user_id_created_on',
+      fields: ['user_id', 'created_on'],
+    },
+    {
+      name: 'document_message_created_on_user_id',
+      fields: ['created_on', 'user_id'],
+    },
+  ],
+})
 export class DocumentMessageModel extends Model<DocumentMessageModel> {
   @Column({
     type: DataType.STRING,

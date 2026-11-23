@@ -46,6 +46,16 @@ export interface Config {
   geminiApiKey: string;
   anthropicApiKey: string;
   adminEmail: string;
+  /** Comma-separated emails that can open the admin dashboard. */
+  adminEmails: string[];
+  /** Marketing emails sent per day (Gmail allows about 500 in all; the rest is left for account emails). */
+  marketingDailyLimit: number;
+  /** Postal address shown in every marketing email's footer. */
+  postalAddress: string;
+  /** This API's public origin, for click tracking and one-click unsubscribe links. */
+  backendPublicUrl: string;
+  /** Set to "false" to stop the marketing sender on this instance. */
+  marketingSenderEnabled: boolean;
   googleServiceAccountBase64: string;
 }
 
@@ -98,5 +108,13 @@ export default (): Config => ({
   geminiApiKey: process.env.GEMINI_API_KEY,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   adminEmail: process.env.ADMIN_EMAIL,
+  adminEmails: (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
+  marketingDailyLimit: Number(process.env.MARKETING_DAILY_LIMIT) || 400,
+  postalAddress: process.env.POSTAL_ADDRESS || '',
+  backendPublicUrl: (process.env.BACKEND_PUBLIC_URL || '').replace(/\/+$/, ''),
+  marketingSenderEnabled: process.env.MARKETING_SENDER_ENABLED !== 'false',
   googleServiceAccountBase64: process.env.GOOGLE_SERVICE_ACCOUNT_BASE64,
 });

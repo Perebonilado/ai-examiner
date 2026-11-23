@@ -20,7 +20,11 @@ import { PerformanceTrackingModel } from './PerformanceTrackingModel';
 import { CallCreditsModel } from './CallCreditsModel';
 import { UserRole } from 'src/infra/web/models/UserRole';
 
-@Table({ tableName: 'user' })
+// For the admin pages: sign-ups by day.
+@Table({
+  tableName: 'user',
+  indexes: [{ name: 'user_created_on', fields: ['created_on'] }],
+})
 export class UserModel extends Model<UserModel> {
   @Column({
     type: DataType.UUID,
@@ -67,7 +71,7 @@ export class UserModel extends Model<UserModel> {
   @Column({
     type: DataType.STRING,
     allowNull: false,
-    field: 'role'
+    field: 'role',
   })
   role: UserRole;
 

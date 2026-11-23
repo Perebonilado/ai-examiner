@@ -13,6 +13,7 @@ import { Request } from 'express';
 import { AuthGuard } from 'src/infra/auth/guards/AuthGuard';
 import { VerifiedTokenModel } from 'src/infra/auth/models/VerifiedTokenModel';
 import { EasyReadAllowanceService } from '../services/EasyReadAllowanceService';
+import { cleanDocumentId } from 'src/admin/readingTime';
 
 @Controller('easy-read')
 export class EasyReadController {
@@ -29,12 +30,15 @@ export class EasyReadController {
     return await this.easyReadAllowanceService.getAllowance(userToken.sub);
   }
 
-  /** The app reports reading time while Easy Read is open and visible (free plan only). */
+  /**
+   * The app reports reading time while Easy Read is open and visible, with the document. Free
+   * plans spend it from the monthly allowance; every plan's time is kept for the admin dashboard.
+   */
   @UseGuards(AuthGuard)
   @Post('usage')
   public async recordUsage(
     @Req() request: Request,
-    @Body() body: { seconds?: unknown },
+    @Body() body: { seconds?: unknown; documentId?: unknown },
   ) {
     const seconds = Number(body?.seconds);
     if (!Number.isFinite(seconds) || seconds < 0) {
@@ -47,6 +51,7 @@ export class EasyReadController {
     return await this.easyReadAllowanceService.recordUsage(
       userToken.sub,
       seconds,
+      cleanDocumentId(body?.documentId),
     );
   }
 }

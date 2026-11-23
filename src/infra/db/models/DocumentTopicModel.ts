@@ -11,7 +11,11 @@ import { CourseDocumentModel } from './CourseDocumentModel';
 import { UserModel } from './UserModel';
 import { DocumentReadingProgressModel } from './DocumentReadingProgress';
 
-@Table({ tableName: 'document_topic' })
+// document_id: the admin opens a document's topics, and Claude classifies documents from them.
+@Table({
+  tableName: 'document_topic',
+  indexes: [{ name: 'document_topic_document_id', fields: ['document_id'] }],
+})
 export class DocumentTopicModel extends Model<DocumentTopicModel> {
   @Column({
     type: DataType.BIGINT,

@@ -12,7 +12,16 @@ import { QuestionModel } from './QuestionModel';
 import { UserModel } from './UserModel';
 import { CourseDocumentModel } from './CourseDocumentModel';
 
-@Table({ tableName: 'score' })
+// For the admin pages: each person's latest one from the index alone, and date ranges of activity.
+@Table({
+  tableName: 'score',
+  indexes: [
+    { name: 'score_user_id_created_on', fields: ['user_id', 'created_on'] },
+    { name: 'score_created_on_user_id', fields: ['created_on', 'user_id'] },
+    // The admin's test pages find each attempt's score.
+    { name: 'score_question_id_user_id', fields: ['question_id', 'user_id'] },
+  ],
+})
 export class ScoreModel extends Model<ScoreModel> {
   @Column({
     type: DataType.STRING,

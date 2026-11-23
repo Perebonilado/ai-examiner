@@ -1,3 +1,18 @@
+import {
+  UserActivityModel,
+  EasyReadReadingHourModel,
+  EasyReadReadingModel,
+  UserDailyActiveModel,
+  UserPresenceModel,
+} from 'src/admin/models/ActivityModels';
+import { AdminMemberModel } from 'src/admin/models/AdminMemberModel';
+import { INSIGHTS_MODELS } from 'src/admin/insights/models';
+import {
+  EmailPreferenceModel,
+  MarketingCampaignModel,
+  MarketingClickModel,
+  MarketingRecipientModel,
+} from 'src/admin/models/CampaignModels';
 import { Sequelize } from 'sequelize-typescript';
 import { EnvironmentVariables } from 'src/EnvironmentVariables';
 import { UserModel } from '../models/UserModel';
@@ -72,7 +87,18 @@ export const databaseProviders = [
         DocumentSummaryModel,
         RelatedVideoModel,
         StoredFileModel,
-        DocumentReadingProgressModel
+        DocumentReadingProgressModel,
+        UserActivityModel,
+        UserPresenceModel,
+        UserDailyActiveModel,
+        EasyReadReadingModel,
+        EasyReadReadingHourModel,
+        AdminMemberModel,
+        ...INSIGHTS_MODELS,
+        MarketingCampaignModel,
+        MarketingRecipientModel,
+        MarketingClickModel,
+        EmailPreferenceModel,
       ]);
 
       try {

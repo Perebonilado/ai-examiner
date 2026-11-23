@@ -19,7 +19,21 @@ import { RelatedVideoModel } from './RelatedVideoModel';
 import { StoredFileModel } from './StoredFileModel';
 import { DocumentReadingProgressModel } from './DocumentReadingProgress';
 
-@Table({ tableName: 'course_document' })
+// For the admin pages: (user_id, is_deleted, created_on) counts each person's documents and finds
+// their latest one from the index alone; (created_on, user_id) reads a date range of uploads.
+@Table({
+  tableName: 'course_document',
+  indexes: [
+    {
+      name: 'course_document_user_id_deleted_created_on',
+      fields: ['user_id', 'is_deleted', 'created_on'],
+    },
+    {
+      name: 'course_document_created_on_user_id',
+      fields: ['created_on', 'user_id'],
+    },
+  ],
+})
 export class CourseDocumentModel extends Model<CourseDocumentModel> {
   @Column({
     type: DataType.STRING,

@@ -8,6 +8,8 @@ import { QueryModule } from './query/QueryModule';
 import { BusinessModule } from './business/BusinessModule';
 import { WebHooksModule } from './webhooks/WebHooksModule';
 import { NotificationsModule } from './notification/NotificationsModule';
+import { ActivityModule } from './admin/ActivityModule';
+import { AdminModule } from './admin/AdminModule';
 
 @Module({
   imports: [
@@ -19,7 +21,9 @@ import { NotificationsModule } from './notification/NotificationsModule';
     QueryModule,
     BusinessModule,
     WebHooksModule,
-    NotificationsModule
+    NotificationsModule,
+    ActivityModule,
+    AdminModule,
   ],
   providers: []
 })
