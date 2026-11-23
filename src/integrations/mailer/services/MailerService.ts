@@ -8,9 +8,19 @@ export class MailerService {
   constructor(private mailingService: NodeMailerService) {}
 
   public async sendEmail(payload: SendEmailModel) {
+    // Local testing: print instead of sending (never set in production).
+    if (process.env.MAIL_DRY_RUN === 'true') {
+      console.log(
+        `[mail dry run] to ${payload.receiverEmail}: ${payload.subject}\n${payload.text}`,
+      );
+      return;
+    }
     // Show "AI Examiner" as the sender when the SMTP login is an email address.
     const user = EnvironmentVariables.config.emailUser;
-    const from = user && user.includes('@') ? { name: 'AI Examiner', address: user } : undefined;
+    const from =
+      user && user.includes('@')
+        ? { name: 'AI Examiner', address: user }
+        : undefined;
     try {
       await this.mailingService.sendMail({
         ...(from ? { from } : {}),
@@ -18,10 +28,12 @@ export class MailerService {
         to: payload.receiverEmail,
         text: payload.text,
         ...(payload.html ? { html: payload.html } : {}),
-        attachments: payload.attachments ? payload.attachments.map((file)=>({
-          filename: file.originalname,
-          content: file.buffer,
-        })) : [],
+        attachments: payload.attachments
+          ? payload.attachments.map((file) => ({
+              filename: file.originalname,
+              content: file.buffer,
+            }))
+          : [],
       });
     } catch (error) {
       throw new HttpException('Failed to send email', HttpStatus.BAD_REQUEST);
@@ -41,7 +53,10 @@ export class MailerService {
     replyTo?: string;
   }) {
     const user = EnvironmentVariables.config.emailUser;
-    const from = user && user.includes('@') ? { name: 'AI Examiner', address: user } : undefined;
+    const from =
+      user && user.includes('@')
+        ? { name: 'AI Examiner', address: user }
+        : undefined;
     return this.mailingService.sendMail({
       ...(from ? { from } : {}),
       to: payload.to,

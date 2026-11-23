@@ -12,6 +12,8 @@ export class FloDeskMailerService {
   private baseUrl = `https://${EnvironmentVariables.config.floDeskBaseUrl}`;
 
   public async createSubscriber(payload: CreateFloDeskSubscriberPayload) {
+    // Local testing: don't add test addresses to the mailing list.
+    if (process.env.MAIL_DRY_RUN === 'true') return;
     try {
       const url = `${this.baseUrl}/subscribers`;
 
